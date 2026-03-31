@@ -6,4 +6,4 @@ description: Default description
 suites: 
 license: 
 dependencies:
-  codeql/cpp-all: "5.4.1"
+  codeql/cpp-all: "8.0.3"

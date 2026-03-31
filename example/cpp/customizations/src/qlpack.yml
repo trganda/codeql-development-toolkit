@@ -2,4 +2,4 @@ library: true
 name: qlt/cpp-customizations
 version: 0.0.2
 dependencies:
-  "codeql/cpp-all": "5.4.1"
+  "codeql/cpp-all": "8.0.3"
