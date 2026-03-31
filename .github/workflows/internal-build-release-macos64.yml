@@ -67,7 +67,7 @@ jobs:
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: qlt-dist
+        name: qlt-dist-macos-arm64
         path: qlt*.zip
 
     - name: Upload Build Artifacts

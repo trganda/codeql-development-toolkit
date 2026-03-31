@@ -9,7 +9,7 @@ on:
           required: true
           type: string 
   
-  
+
 jobs:
   build-linux64:
     runs-on: ubuntu-20.04
@@ -37,7 +37,6 @@ jobs:
         chmod +x ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/linux-x64/qlt
         chmod +r -R ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/linux-x64        
         
-
     - uses: actions/setup-python@v5
       with:
         python-version: '3.11'
@@ -54,7 +53,6 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
 
-
     - name: Build Bundle Archive
       shell: bash
       run: |
@@ -66,12 +64,10 @@ jobs:
         zip -r $ARCHIVE .
         popd
 
-
-
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: qlt-dist
+        name: qlt-dist-linux64
         path: qlt*.zip
 
     - name: Upload Build Artifacts
