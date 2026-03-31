@@ -48,10 +48,10 @@ find_codeql_cli() {
 
     # Try common installation paths
     local common_paths=(
-        "$HOME/.codeql/codeql-cli_v2.22.4/codeql/codeql"
-        "$HOME/.codeql/codeql-bundle-v2.22.4/codeql/codeql"
-        "$HOME/.codeql/distributions/codeql-cli_v2.22.4/codeql/codeql"
-        "$HOME/.codeql/distributions/codeql-bundle-v2.22.4/codeql/codeql"
+        "$HOME/.codeql/codeql-cli_v2.25.1/codeql/codeql"
+        "$HOME/.codeql/codeql-bundle-v2.25.1/codeql/codeql"
+        "$HOME/.codeql/distributions/codeql-cli_v2.25.1/codeql/codeql"
+        "$HOME/.codeql/distributions/codeql-bundle-v2.25.1/codeql/codeql"
         "$(which codeql 2>/dev/null)"
     )
 
@@ -210,11 +210,11 @@ setup_test_environment() {
     log_info "Creating qlt.conf.json configuration..."
     cat > qlt.conf.json << 'EOF'
 {
-  "CodeQLCLI": "2.22.4",
-  "CodeQLStandardLibrary": "codeql-cli/v2.22.4",
-  "CodeQLCLIBundle": "codeql-bundle-v2.22.4",
+  "CodeQLCLI": "2.25.1",
+  "CodeQLStandardLibrary": "codeql-cli/v2.25.1",
+  "CodeQLCLIBundle": "codeql-bundle-v2.25.1",
   "EnableCustomCodeQLBundles": false,
-  "CodeQLStandardLibraryIdent": "codeql-cli_v2.22.4"
+  "CodeQLStandardLibraryIdent": "codeql-cli_v2.25.1"
 }
 EOF
 
