@@ -1,0 +1,25 @@
+name: 🚀 Trigger Release Build on Publish
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  trigger-release-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract version from tag
+        id: version
+        run: |
+          # Strip leading 'v' from the tag name (e.g. v1.2.3 -> 1.2.3)
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+  release-build:
+    uses: ./.github/workflows/internal-release-build.yml
+    needs: trigger-release-build
+    with:
+      version: ${{ needs.trigger-release-build.outputs.version }}

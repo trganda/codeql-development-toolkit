@@ -1,43 +1,26 @@
 name: 📦 Build and Publish Release
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
-        version:
-          description: |
-            The version to release. (eg: 0.1.2, exclude the 'v'.). 
-          required: true
-          type: string 
+      version:
+        description: |
+          The version to release. (eg: 0.1.2, exclude the 'v'.).
+        required: true
+        type: string
   
 jobs:
-  create-draft-release:
-    runs-on: ubuntu-latest 
-    steps:
-
-    - uses: actions/checkout@v3
-
-    - name: Create Draft Release 
-      shell: pwsh
-      run: |
-        Write-Host (Get-Location)
-        .\scripts\create_draft_release.ps1 -Version ${{inputs.version}}
-      env:
-        GH_TOKEN: ${{ github.token }}
-
   build-linux64:
     uses: ./.github/workflows/internal-build-release-linux64.yml
-    needs: create-draft-release
     with:
       version: ${{inputs.version}}
 
   build-macos64:
     uses: ./.github/workflows/internal-build-release-macos64.yml
-    needs: create-draft-release
     with:
       version: ${{inputs.version}}
 
   build-win64:
-      uses: ./.github/workflows/internal-build-release-win64.yml
-      needs: create-draft-release
-      with:
-        version: ${{inputs.version}}
+    uses: ./.github/workflows/internal-build-release-win64.yml
+    with:
+      version: ${{inputs.version}}

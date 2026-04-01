@@ -17,9 +17,11 @@ namespace CodeQLToolkit.Features.Test.Lifecycle.Models
         public int NumSlices { get; set; }
 
 
-        public string FileName { 
-            
-            get {
+        public string FileName
+        {
+
+            get
+            {
 
                 var savePath = $"test_report_{RunnerOS}_{CLIVersion}_slice_{Slice}_of_{NumSlices}.json";
 
@@ -27,6 +29,6 @@ namespace CodeQLToolkit.Features.Test.Lifecycle.Models
             }
         }
 
-        
+
     }
 }

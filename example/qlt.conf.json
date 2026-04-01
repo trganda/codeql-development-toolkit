@@ -1,6 +1,6 @@
 {
-  "CodeQLCLI": "2.15.5",
-  "CodeQLCLIBundle": "codeql-bundle-v2.15.5",
+  "CodeQLCLI": "2.25.1",
+  "CodeQLCLIBundle": "codeql-bundle-v2.25.1",
   "EnableCustomCodeQLBundles": true,
   "CodeQLPackConfiguration" : [
     {

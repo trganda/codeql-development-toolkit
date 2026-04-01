@@ -97,7 +97,7 @@ jobs:
         compression-level: 0
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
         tools: ${{ env.QLT_CODEQL_BUNDLE_PATH }}
@@ -105,14 +105,14 @@ jobs:
 {% if dev_mode %}
 {% raw %}
     - name: Autobuild
-      uses: github/codeql-action/autobuild@v2
+      uses: github/codeql-action/autobuild@v3
       with:
         working-directory: example/integration-tests/${{ matrix.language }}/src/  # Path containing the example application 
 {% endraw %}
 {% else %}
 {% raw %}
     - name: Autobuild
-      uses: github/codeql-action/autobuild@v2
+      uses: github/codeql-action/autobuild@v3
       with:
         working-directory: integration-tests/${{ matrix.language }}/src/  # Path containing the example application 
 {% endraw %}
@@ -120,7 +120,7 @@ jobs:
 {% raw %}
     - name: Perform CodeQL Analysis
       id: analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
 
     - name: Validate SARIF Location
       shell: bash
