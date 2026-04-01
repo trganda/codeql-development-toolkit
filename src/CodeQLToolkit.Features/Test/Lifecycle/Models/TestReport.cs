@@ -10,7 +10,6 @@ namespace CodeQLToolkit.Features.Test.Lifecycle.Models
     {
         public string RunnerOS { get; set; }
         public string CLIVersion { get; set; }
-        public string STDLibIdent { get; set; }
 
         public string Language { get; set; }
 
@@ -22,7 +21,7 @@ namespace CodeQLToolkit.Features.Test.Lifecycle.Models
             
             get {
 
-                var savePath = $"test_report_{RunnerOS}_{CLIVersion}_{STDLibIdent}_slice_{Slice}_of_{NumSlices}.json";
+                var savePath = $"test_report_{RunnerOS}_{CLIVersion}_slice_{Slice}_of_{NumSlices}.json";
 
                 return savePath;
             }

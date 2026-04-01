@@ -56,7 +56,6 @@ namespace CodeQLToolkit.Features.Test.Commands.Targets.Actions
                      {
                          RunnerOS = RunnerOS,
                          CLIVersion = CLIVersion,
-                         STDLibIdent = STDLibIdent,
                          Language = Language,
                          Slice = slice,
                          NumSlices = NumThreads

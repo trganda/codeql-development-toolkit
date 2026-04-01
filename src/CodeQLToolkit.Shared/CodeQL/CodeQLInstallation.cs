@@ -13,13 +13,11 @@ namespace CodeQLToolkit.Shared.CodeQL
     public class CodeQLInstallation
     {
         public string CLIVersion { get; set; }
-        public string StandardLibraryVersion { get; set; }
 
         public string CodeScanningConfig { get; set; }
         public string QLTConfigFilePath { get; private set; }
 
         public string CLIBundle { get; set; }
-        public string StandardLibraryIdent { get; set; }
         public bool EnableCustomCodeQLBundles { get; set; }
         public CodeQLPackConfiguration[] CodeQLPackConfiguration { get; set; }
         public bool QuickBundle { get; set; }
@@ -43,8 +41,6 @@ namespace CodeQLToolkit.Shared.CodeQL
             {
                 CLIVersion = config.CodeQLCLI,
                 CLIBundle = config.CodeQLCLIBundle,
-                StandardLibraryIdent = config.CodeQLStandardLibraryIdent,
-                StandardLibraryVersion = config.CodeQLStandardLibrary,
                 CodeQLPackConfiguration = config.CodeQLPackConfiguration,
                 Base = config.Base,
                 CodeScanningConfig = config.CodeQLConfiguration,
@@ -138,14 +134,13 @@ namespace CodeQLToolkit.Shared.CodeQL
 
         public string CustomBundleOutputDirectory => Path.Combine(InstallationDirectory, "out");
 
-        public string StdLibDirectory => Path.Combine(InstallationDirectory, "codeql-stdlib");
         public string CodeQLDirectory => Path.Combine(InstallationDirectory, "codeql");
 
 
         private void PackageInstall()
         {
             Log<CodeQLInstallation>.G().LogInformation($"Begin Installation ");
-            Log<CodeQLInstallation>.G().LogInformation($"Requested CLI Version {CLIVersion}, Standard Library Ident: {StandardLibraryIdent}");
+            Log<CodeQLInstallation>.G().LogInformation($"Requested CLI Version {CLIVersion}");
 
             Log<CodeQLInstallation>.G().LogInformation($"Create installation directory {InstallationDirectory}");
             Directory.CreateDirectory(InstallationDirectory);
@@ -167,26 +162,6 @@ namespace CodeQLToolkit.Shared.CodeQL
             Log<CodeQLInstallation>.G().LogInformation($"Unpacking distribution...");
             ZipFile.ExtractToDirectory(Path.Combine(InstallationDirectory, downloadFile), InstallationDirectory);
             Log<CodeQLInstallation>.G().LogInformation($"Done.");
-
-            Log<CodeQLInstallation>.G().LogInformation($"Checkout standard library into.. {StdLibDirectory}");
-
-            var repoPath = Repository.Clone("https://github.com/github/codeql.git", StdLibDirectory);
-
-
-            Log<CodeQLInstallation>.G().LogInformation($"Getting standard library version.. {StandardLibraryVersion}");
-
-            using (var repo = new Repository(repoPath))
-            {
-                var tag = repo.Tags[$"refs/tags/{StandardLibraryVersion}"];
-
-                if (tag == null)
-                {
-                    Log<CodeQLInstallation>.G().LogInformation($"Unknown standard library version: {StandardLibraryVersion}");
-                    throw new Exception($"Unknown standard library version: {StandardLibraryVersion}");
-                }
-
-                Branch b = Commands.Checkout(repo, $"refs/tags/{StandardLibraryVersion}");
-            }
         }
 
         private void CustomBundleInstall()
@@ -339,7 +314,7 @@ namespace CodeQLToolkit.Shared.CodeQL
         {
             if (k == ArtifactKind.PACKAGE)
             {
-                var ident = String.Join("", "codeql-cli-" + CLIVersion, "#standard-library-ident-", StandardLibraryIdent);
+                var ident = "codeql-cli-" + CLIVersion;
                 return StringUtils.CreateMD5(FileUtils.SanitizeFilename(ident)).ToLower();
             }
 
@@ -374,7 +349,7 @@ namespace CodeQLToolkit.Shared.CodeQL
             }
             else
             {
-                Log<CodeQLInstallation>.G().LogInformation($"Requested CLI Version {CLIVersion} with Standard Library Ident: {StandardLibraryIdent}");
+                Log<CodeQLInstallation>.G().LogInformation($"Requested CLI Version {CLIVersion}");
             }
 
             Log<CodeQLInstallation>.G().LogInformation($"Checking for existance of required directories...");
@@ -391,17 +366,6 @@ namespace CodeQLToolkit.Shared.CodeQL
                 return false;
             }
 
-            // custom bundles don't have a standard library directory. 
-            if (!EnableCustomCodeQLBundles)
-            {
-                if (!Directory.Exists(StdLibDirectory))
-                {
-                    Log<CodeQLInstallation>.G().LogInformation($"Standard Library Directory Missing: {StdLibDirectory}");
-                    return false;
-                }
-
-            }
-
             return true;
         }
 
@@ -410,7 +374,6 @@ namespace CodeQLToolkit.Shared.CodeQL
         public string GetInstallationDirectory(ArtifactKind k)
         {
             return InstallationRepository.DirectoryForVersion(k, GetIdentForPackage(k));
-
         }
 
         public string CodeQLHome => CodeQLDirectory;

@@ -19,23 +19,10 @@ namespace CodeQLToolkit.Shared.Utils
     public class QLTConfig
     {
         public string CodeQLCLI { get; set; }
-        public string CodeQLStandardLibrary { get; set; }
         public string CodeQLCLIBundle { get; set; }
         public string CodeQLConfiguration { get; set; }
 
         public CodeQLPackConfiguration[] CodeQLPackConfiguration { get; set; }
-
-        public string CodeQLStandardLibraryIdent
-        {
-            get
-            {
-                if (CodeQLStandardLibrary != null)
-                {
-                    return CodeQLStandardLibrary.Replace("/", "_");
-                }
-                return CodeQLStandardLibrary;
-            }
-        }
 
         [JsonIgnore]
         public string CodeQLConfigurationPath => Path.Combine(Base, CodeQLConfiguration);

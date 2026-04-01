@@ -36,7 +36,6 @@ namespace CodeQLToolkit.Features.Pack.Commands.Targets
 
             Console.WriteLine($"---------current settings---------");
             Console.WriteLine($"CodeQL CLI Version: {config.CodeQLCLI}");
-            Console.WriteLine($"CodeQL Standard Library Version: {config.CodeQLStandardLibrary}");
             Console.WriteLine($"CodeQL CLI Bundle Version: {config.CodeQLCLIBundle}");
             Console.WriteLine($"----------------------------------");
             Console.WriteLine("(hint: use `qlt codeql set` to modify these values.)");
