@@ -14,9 +14,9 @@ jobs:
     runs-on: windows-latest 
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
@@ -33,7 +33,7 @@ jobs:
         Copy-Item .\src\CodeQLToolkit.Core\bin\Release\net6.0\publish\windows-x64\CodeQLToolkit.Core.exe .\src\CodeQLToolkit.Core\bin\Release\net6.0\publish\windows-x64\qlt.exe
         
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.11'
 
@@ -59,7 +59,7 @@ jobs:
         Pop-Location
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: qlt-dist
         path: qlt*.zip

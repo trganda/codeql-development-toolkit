@@ -19,7 +19,7 @@ jobs:
       matrix: ${{ steps.export-unit-test-matrix.outputs.matrix }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
 
       - name: Install QLT
@@ -46,7 +46,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
 
       - name: Install QLT
@@ -106,7 +106,7 @@ jobs:
 
             
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-results-${{ runner.os }}-${{ matrix.codeql_cli }}-${{ matrix.codeql_standard_library_ident }}
           path: |
@@ -120,7 +120,7 @@ jobs:
     steps:
 
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
 
       - name: Install QLT
@@ -132,7 +132,7 @@ jobs:
 
 
       - name: Collect test results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
 
       - name: Validate test results
         run: |
