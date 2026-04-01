@@ -89,8 +89,6 @@ jobs:
         env:
           RUNNER_OS: ${{ runner.os }}
           CODEQL_CLI: ${{ matrix.codeql_cli }}
-          CODEQL_STDLIB: ${{ matrix.codeql_standard_library }}
-          CODEQL_STDLIB_IDENT: ${{matrix.codeql_standard_library_ident}}
           RUNNER_TMP: ${{ runner.temp }}
         shell: bash
         run: >
@@ -108,9 +106,9 @@ jobs:
       - name: Upload test results
         uses: actions/upload-artifact@v6
         with:
-          name: test-results-${{ runner.os }}-${{ matrix.codeql_cli }}-${{ matrix.codeql_standard_library_ident }}
+          name: test-results-${{ runner.os }}-${{ matrix.codeql_cli }}
           path: |
-            ${{ runner.temp }}/test_report_${{ runner.os }}_${{ matrix.codeql_cli }}_${{ matrix.codeql_standard_library_ident }}_slice_*.json
+            ${{ runner.temp }}/test_report_${{ runner.os }}_${{ matrix.codeql_cli }}_slice_*.json
           if-no-files-found: error
 
   validate-test-results:

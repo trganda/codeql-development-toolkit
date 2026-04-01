@@ -1,16 +1,10 @@
-name: Fetch CodeQL CLI and queries
+name: Fetch CodeQL CLI
 description: |
-  Fetches a CodeQL CLI and a copy of the CodeQL standard libraries at the specified versions.
+  Fetches a CodeQL CLI at the specified version.
 inputs:
   codeql-cli-version:
     description: |
       The version of the CodeQL CLI to be downloaded.
-    required: false
-    default: 'latest'
-
-  codeql-stdlib-version:
-    description: |
-      The tag or commit to use from the CodeQL Standard Library
     required: false
     default: 'latest'
 
@@ -22,12 +16,12 @@ inputs:
 
   codeql-home:
     description: |
-      The directory to store the CodeQL CLI and Standard Library.
+      The directory to store the CodeQL CLI.
       A fixed location can be used for caching the tooling.
     required: false
 outputs:
   codeql-home:
-    description: 'The directory containing the CodeQL CLI and CodeQL Standard Library'
+    description: 'The directory containing the CodeQL CLI'
     value: ${{ steps.install-codeql.outputs.codeql-home }}
 
 runs:
@@ -39,7 +33,6 @@ runs:
         RUNNER_OS: ${{ runner.os }}
         RUNNER_TEMP: ${{ runner.temp }}
         CODEQL_CLI_VERSION: ${{ inputs.codeql-cli-version }}
-        CODEQL_STDLIB_VERSION: ${{ inputs.codeql-stdlib-version }}
         GITHUB_TOKEN: ${{ github.token }}
         ADD_TO_PATH: ${{ inputs.add-to-path }}
         CODEQL_HOME: ${{ inputs.codeql-home }}
@@ -84,17 +77,6 @@ runs:
         fi
         echo "::debug::Unpacking CodeQL CLI"
         unzip -q $RELEASE_PATTERN
-
-        echo "::debug::Cloning CodeQL standard library"
-        git clone https://github.com/github/codeql.git codeql-stdlib
-
-        if [ "$CODEQL_STDLIB_VERSION" != "latest" ]
-        then
-          pushd codeql-stdlib
-          echo "::debug::Switching to revision $CODEQL_STDLIB_VERSION"
-          git checkout $CODEQL_STDLIB_VERSION
-          popd
-        fi
 
         if [ "$ADD_TO_PATH" == "true" ]
         then

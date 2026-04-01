@@ -11,7 +11,6 @@ namespace CodeQLToolkit.Features.CodeQL.Lifecycle.Targets
     public class SetVersionLifecycleTarget : ILifecycleTarget
     {
         public string CodeQLCLI { get; set; }
-        public string CodeQLStandardLibrary { get; set; }
         public string CodeQLCLIBundle { get; set; }
 
         override public void Run()
@@ -21,7 +20,6 @@ namespace CodeQLToolkit.Features.CodeQL.Lifecycle.Targets
             var c = new QLTConfig()
             {
                 CodeQLCLI = CodeQLCLI,
-                CodeQLStandardLibrary = CodeQLStandardLibrary,
                 CodeQLCLIBundle = CodeQLCLIBundle,
                 Base = Base
             };

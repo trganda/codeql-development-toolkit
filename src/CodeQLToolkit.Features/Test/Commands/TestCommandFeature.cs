@@ -125,7 +125,6 @@ namespace CodeQLToolkit.Features.Test.Commands
                 featureTarget.Language = language;
                 featureTarget.RunnerOS = runnerOS;
                 featureTarget.CLIVersion = config.CodeQLCLI;
-                featureTarget.STDLibIdent = config.CodeQLStandardLibraryIdent;
                 featureTarget.ExtraCodeQLArgs = extraArgs;
                 featureTarget.UseBundle = useBundle;
 
