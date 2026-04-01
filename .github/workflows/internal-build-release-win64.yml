@@ -24,11 +24,15 @@ jobs:
     - name: Build
       run: dotnet build -c Release --no-restore
 
+    - name: Update version file
+      shell: pwsh
+      run: Set-Content -Path "src\CodeQLToolkit.Core\ver.txt" -Value "${{inputs.version}}"
+
     - name: Build Bundle
       shell: pwsh
       run: |
         echo "Current Directory $(Get-Location)"
-        # build the project 
+        # build the project
         dotnet publish .\src\CodeQLToolkit.Core\CodeQLToolkit.Core.csproj /p:PublishProfile=.\src\CodeQLToolkit.Core\Properties\PublishProfiles\Windows-x64.pubxml
         Copy-Item .\src\CodeQLToolkit.Core\bin\Release\net6.0\publish\windows-x64\CodeQLToolkit.Core.exe .\src\CodeQLToolkit.Core\bin\Release\net6.0\publish\windows-x64\qlt.exe
         
