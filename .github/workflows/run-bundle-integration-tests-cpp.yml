@@ -26,7 +26,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-
     - name: Install QLT
       id: install-qlt
       uses: ./.github/actions/install-qlt-local
@@ -34,14 +33,12 @@ jobs:
         qlt-version: 'latest'
         add-to-path: true
 
-
     - name: Validate QLT Installation
       shell: bash
       run: |
         echo -e "Checking QLT Version:"
         echo "QLT Home: ${{ steps.install-qlt.outputs.qlt-home }}"
         qlt version
-
 
     - name: Create Bundle (compiled)
       shell: bash
@@ -56,7 +53,6 @@ jobs:
           echo "Failed to install query packs with tool."
           exit 1
         fi
-
 
     - name: Validate Bundle Existence
       shell: bash
@@ -81,14 +77,10 @@ jobs:
         languages: ${{ matrix.language }}
         tools: ${{ env.QLT_CODEQL_BUNDLE_PATH }}
 
-
-
     - name: Autobuild
       uses: github/codeql-action/autobuild@v4
       with:
         working-directory: example/integration-tests/${{ matrix.language }}/src/  # Path containing the example application 
-
-
 
     - name: Perform CodeQL Analysis
       id: analysis
@@ -113,9 +105,6 @@ jobs:
       shell: bash
       run: |        
         ls -l ${{ steps.analysis.outputs.sarif-output }}/*.sarif
-
-
-
 
     - name: Validate SARIF Results
       shell: bash

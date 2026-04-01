@@ -11,8 +11,7 @@ namespace CodeQLToolkit.Shared.Utils
     {
         public static DirectoryInfo GetExecutingDirectory()
         {
-            var location = new Uri(Assembly.GetEntryAssembly().GetName().CodeBase);
-            return new FileInfo(location.AbsolutePath).Directory;
+            return new DirectoryInfo(AppContext.BaseDirectory);
         }
 
         public static string CreateTempDirectory()
@@ -31,7 +30,7 @@ namespace CodeQLToolkit.Shared.Utils
         {
             string f = filename;
 
-            foreach(var c in Path.GetInvalidFileNameChars())
+            foreach (var c in Path.GetInvalidFileNameChars())
             {
                 f = f.Replace(c, '_');
             }
