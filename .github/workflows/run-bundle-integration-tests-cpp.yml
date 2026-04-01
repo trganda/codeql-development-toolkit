@@ -26,7 +26,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-
     - name: Install QLT
       id: install-qlt
       uses: ./.github/actions/install-qlt-local
@@ -34,14 +33,12 @@ jobs:
         qlt-version: 'latest'
         add-to-path: true
 
-
     - name: Validate QLT Installation
       shell: bash
       run: |
         echo -e "Checking QLT Version:"
         echo "QLT Home: ${{ steps.install-qlt.outputs.qlt-home }}"
         qlt version
-
 
     - name: Create Bundle (compiled)
       shell: bash
@@ -57,7 +54,6 @@ jobs:
           exit 1
         fi
 
-
     - name: Validate Bundle Existence
       shell: bash
       run: |
@@ -65,7 +61,7 @@ jobs:
         ls -l ${{ env.QLT_CODEQL_HOME }}/../out/
 
     - name: Upload Bundles
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: codeql-bundles
         path: |
@@ -76,23 +72,19 @@ jobs:
         compression-level: 0
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
         tools: ${{ env.QLT_CODEQL_BUNDLE_PATH }}
 
-
-
     - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
+      uses: github/codeql-action/autobuild@v4
       with:
         working-directory: example/integration-tests/${{ matrix.language }}/src/  # Path containing the example application 
 
-
-
     - name: Perform CodeQL Analysis
       id: analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v4
 
     - name: Validate SARIF Location
       shell: bash
@@ -102,7 +94,7 @@ jobs:
         ls -l ${{ steps.analysis.outputs.sarif-output }}
 
     - name: Upload SARIF Results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: actual.sarif
         path: |
@@ -113,9 +105,6 @@ jobs:
       shell: bash
       run: |        
         ls -l ${{ steps.analysis.outputs.sarif-output }}/*.sarif
-
-
-
 
     - name: Validate SARIF Results
       shell: bash

@@ -62,20 +62,20 @@ jobs:
         ls -l ${{ env.QLT_CODEQL_HOME }}/../out/
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
         queries: security-extended
         tools: ${{ env.QLT_CODEQL_BUNDLE_PATH }}
 
     - name: Autobuild
-      uses: github/codeql-action/autobuild@v2
+      uses: github/codeql-action/autobuild@v4
       with:
         working-directory: example/integration-tests/cpp/src/  # Path containing the example application 
 
     - name: Perform CodeQL Analysis
       id: analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v4
 
     - name: Validate SARIF Location
       shell: bash
@@ -85,7 +85,7 @@ jobs:
         ls -l ${{ steps.analysis.outputs.sarif-output }}
 
     - name: Upload SARIF Results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: actual.sarif
         path: |
@@ -93,7 +93,7 @@ jobs:
         if-no-files-found: error
 
     - name: Upload Bundles
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: codeql-bundles
         path: |
