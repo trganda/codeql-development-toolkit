@@ -14,9 +14,9 @@ jobs:
     runs-on: macos-14 # note this is arm64
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
@@ -36,7 +36,7 @@ jobs:
         chmod +x ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/macos-arm64/qlt
         chmod -R +r ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/macos-arm64                    
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.11'
 
