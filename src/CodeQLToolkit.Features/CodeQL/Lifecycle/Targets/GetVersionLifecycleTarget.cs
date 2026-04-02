@@ -29,7 +29,6 @@ namespace CodeQLToolkit.Features.CodeQL.Lifecycle.Targets
             // This should be updated so that we can pretty print all the various options:
             Console.WriteLine($"---------current settings---------");
             Console.WriteLine($"CodeQL CLI Version: {config.CodeQLCLI}");
-            Console.WriteLine($"CodeQL Standard Library Version: {config.CodeQLStandardLibrary}");
             Console.WriteLine($"CodeQL CLI Bundle Version: {config.CodeQLCLIBundle}");
             Console.WriteLine($"----------------------------------");
             Console.WriteLine("(hint: use `qlt codeql set` to modify these values.)");
