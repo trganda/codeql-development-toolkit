@@ -21,11 +21,9 @@ namespace CodeQLToolkit.Features.CodeQL.Lifecycle
             var setVersionCommand = new Command("version", "Sets the version of CodeQL used.");
 
             var cliVersionOption = new Option<string>("--cli-version", GitHubReleaseResolver.GetLatestCLIVersion, "The version of the cli to use. Example: `2.25.1`.") { IsRequired = true };
-            var standardLibraryVersionOption = new Option<string>("--standard-library-version", GitHubReleaseResolver.GetLatestStandardLibraryVersion, "The version of the standard library to use. Example: `codeql-cli/v2.25.1`.") { IsRequired = true };
             var bundleVersionOption = new Option<string>("--bundle-version", GitHubReleaseResolver.GetLatestBundleVersion, "The bundle version to use. Example: `codeql-bundle-v2.25.1`.") { IsRequired = true };
 
             setVersionCommand.Add(cliVersionOption);
-            setVersionCommand.Add(standardLibraryVersionOption);
             setVersionCommand.Add(bundleVersionOption);
 
             setCommand.Add(setVersionCommand);
@@ -37,19 +35,18 @@ namespace CodeQLToolkit.Features.CodeQL.Lifecycle
             getCommand.Add(getVersionCommand);
 
             {
-                setVersionCommand.SetHandler((cliVersion, standardLibraryVersion, bundleVersion, basePath) =>
+                setVersionCommand.SetHandler((cliVersion, bundleVersion, basePath) =>
                 {
                     Log<CodeQLLifecycleFeature>.G().LogInformation("Executing set command...");
 
                     new SetVersionLifecycleTarget()
                     {
                         CodeQLCLI = cliVersion,
-                        CodeQLStandardLibrary = standardLibraryVersion,
                         CodeQLCLIBundle = bundleVersion,
                         Base = basePath
                     }.Run();
 
-                }, cliVersionOption, standardLibraryVersionOption, bundleVersionOption, Globals.BasePathOption);
+                }, cliVersionOption, bundleVersionOption, Globals.BasePathOption);
             }
 
 

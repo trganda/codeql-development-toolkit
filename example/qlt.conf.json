@@ -1,9 +1,7 @@
 {
   "CodeQLCLI": "2.25.1",
-  "CodeQLStandardLibrary": "codeql-cli/v2.25.1",
   "CodeQLCLIBundle": "codeql-bundle-v2.25.1",
   "EnableCustomCodeQLBundles": true,
-  "CodeQLStandardLibraryIdent": "codeql-cli_v2.25.1",
   "CodeQLPackConfiguration" : [
     {
       "Name": "qlt/cpp-customizations",

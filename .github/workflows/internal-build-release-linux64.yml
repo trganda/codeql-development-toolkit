@@ -17,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
@@ -40,7 +40,7 @@ jobs:
         # repair permissions
         chmod +x ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/linux-x64/qlt
         chmod +r -R ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/linux-x64        
-        
+
     - uses: actions/setup-python@v6
       with:
         python-version: '3.11'
@@ -69,7 +69,7 @@ jobs:
         popd
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: qlt-dist-linux64
         path: qlt*.zip
