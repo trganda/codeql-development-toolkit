@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using System.IO;
 using CodeQLToolkit.Shared.Options;
 using CodeQLToolkit.Shared.Utils;
+using NLog;
 using CodeQLToolkit.Features.CodeQL;
 using CodeQLToolkit.Features.Test;
 using CodeQLToolkit.Features.Pack;
@@ -19,8 +20,6 @@ namespace CodeQLDevelopmentLifecycleToolkit.Core
     {
         public static async Task<int> Main(string[] args)
         {
-            Log<QLT>.G().LogInformation("QLT Startup...");
-
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
             var rootCommand = new RootCommand();
@@ -30,6 +29,28 @@ namespace CodeQLDevelopmentLifecycleToolkit.Core
             rootCommand.AddGlobalOption(Globals.AutomationTypeOption);
             rootCommand.AddGlobalOption(Globals.Development);
             rootCommand.AddGlobalOption(Globals.UseBundle);
+            rootCommand.AddGlobalOption(Globals.Verbose);
+
+            // Parse early to read --verbose before any logging occurs
+            var parseResult = rootCommand.Parse(args);
+            var verbose = parseResult.GetValueForOption(Globals.Verbose);
+
+            if (!verbose)
+            {
+                var config = LogManager.Configuration;
+                if (config != null)
+                {
+                    var fileTarget = config.FindTargetByName("logfile");
+                    config.LoggingRules.Clear();
+                    if (fileTarget != null)
+                    {
+                        config.LoggingRules.Add(new NLog.Config.LoggingRule("*", NLog.LogLevel.Debug, fileTarget));
+                    }
+                    LogManager.ReconfigExistingLoggers();
+                }
+            }
+
+            Log<QLT>.G().LogInformation("QLT Startup...");
 
             var versionCommand = new Command("version", "Get the current tool version.");
             rootCommand.Add(versionCommand);

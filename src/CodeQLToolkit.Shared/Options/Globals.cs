@@ -36,6 +36,11 @@ namespace CodeQLToolkit.Shared.Options
         }, "Switching QLT from using the distribution versions of CodeQL to using a Custom Bundle.")
         { IsRequired = true }.FromAmong(SupportedAutomationTypes);
 
+        public static Option<bool> Verbose { get; } = new Option<bool>("--verbose", () =>
+        {
+            return false;
+        }, "Enable verbose logging output.");
+
 
     }
 }
