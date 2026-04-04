@@ -1,0 +1,9 @@
+[[ if eq .QueryKind "path-problem" -]]
+edges
+nodes
+subpaths
+#select
+[[- else -]]
+| [[ .TestFilePrefix ]].rb:0:0:0:0 | [[ .TestFilePrefix ]].rb | Replace this with your query. |
+| file://:0:0:0:0 |  | Replace this with your query. |
+[[- end -]]

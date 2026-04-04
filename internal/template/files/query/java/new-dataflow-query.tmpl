@@ -1,0 +1,31 @@
+/**
+ * @id [[ .Language ]]/[[ .QueryPackName ]]/[[ toLower .QueryName ]]
+ * @name [[ .QueryName ]]
+ * @description [[ .Description ]]
+ * @kind path-problem
+ * @precision medium
+ * @problem.severity error
+ * @tags [[ .QueryPackName ]]
+ */
+
+import [[ .QlLanguageImport ]]
+import semmle.code.java.dataflow.DataFlow
+
+module Config implements DataFlow::ConfigSig {
+  predicate isSource(DataFlow::Node node) {
+    // Define your source here
+    none()
+  }
+
+  predicate isSink(DataFlow::Node node) {
+    // Define your sink here
+    none()
+  }
+}
+
+module Flow = DataFlow::Global<Config>;
+import Flow::PathGraph
+
+from Flow::PathNode source, Flow::PathNode sink
+where Flow::flowPath(source, sink)
+select sink.getNode(), source, sink, "Replace this with your query."

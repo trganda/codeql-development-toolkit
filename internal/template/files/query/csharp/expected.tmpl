@@ -1,0 +1,8 @@
+[[ if eq .QueryKind "path-problem" -]]
+edges
+nodes
+subpaths
+#select
+[[- else -]]
+| [[ .TestFilePrefix ]].cs:0:0:0:0 | [[ .TestFilePrefix ]].cs | Replace this with your query. |
+[[- end -]]

@@ -3,81 +3,46 @@ name: 🐧 Build Release (Linux x64)
 on:
   workflow_call:
     inputs:
-        version:
-          description: |
-            The version to release. (eg: 0.1.2, exclude the 'v'.). 
-          required: true
-          type: string 
-  
+      version:
+        description: |
+          The version to release. (eg: 0.1.2, exclude the 'v'.).
+        required: true
+        type: string
 
 jobs:
   build-linux64:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
       with:
-        dotnet-version: 6.0.x
-    - name: Restore dependencies
-      run: dotnet restore
+        go-version-file: go.mod
+
     - name: Build
-      run: dotnet build -c Release --no-restore
-
-    - name: Update version file
-      shell: bash
-      run: echo "${{inputs.version}}" > src/CodeQLToolkit.Core/ver.txt
-
-    - name: Build Bundle
-      shell: bash
       run: |
-        echo "Current Directory $(pwd)"
-        # build the project
-        dotnet publish ./src/CodeQLToolkit.Core/CodeQLToolkit.Core.csproj /p:PublishProfile=./src/CodeQLToolkit.Core/Properties/PublishProfiles/Linux-Profile.pubxml
-        cp ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/linux-x64/CodeQLToolkit.Core ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/linux-x64/qlt
-        
-        # repair permissions
-        chmod +x ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/linux-x64/qlt
-        chmod +r -R ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/linux-x64        
+        mkdir -p dist
+        go build \
+          -ldflags "-X github.com/advanced-security/codeql-development-toolkit/cmd.Version=${{ inputs.version }}" \
+          -o dist/qlt .
+        chmod +x dist/qlt
 
-    - uses: actions/setup-python@v6
-      with:
-        python-version: '3.11'
-
-    - name: Build CodeQL Bundle Tool for Packaging
-      shell: pwsh 
+    - name: Build Archive
       run: |
-        # need this for the bundling to work.
-        pip install poetry 
-        pip install -U pyinstaller 
-
-        # run the packaging 
-        ./scripts/build_codeql_bundle_dist.ps1 -Version 0.4.1 -WorkDirectory dist -DestinationDirectory ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/linux-x64/tools/
-      env:
-        GH_TOKEN: ${{ github.token }}
-
-    - name: Build Bundle Archive
-      shell: bash
-      run: |
-        echo "Current Directory $(pwd)"
-
-        # create bundle 
-        ARCHIVE="$(pwd)/qlt-linux-x86_64.zip"        
-        pushd ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/linux-x64
-        zip -r $ARCHIVE .
+        ARCHIVE="$(pwd)/qlt-linux-x86_64.zip"
+        pushd dist
+        zip -r "$ARCHIVE" qlt
         popd
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v4
       with:
         name: qlt-dist-linux64
-        path: qlt*.zip
+        path: qlt-linux-x86_64.zip
 
-    - name: Upload Build Artifacts
-      shell: pwsh
-      run: |
-        Write-Host (Get-Location)
-        gh release upload v${{inputs.version}} ./qlt-linux-x86_64.zip
+    - name: Upload to GitHub Release
+      run: gh release upload v${{ inputs.version }} ./qlt-linux-x86_64.zip
       env:
         GH_TOKEN: ${{ github.token }}
