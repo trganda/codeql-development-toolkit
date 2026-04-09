@@ -80,3 +80,7 @@ The release pipeline is split into three platform workflows called from `interna
 - `internal-build-release-win64.yml` — `windows-latest`, produces `qlt-windows-x64.zip`
 
 All three use `actions/setup-go@v5` with the version from `go.mod`, inject `inputs.version` via `-ldflags`, and upload to the GitHub release via `gh release upload`.
+
+## Git Conversions
+
+Must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification to generate git commit message.

@@ -74,7 +74,8 @@ The query is located by name in order:
   2. Filesystem search up to 3 levels under <base>/<language>/[pack]
 
 The CodeQL binary is resolved in order:
-  1. $HOME/.qlt/cli/codeql/codeql  (installed by 'qlt query run install-packs')
+  1. $HOME/.qlt/codeql/<version>/codeql/codeql (installed by 'qlt codeql install';
+     version read from qlt.conf.json)
   2. codeql found on PATH`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing query run",

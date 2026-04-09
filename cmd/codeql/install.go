@@ -19,12 +19,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/trganda/codeql-development-toolkit/internal/config"
+	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
 
-const (
-	cliDownloadBase = "https://github.com/github/codeql-cli-binaries/releases/download"
-	defaultCLIDir   = ".qlt/codeql"
-)
+const cliDownloadBase = "https://github.com/github/codeql-cli-binaries/releases/download"
 
 var downloadClient = &http.Client{Timeout: 30 * time.Minute}
 
@@ -42,12 +40,6 @@ func newInstallCmd(base *string, useBundle *bool) *cobra.Command {
 	cmd.Flags().StringVar(&version, "version", "", "CodeQL CLI version to install (e.g. 2.25.1); reads qlt.conf.json when omitted")
 	cmd.Flags().StringVar(&platform, "platform", "", "Platform override (e.g. linux64, osx-arm64, win64); auto-detected when empty")
 	return cmd
-}
-
-// versionTag normalizes a version string to a "v"-prefixed git tag
-// (e.g. "2.25.1" → "v2.25.1", "v2.25.1" → "v2.25.1").
-func versionTag(version string) string {
-	return "v" + strings.TrimPrefix(version, "v")
 }
 
 func runInstall(base, version, platform string) error {
@@ -74,7 +66,7 @@ func runInstall(base, version, platform string) error {
 //
 //	<hex>  <filename>
 func fetchRemoteChecksum(version, assetName, destDir string) (string, error) {
-	tag := versionTag(version)
+	tag := paths.VersionTag(version)
 	url := fmt.Sprintf("%s/%s/%s.checksum.txt", cliDownloadBase, tag, assetName)
 	slog.Debug("Fetching checksum file", "url", url)
 
@@ -145,18 +137,6 @@ func platformAsset(platform string) (string, error) {
 	default:
 		return "", fmt.Errorf("unsupported platform %s; use --platform to override", runtime.GOOS)
 	}
-}
-
-// cliInstallDir returns the per-version install directory
-// ($HOME/.qlt/codeql/<version>) so distinct versions coexist without
-// overwriting each other.
-func cliInstallDir(version string) (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("resolve home directory: %w", err)
-	}
-	tag := versionTag(version)
-	return filepath.Join(home, defaultCLIDir, tag), nil
 }
 
 // localFileSHA256 computes the SHA-256 hex digest of the file at path.
@@ -263,12 +243,12 @@ func installCLI(base, version, platform string) error {
 		return err
 	}
 
-	installDir, err := cliInstallDir(version)
+	installDir, err := paths.CLIInstallDir(version)
 	if err != nil {
-		return err
+		return fmt.Errorf("resolve install directory: %w", err)
 	}
 
-	tag := versionTag(version)
+	tag := paths.VersionTag(version)
 	assetURL := fmt.Sprintf("%s/%s/%s", cliDownloadBase, tag, asset)
 	zipPath := filepath.Join(installDir, asset)
 	codeqlDir := filepath.Join(installDir, "codeql")

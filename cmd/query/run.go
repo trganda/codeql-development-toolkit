@@ -6,32 +6,28 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 
+	"github.com/trganda/codeql-development-toolkit/internal/config"
 	"github.com/trganda/codeql-development-toolkit/internal/language"
+	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
 
-const defaultCLIDir = ".qlt/cli"
-
-// resolveCodeQLBinary returns the path to the codeql binary.
-// Checks the install-packs location first, then falls back to PATH.
-func resolveCodeQLBinary() (string, error) {
-	home, err := os.UserHomeDir()
-	if err == nil {
-		bin := "codeql"
-		if runtime.GOOS == "windows" {
-			bin = "codeql.exe"
-		}
-		installed := filepath.Join(home, defaultCLIDir, "codeql", bin)
-		if _, err := os.Stat(installed); err == nil {
-			return installed, nil
+// resolveCodeQLBinary returns the path to the codeql binary. It first looks
+// at the version recorded in <base>/qlt.conf.json (installed by
+// 'qlt codeql install'), then falls back to PATH.
+func resolveCodeQLBinary(base string) (string, error) {
+	if cfg, _ := config.LoadFromFile(base); cfg != nil && cfg.CodeQLCLI != "" {
+		if bin, err := paths.CodeQLBinary(cfg.CodeQLCLI); err == nil {
+			if _, err := os.Stat(bin); err == nil {
+				return bin, nil
+			}
 		}
 	}
 
 	path, err := exec.LookPath("codeql")
 	if err != nil {
-		return "", fmt.Errorf("codeql binary not found; run 'qlt query run install-packs' first")
+		return "", fmt.Errorf("codeql binary not found; run 'qlt codeql install' first")
 	}
 	return path, nil
 }
@@ -103,7 +99,7 @@ func runQuery(base, queryName, database, lang, pack, format, output, additionalP
 		slog.Info("Unrecognised language, proceeding anyway", "language", lang)
 	}
 
-	codeql, err := resolveCodeQLBinary()
+	codeql, err := resolveCodeQLBinary(base)
 	if err != nil {
 		return err
 	}

@@ -36,7 +36,7 @@ If --language and --pack are omitted, all query files found under <base> are com
 }
 
 func runCompile(base, lang, pack string, threads int) error {
-	codeql, err := resolveCodeQLBinary()
+	codeql, err := resolveCodeQLBinary(base)
 	if err != nil {
 		return err
 	}

@@ -32,7 +32,7 @@ If --language and --pack are omitted, every qlpack.yml found under <base> is ins
 }
 
 func runPackInstall(base, lang, pack string) error {
-	codeql, err := resolveCodeQLBinary()
+	codeql, err := resolveCodeQLBinary(base)
 	if err != nil {
 		return err
 	}
