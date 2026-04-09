@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/advanced-security/codeql-development-toolkit/internal/language"
+	"github.com/trganda/codeql-development-toolkit/internal/language"
 )
 
 // NewCommand returns the `validation` cobra command.

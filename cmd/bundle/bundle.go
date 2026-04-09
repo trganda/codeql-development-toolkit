@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	tmpl "github.com/advanced-security/codeql-development-toolkit/internal/template"
+	tmpl "github.com/trganda/codeql-development-toolkit/internal/template"
 )
 
 // NewCommand returns the `bundle` cobra command.

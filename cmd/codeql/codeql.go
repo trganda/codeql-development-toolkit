@@ -6,18 +6,19 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/advanced-security/codeql-development-toolkit/internal/config"
-	"github.com/advanced-security/codeql-development-toolkit/internal/release"
+	"github.com/trganda/codeql-development-toolkit/internal/config"
+	"github.com/trganda/codeql-development-toolkit/internal/release"
 )
 
 // NewCommand returns the `codeql` cobra command.
-func NewCommand(base, automationType *string) *cobra.Command {
+func NewCommand(base, automationType *string, useBundle *bool) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "codeql",
 		Short: "CodeQL version management commands",
 	}
 	cmd.AddCommand(newSetCmd(base))
 	cmd.AddCommand(newGetCmd(base))
+	cmd.AddCommand(newInstallCmd(base, useBundle))
 	return cmd
 }
 

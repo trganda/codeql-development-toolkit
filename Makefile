@@ -1,4 +1,4 @@
-MODULE   := github.com/advanced-security/codeql-development-toolkit
+MODULE   := github.com/trganda/codeql-development-toolkit
 VERSION  ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 LDFLAGS  := -ldflags "-X $(MODULE)/cmd.Version=$(VERSION)"
 

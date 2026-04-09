@@ -1,4 +1,4 @@
-module github.com/advanced-security/codeql-development-toolkit
+module github.com/trganda/codeql-development-toolkit
 
 go 1.21
 

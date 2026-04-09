@@ -7,13 +7,13 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/advanced-security/codeql-development-toolkit/cmd/bundle"
-	"github.com/advanced-security/codeql-development-toolkit/cmd/codeql"
-	"github.com/advanced-security/codeql-development-toolkit/cmd/pack"
-	"github.com/advanced-security/codeql-development-toolkit/cmd/query"
-	"github.com/advanced-security/codeql-development-toolkit/cmd/test"
-	"github.com/advanced-security/codeql-development-toolkit/cmd/validation"
-	qltlog "github.com/advanced-security/codeql-development-toolkit/internal/log"
+	"github.com/trganda/codeql-development-toolkit/cmd/bundle"
+	"github.com/trganda/codeql-development-toolkit/cmd/codeql"
+	"github.com/trganda/codeql-development-toolkit/cmd/pack"
+	"github.com/trganda/codeql-development-toolkit/cmd/query"
+	"github.com/trganda/codeql-development-toolkit/cmd/test"
+	"github.com/trganda/codeql-development-toolkit/cmd/validation"
+	qltlog "github.com/trganda/codeql-development-toolkit/internal/log"
 )
 
 // Global flags shared by all commands.
@@ -53,7 +53,7 @@ func init() {
 
 	rootCmd.AddCommand(versionCmd())
 	rootCmd.AddCommand(query.NewCommand(&BasePath, &AutomationType, &Development, &UseBundle))
-	rootCmd.AddCommand(codeql.NewCommand(&BasePath, &AutomationType))
+	rootCmd.AddCommand(codeql.NewCommand(&BasePath, &AutomationType, &UseBundle))
 	rootCmd.AddCommand(test.NewCommand(&BasePath, &AutomationType, &Development, &UseBundle))
 	rootCmd.AddCommand(validation.NewCommand(&BasePath, &AutomationType, &Development))
 	rootCmd.AddCommand(pack.NewCommand(&BasePath, &AutomationType))

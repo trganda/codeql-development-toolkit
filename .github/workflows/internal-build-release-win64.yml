@@ -27,7 +27,7 @@ jobs:
         New-Item -ItemType Directory -Force -Path dist | Out-Null
         $env:CGO_ENABLED = "0"
         go build `
-          -ldflags "-X github.com/advanced-security/codeql-development-toolkit/cmd.Version=${{ inputs.version }}" `
+          -ldflags "-X github.com/trganda/codeql-development-toolkit/cmd.Version=${{ inputs.version }}" `
           -o dist/qlt.exe .
 
     - name: Build Archive

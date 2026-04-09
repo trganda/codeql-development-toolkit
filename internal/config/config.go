@@ -15,13 +15,22 @@ type CodeQLPackConfiguration struct {
 	ReferencesBundle bool   `json:"ReferencesBundle"`
 }
 
+// QueryEntry records a generated query so it can be resolved by name later.
+type QueryEntry struct {
+	Name     string `json:"Name"`
+	Language string `json:"Language"`
+	Pack     string `json:"Pack"`
+	Scope    string `json:"Scope,omitempty"`
+}
+
 // QLTConfig holds the QLT configuration loaded from qlt.conf.json.
 type QLTConfig struct {
-	CodeQLCLI              string                    `json:"CodeQLCLI"`
-	CodeQLCLIBundle        string                    `json:"CodeQLCLIBundle"`
-	CodeQLConfiguration    string                    `json:"CodeQLConfiguration,omitempty"`
+	CodeQLCLI               string                    `json:"CodeQLCLI"`
+	CodeQLCLIDigest         string                    `json:"CodeQLCLIDigest,omitempty"`
+	CodeQLCLIBundle         string                    `json:"CodeQLCLIBundle"`
+	CodeQLConfiguration     string                    `json:"CodeQLConfiguration,omitempty"`
 	CodeQLPackConfiguration []CodeQLPackConfiguration `json:"CodeQLPackConfiguration,omitempty"`
-	base                   string
+	base                    string
 }
 
 // ConfigFilePath returns the path to qlt.conf.json under the base directory.

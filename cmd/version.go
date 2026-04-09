@@ -9,7 +9,7 @@ import (
 
 // Version is injected at build time via -ldflags:
 //
-//	-X github.com/advanced-security/codeql-development-toolkit/cmd.Version=<ver>
+//	-X github.com/trganda/codeql-development-toolkit/cmd.Version=<ver>
 var Version = "dev"
 
 func versionCmd() *cobra.Command {

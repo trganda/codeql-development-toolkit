@@ -10,9 +10,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/advanced-security/codeql-development-toolkit/internal/config"
-	"github.com/advanced-security/codeql-development-toolkit/internal/language"
-	tmpl "github.com/advanced-security/codeql-development-toolkit/internal/template"
+	"github.com/trganda/codeql-development-toolkit/internal/config"
+	"github.com/trganda/codeql-development-toolkit/internal/language"
+	tmpl "github.com/trganda/codeql-development-toolkit/internal/template"
 )
 
 // NewCommand returns the `test` cobra command.

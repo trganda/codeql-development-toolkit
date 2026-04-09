@@ -15,7 +15,7 @@ make clean          # remove dist/
 make build VERSION=1.2.3
 
 # Build without make
-go build -ldflags "-X github.com/advanced-security/codeql-development-toolkit/cmd.Version=dev" -o dist/qlt .
+go build -ldflags "-X github.com/trganda/codeql-development-toolkit/cmd.Version=dev" -o dist/qlt .
 
 # Run a single test package
 go test ./internal/config/...

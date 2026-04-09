@@ -25,7 +25,7 @@ jobs:
       run: |
         mkdir -p dist
         go build \
-          -ldflags "-X github.com/advanced-security/codeql-development-toolkit/cmd.Version=${{ inputs.version }}" \
+          -ldflags "-X github.com/trganda/codeql-development-toolkit/cmd.Version=${{ inputs.version }}" \
           -o dist/qlt .
         chmod +x dist/qlt
 
