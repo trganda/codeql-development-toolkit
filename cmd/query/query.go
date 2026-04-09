@@ -92,8 +92,8 @@ The CodeQL binary is resolved in order:
 	run.Flags().StringVar(&output, "output", "", "Output file path (default: <query-name>.<ext> beside the query file)")
 	run.Flags().StringVar(&additionalPacks, "additional-packs", "", "Colon-separated list of additional pack search paths")
 	run.Flags().IntVar(&threads, "threads", 0, "Number of threads (0 = use all available cores)")
-	_ = run.MarkFlagRequired("query")
-	_ = run.MarkFlagRequired("database")
-	_ = run.MarkFlagRequired("language")
+	run.MarkFlagRequired("query")
+	run.MarkFlagRequired("database")
+	run.MarkFlagRequired("language")
 	return run
 }

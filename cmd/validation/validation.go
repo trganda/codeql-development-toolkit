@@ -43,7 +43,7 @@ func newCheckQueriesCmd(base *string) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&lang, "language", "", "Language to validate")
 	cmd.Flags().BoolVar(&prettyPrint, "pretty-print", false, "Pretty-print results")
-	_ = cmd.MarkFlagRequired("language")
+	cmd.MarkFlagRequired("language")
 	return cmd
 }
 

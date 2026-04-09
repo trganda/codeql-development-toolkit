@@ -32,9 +32,8 @@ func newRunUnitTestsCmd(base *string, useBundle *bool) *cobra.Command {
 	cmd.Flags().IntVar(&numThreads, "num-threads", 4, "Number of threads for test execution")
 	cmd.Flags().StringVar(&lang, "language", "", "Language to run tests for")
 	cmd.Flags().StringVar(&codeqlArgs, "codeql-args", "", "Extra arguments to pass to CodeQL")
-	_ = cmd.MarkFlagRequired("num-threads")
-	_ = cmd.MarkFlagRequired("work-dir")
-	_ = cmd.MarkFlagRequired("language")
+	cmd.MarkFlagRequired("num-threads")
+	cmd.MarkFlagRequired("language")
 	return cmd
 }
 

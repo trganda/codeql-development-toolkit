@@ -80,12 +80,7 @@ func runTestInit(base, lang, useRunner, branch string, numThreads int, overwrite
 		return fmt.Errorf("write run-unit-tests workflow: %w", err)
 	}
 
-	fmt.Printf(`------------------------------------------
-Your repository now has the CodeQL Unit Test Runner installed in .github/workflows/.
-Additionally, QLT has installed necessary actions in .github/actions/install-qlt.
+	slog.Info(`Your repository now has the CodeQL Unit Test Runner installed in .github/workflows/. Additionally, QLT has installed necessary actions in .github/actions/install-qlt.`)
 
-Note: runner will use %d threads and the %q runner by default.
-(Hint: use --overwrite-existing to regenerate files.)
-`, numThreads, useRunner)
 	return nil
 }

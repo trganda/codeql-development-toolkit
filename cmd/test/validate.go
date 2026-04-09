@@ -19,7 +19,7 @@ func newValidateUnitTestsCmd() *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:   "validate",
-		Short: "Validate unit test results for CI/CD",
+		Short: "Validate unit test results",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing test run validate-unit-tests command", "results-dir", resultsDir)
 			return runValidateUnitTests(resultsDir, prettyPrint)
@@ -27,7 +27,7 @@ func newValidateUnitTestsCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&resultsDir, "results-directory", "", "Directory containing test result files")
 	cmd.Flags().BoolVar(&prettyPrint, "pretty-print", false, "Pretty-print results (no failure exit code)")
-	_ = cmd.MarkFlagRequired("results-directory")
+	cmd.MarkFlagRequired("results-directory")
 	return cmd
 }
 

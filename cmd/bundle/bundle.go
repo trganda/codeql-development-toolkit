@@ -103,8 +103,8 @@ func newValidateIntegrationTestsCmd(base *string) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&expected, "expected", "", "Path to expected SARIF file")
 	cmd.Flags().StringVar(&actual, "actual", "", "Path to actual SARIF file")
-	_ = cmd.MarkFlagRequired("expected")
-	_ = cmd.MarkFlagRequired("actual")
+	cmd.MarkFlagRequired("expected")
+	cmd.MarkFlagRequired("actual")
 	return cmd
 }
 
