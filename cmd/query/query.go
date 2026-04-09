@@ -12,13 +12,13 @@ import (
 )
 
 // NewCommand returns the `query` cobra command.
-func NewCommand(base, automationType *string, development, useBundle *bool) *cobra.Command {
+func NewCommand(base, automationType *string, useBundle *bool) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "query",
 		Short: "Query feature commands",
 	}
-	cmd.AddCommand(newInitCmd(base, development))
-	cmd.AddCommand(newGenerateCmd(base, development))
+	cmd.AddCommand(newInitCmd(base))
+	cmd.AddCommand(newGenerateCmd(base))
 	cmd.AddCommand(newInstallCmd(base))
 	cmd.AddCommand(newCompileCmd(base))
 	cmd.AddCommand(newRunCmd(base, useBundle))
@@ -26,7 +26,7 @@ func NewCommand(base, automationType *string, development, useBundle *bool) *cob
 }
 
 // newInitCmd returns `query init`.
-func newInitCmd(base *string, development *bool) *cobra.Command {
+func newInitCmd(base *string) *cobra.Command {
 	var overwriteExisting bool
 	cmd := &cobra.Command{
 		Use:   "init",

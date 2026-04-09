@@ -11,19 +11,19 @@ import (
 )
 
 // NewCommand returns the `bundle` cobra command.
-func NewCommand(base, automationType *string, development *bool) *cobra.Command {
+func NewCommand(base, automationType *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bundle",
 		Short: "Custom CodeQL bundle management commands",
 	}
-	cmd.AddCommand(newInitCmd(base, development))
+	cmd.AddCommand(newInitCmd(base))
 	cmd.AddCommand(newSetCmd(base))
 	cmd.AddCommand(newGetCmd(base))
 	cmd.AddCommand(newRunCmd(base))
 	return cmd
 }
 
-func newInitCmd(base *string, development *bool) *cobra.Command {
+func newInitCmd(base *string) *cobra.Command {
 	var (
 		lang              string
 		overwriteExisting bool
@@ -33,7 +33,7 @@ func newInitCmd(base *string, development *bool) *cobra.Command {
 		Short: "Initialize bundle support",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing bundle init command", "base", *base, "language", lang)
-			return runBundleInit(*base, lang, *development, overwriteExisting)
+			return runBundleInit(*base, lang, overwriteExisting)
 		},
 	}
 	cmd.Flags().StringVar(&lang, "language", "", "Language for bundle")
@@ -111,14 +111,12 @@ func newValidateIntegrationTestsCmd(base *string) *cobra.Command {
 // bundleInitData holds template variables for bundle init.
 type bundleInitData struct {
 	Language string
-	DevMode  bool
 }
 
-func runBundleInit(base, lang string, devMode, overwrite bool) error {
-	slog.Debug("Running bundle init", "base", base, "lang", lang, "dev-mode", devMode)
+func runBundleInit(base, lang string, overwrite bool) error {
+	slog.Debug("Running bundle init", "base", base, "lang", lang)
 	data := bundleInitData{
 		Language: lang,
-		DevMode:  devMode,
 	}
 
 	// Write install-qlt action

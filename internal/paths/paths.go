@@ -2,10 +2,14 @@
 package paths
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/trganda/codeql-development-toolkit/internal/config"
 )
 
 // DefaultCLIDir is the per-user directory (relative to $HOME) where qlt
@@ -31,9 +35,9 @@ func CLIInstallDir(version string) (string, error) {
 	return filepath.Join(home, DefaultCLIDir, VersionTag(version)), nil
 }
 
-// CodeQLBinary returns the absolute path to the codeql executable for the
+// codeQLBinary returns the absolute path to the codeql executable for the
 // given installed version.
-func CodeQLBinary(version string) (string, error) {
+func codeQLBinary(version string) (string, error) {
 	dir, err := CLIInstallDir(version)
 	if err != nil {
 		return "", err
@@ -43,4 +47,23 @@ func CodeQLBinary(version string) (string, error) {
 		bin = "codeql.exe"
 	}
 	return filepath.Join(dir, "codeql", bin), nil
+}
+
+// resolveCodeQLBinary returns the path to the codeql binary. It first looks
+// at the version recorded in <base>/qlt.conf.json (installed by
+// 'qlt codeql install'), then falls back to PATH.
+func ResolveCodeQLBinary(base string) (string, error) {
+	if cfg, _ := config.LoadFromFile(base); cfg != nil && cfg.CodeQLCLI != "" {
+		if bin, err := codeQLBinary(cfg.CodeQLCLI); err == nil {
+			if _, err := os.Stat(bin); err == nil {
+				return bin, nil
+			}
+		}
+	}
+
+	path, err := exec.LookPath("codeql")
+	if err != nil {
+		return "", fmt.Errorf("codeql binary not found; run 'qlt codeql install' first")
+	}
+	return path, nil
 }

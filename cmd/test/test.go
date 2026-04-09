@@ -5,24 +5,14 @@ import (
 )
 
 // NewCommand returns the `test` cobra command.
-func NewCommand(base, automationType *string, development, useBundle *bool) *cobra.Command {
+func NewCommand(base, automationType *string, useBundle *bool) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "test",
 		Short: "Unit testing commands",
 	}
-	cmd.AddCommand(newInitCmd(base, development))
-	cmd.AddCommand(newRunCmd(base, development, useBundle))
+	cmd.AddCommand(newInitCmd(base))
+	cmd.AddCommand(newGetMatrixCmd(base))
+	cmd.AddCommand(newRunUnitTestsCmd(base, useBundle))
+	cmd.AddCommand(newValidateUnitTestsCmd())
 	return cmd
-}
-
-// newRunCmd returns `test run`, a parent for the individual run subcommands.
-func newRunCmd(base *string, development *bool, useBundle *bool) *cobra.Command {
-	run := &cobra.Command{
-		Use:   "run",
-		Short: "Run test-related commands",
-	}
-	run.AddCommand(newGetMatrixCmd(base))
-	run.AddCommand(newExecuteUnitTestsCmd(base, useBundle))
-	run.AddCommand(newValidateUnitTestsCmd())
-	return run
 }

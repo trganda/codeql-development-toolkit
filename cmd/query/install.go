@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/trganda/codeql-development-toolkit/internal/language"
+	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
 
 // newInstallCmd returns `query install`.
@@ -32,7 +33,7 @@ If --language and --pack are omitted, every qlpack.yml found under <base> is ins
 }
 
 func runPackInstall(base, lang, pack string) error {
-	codeql, err := resolveCodeQLBinary(base)
+	codeql, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err
 	}

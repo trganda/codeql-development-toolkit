@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/trganda/codeql-development-toolkit/internal/language"
+	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
 
 // newCompileCmd returns `query compile`.
@@ -36,7 +37,7 @@ If --language and --pack are omitted, all query files found under <base> are com
 }
 
 func runCompile(base, lang, pack string, threads int) error {
-	codeql, err := resolveCodeQLBinary(base)
+	codeql, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err
 	}

@@ -19,19 +19,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-[[ if .DevMode ]]
-      - name: Install QLT
-        id: install-qlt
-        uses: ./.github/actions/install-qlt-local
-        with:
-          qlt-version: 'latest'
-          add-to-path: true
-
-      - name: Export unit test matrix
-        id: export-unit-test-matrix
-        run: |
-          qlt test run get-matrix --os-version [[ .UseRunner ]] --base example/
-[[ else ]]
       - name: Install QLT
         id: install-qlt
         uses: ./.github/actions/install-qlt
@@ -43,7 +30,6 @@ jobs:
         id: export-unit-test-matrix
         run: |
           qlt test run get-matrix --os-version [[ .UseRunner ]]
-[[ end ]]
   run-test-suites:
     name: Run Unit Tests
     needs: create-unit-test-matrix
@@ -56,21 +42,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-[[ if .DevMode ]]
-      - name: Install QLT
-        id: install-qlt
-        uses: ./.github/actions/install-qlt-local
-        with:
-          qlt-version: 'latest'
-          add-to-path: true
-[[ else ]]
       - name: Install QLT
         id: install-qlt
         uses: ./.github/actions/install-qlt
         with:
           qlt-version: 'latest'
           add-to-path: true
-[[ end ]]
       - name: Install CodeQL
         id: install-codeql
         shell: bash
@@ -90,17 +67,10 @@ jobs:
           echo -e "Checking QLT Version:"
           echo "QLT Home: ${{ steps.install-qlt.outputs.qlt-home }}"
           qlt version
-[[ if .DevMode ]]
-      - name: Install QL Packs
-        shell: bash
-        run: |
-          qlt query run install-packs --base example/
-[[ else ]]
       - name: Install QL Packs
         shell: bash
         run: |
           qlt query run install-packs
-[[ end ]]
       - name: Run test suites
         id: run-test-suites
         env:
@@ -109,22 +79,12 @@ jobs:
           RUNNER_TMP: ${{ runner.temp }}
         shell: bash
         run: >
-[[ if .DevMode ]]
           qlt test run execute-unit-tests
           --codeql-args "[[ .CodeqlArgs ]]"
           --num-threads [[ .NumThreads ]]
           --language [[ .Language ]]
           --runner-os $RUNNER_OS
           --work-dir $RUNNER_TMP
-          --base example/
-[[ else ]]
-          qlt test run execute-unit-tests
-          --codeql-args "[[ .CodeqlArgs ]]"
-          --num-threads [[ .NumThreads ]]
-          --language [[ .Language ]]
-          --runner-os $RUNNER_OS
-          --work-dir $RUNNER_TMP
-[[ end ]]
       - name: Upload test results
         uses: actions/upload-artifact@v6
         with:
@@ -141,21 +101,12 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v4
-[[ if .DevMode ]]
-      - name: Install QLT
-        id: install-qlt
-        uses: ./.github/actions/install-qlt-local
-        with:
-          qlt-version: 'latest'
-          add-to-path: true
-[[ else ]]
       - name: Install QLT
         id: install-qlt
         uses: ./.github/actions/install-qlt
         with:
           qlt-version: 'latest'
           add-to-path: true
-[[ end ]]
       - name: Collect test results
         uses: actions/download-artifact@v7
 

@@ -14,17 +14,17 @@ import (
 )
 
 // newGenerateCmd returns `query generate`.
-func newGenerateCmd(base *string, development *bool) *cobra.Command {
+func newGenerateCmd(base *string) *cobra.Command {
 	gen := &cobra.Command{
 		Use:   "generate",
 		Short: "Generate CodeQL query scaffolding",
 	}
-	gen.AddCommand(newNewQueryCmd(base, development))
+	gen.AddCommand(newNewQueryCmd(base))
 	return gen
 }
 
 // newNewQueryCmd returns `query generate new-query`.
-func newNewQueryCmd(base *string, development *bool) *cobra.Command {
+func newNewQueryCmd(base *string) *cobra.Command {
 	var (
 		queryName         string
 		lang              string

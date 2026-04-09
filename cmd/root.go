@@ -20,7 +20,6 @@ import (
 var (
 	BasePath       string
 	AutomationType string
-	Development    bool
 	UseBundle      bool
 	Verbose        bool
 )
@@ -47,15 +46,14 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().StringVar(&BasePath, "base", ".", "Base repository path")
 	rootCmd.PersistentFlags().StringVar(&AutomationType, "automation-type", "actions", "Automation type (e.g. actions)")
-	rootCmd.PersistentFlags().BoolVar(&Development, "development", false, "Enable development mode")
 	rootCmd.PersistentFlags().BoolVar(&UseBundle, "use-bundle", false, "Use a custom CodeQL bundle")
 	rootCmd.PersistentFlags().BoolVar(&Verbose, "verbose", false, "Enable verbose logging")
 
 	rootCmd.AddCommand(versionCmd())
-	rootCmd.AddCommand(query.NewCommand(&BasePath, &AutomationType, &Development, &UseBundle))
+	rootCmd.AddCommand(query.NewCommand(&BasePath, &AutomationType, &UseBundle))
 	rootCmd.AddCommand(codeql.NewCommand(&BasePath, &AutomationType, &UseBundle))
-	rootCmd.AddCommand(test.NewCommand(&BasePath, &AutomationType, &Development, &UseBundle))
-	rootCmd.AddCommand(validation.NewCommand(&BasePath, &AutomationType, &Development))
+	rootCmd.AddCommand(test.NewCommand(&BasePath, &AutomationType, &UseBundle))
+	rootCmd.AddCommand(validation.NewCommand(&BasePath, &AutomationType))
 	rootCmd.AddCommand(pack.NewCommand(&BasePath, &AutomationType))
-	rootCmd.AddCommand(bundle.NewCommand(&BasePath, &AutomationType, &Development))
+	rootCmd.AddCommand(bundle.NewCommand(&BasePath, &AutomationType))
 }

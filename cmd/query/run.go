@@ -8,29 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/trganda/codeql-development-toolkit/internal/config"
 	"github.com/trganda/codeql-development-toolkit/internal/language"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
-
-// resolveCodeQLBinary returns the path to the codeql binary. It first looks
-// at the version recorded in <base>/qlt.conf.json (installed by
-// 'qlt codeql install'), then falls back to PATH.
-func resolveCodeQLBinary(base string) (string, error) {
-	if cfg, _ := config.LoadFromFile(base); cfg != nil && cfg.CodeQLCLI != "" {
-		if bin, err := paths.CodeQLBinary(cfg.CodeQLCLI); err == nil {
-			if _, err := os.Stat(bin); err == nil {
-				return bin, nil
-			}
-		}
-	}
-
-	path, err := exec.LookPath("codeql")
-	if err != nil {
-		return "", fmt.Errorf("codeql binary not found; run 'qlt codeql install' first")
-	}
-	return path, nil
-}
 
 // resolveQueryFile finds the .ql file for queryName.
 //
@@ -99,7 +79,7 @@ func runQuery(base, queryName, database, lang, pack, format, output, additionalP
 		slog.Info("Unrecognised language, proceeding anyway", "language", lang)
 	}
 
-	codeql, err := resolveCodeQLBinary(base)
+	codeql, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err
 	}

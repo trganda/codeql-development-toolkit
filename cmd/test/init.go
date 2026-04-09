@@ -12,7 +12,7 @@ import (
 )
 
 // newInitCmd returns `test init`.
-func newInitCmd(base *string, development *bool) *cobra.Command {
+func newInitCmd(base *string) *cobra.Command {
 	var (
 		overwriteExisting bool
 		numThreads        int
@@ -26,7 +26,7 @@ func newInitCmd(base *string, development *bool) *cobra.Command {
 		Short: "Initialize test infrastructure (GitHub Actions workflow)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing test init command", "language", lang, "runner", useRunner, "branch", branch)
-			return runTestInit(*base, *development, lang, useRunner, branch, numThreads, overwriteExisting)
+			return runTestInit(*base, lang, useRunner, branch, numThreads, overwriteExisting)
 		},
 	}
 
@@ -46,11 +46,10 @@ type testInitData struct {
 	NumThreads int
 	UseRunner  string
 	CodeqlArgs string
-	DevMode    bool
 }
 
-func runTestInit(base string, devMode bool, lang, useRunner, branch string, numThreads int, overwrite bool) error {
-	slog.Debug("Running test init", "lang", lang, "devMode", devMode, "overwrite", overwrite)
+func runTestInit(base, lang, useRunner, branch string, numThreads int, overwrite bool) error {
+	slog.Debug("Running test init", "lang", lang, "overwrite", overwrite)
 	langDir := language.ToDirectory(lang)
 
 	data := testInitData{
@@ -59,7 +58,6 @@ func runTestInit(base string, devMode bool, lang, useRunner, branch string, numT
 		NumThreads: numThreads,
 		UseRunner:  useRunner,
 		CodeqlArgs: "--threads=0",
-		DevMode:    devMode,
 	}
 
 	// Write install-qlt action

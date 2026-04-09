@@ -10,25 +10,25 @@ import (
 )
 
 // NewCommand returns the `validation` cobra command.
-func NewCommand(base, automationType *string, development *bool) *cobra.Command {
+func NewCommand(base, automationType *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "validation",
 		Short: "Query validation commands",
 	}
-	cmd.AddCommand(newRunCmd(base, development))
+	cmd.AddCommand(newRunCmd(base))
 	return cmd
 }
 
-func newRunCmd(base *string, development *bool) *cobra.Command {
+func newRunCmd(base *string) *cobra.Command {
 	run := &cobra.Command{
 		Use:   "run",
 		Short: "Run validation commands",
 	}
-	run.AddCommand(newCheckQueriesCmd(base, development))
+	run.AddCommand(newCheckQueriesCmd(base))
 	return run
 }
 
-func newCheckQueriesCmd(base *string, development *bool) *cobra.Command {
+func newCheckQueriesCmd(base *string) *cobra.Command {
 	var (
 		lang        string
 		prettyPrint bool

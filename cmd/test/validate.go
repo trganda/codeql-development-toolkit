@@ -11,14 +11,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// newValidateUnitTestsCmd returns `test run validate-unit-tests`.
+// newValidateUnitTestsCmd returns `test run validate`.
 func newValidateUnitTestsCmd() *cobra.Command {
 	var (
 		resultsDir  string
 		prettyPrint bool
 	)
 	cmd := &cobra.Command{
-		Use:   "validate-unit-tests",
+		Use:   "validate",
 		Short: "Validate unit test results for CI/CD",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing test run validate-unit-tests command", "results-dir", resultsDir)
