@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/spf13/cobra"
 
+	"github.com/trganda/codeql-development-toolkit/internal/executil"
 	"github.com/trganda/codeql-development-toolkit/internal/language"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
@@ -70,17 +69,16 @@ func runCompile(base, lang, pack string, threads int) error {
 	args = append(args, "--")
 	args = append(args, files...)
 
-	fmt.Printf("Running: %s %s\n", codeql, strings.Join(args, " "))
-	cmd := exec.Command(codeql, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-
-	if err := cmd.Run(); err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			return fmt.Errorf("codeql query compile exited with code %d", exitErr.ExitCode())
+	runner := executil.NewRunner(codeql)
+	res, err := runner.Run(args...)
+	if err != nil {
+		if res != nil && len(res.Stdout) > 0 {
+			slog.Debug("CodeQL compile stdout", "output", res.StdoutString())
 		}
 		return fmt.Errorf("run codeql query compile: %w", err)
+	}
+	if len(res.Stderr) > 0 {
+		slog.Debug("CodeQL compile stderr", "output", res.StderrString())
 	}
 	return nil
 }

@@ -1,17 +1,15 @@
 package test
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
-	"os/exec"
-	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/trganda/codeql-development-toolkit/internal/config"
+	"github.com/trganda/codeql-development-toolkit/internal/executil"
 	"github.com/trganda/codeql-development-toolkit/internal/language"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
@@ -67,21 +65,14 @@ func runExecuteUnitTests(base, lang, workDir, codeqlArgs string, numThreads int,
 	slog.Debug("Using CodeQL binary", "path", codeql)
 
 	args := []string{"resolve", "test", "--format", "json", fmt.Sprintf("%s/%s", base, language.ToDirectory(lang))}
-	resolveCmd := exec.Command(codeql, args...)
-	var stderr bytes.Buffer
-	resolveCmd.Stderr = &stderr
-
-	stdout, err := resolveCmd.Output()
+	runner := executil.NewRunner(codeql)
+	res, err := runner.Run(args...)
 	if err != nil {
-		errMsg := strings.TrimSpace(stderr.String())
-		if errMsg != "" {
-			return fmt.Errorf("failed to resolve tests: %w: %s", err, errMsg)
-		}
 		return fmt.Errorf("failed to resolve tests: %w", err)
 	}
 
 	var resolvedTests []string
-	if err := json.Unmarshal(stdout, &resolvedTests); err != nil {
+	if err := json.Unmarshal(res.Stdout, &resolvedTests); err != nil {
 		return fmt.Errorf("failed to parse resolved tests JSON: %w", err)
 	}
 

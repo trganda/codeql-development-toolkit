@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"github.com/trganda/codeql-development-toolkit/internal/executil"
 	"github.com/trganda/codeql-development-toolkit/internal/language"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
@@ -93,20 +93,22 @@ func runQuery(base, queryName, database, lang, pack, format, output, additionalP
 	args := buildAnalyzeArgs(database, queryFile, format, output, additionalPacks, threads)
 	slog.Debug("Running CodeQL", "cmd", codeql, "args", args)
 
-	cmd := exec.Command(codeql, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-
-	fmt.Printf("Running: %s %s\n", codeql, strings.Join(args, " "))
-	if err := cmd.Run(); err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			return fmt.Errorf("codeql exited with code %d", exitErr.ExitCode())
+	runner := executil.NewRunner(codeql)
+	res, err := runner.Run(args...)
+	if err != nil {
+		if res != nil && len(res.Stdout) > 0 {
+			slog.Debug("Command stdout result", "output", res.StdoutString())
 		}
 		return fmt.Errorf("run codeql: %w", err)
 	}
+	if len(res.Stdout) > 0 {
+		slog.Debug("Command stdout result", "output", res.StdoutString())
+	}
+	if len(res.Stderr) > 0 {
+		slog.Debug("Command stderr result", "output", res.StderrString())
+	}
 
-	fmt.Printf("Results written to %s\n", output)
+	slog.Info("Results written to ", "path", output)
 	return nil
 }
 
