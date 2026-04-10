@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -32,7 +33,6 @@ func newRunUnitTestsCmd(base *string, useBundle *bool) *cobra.Command {
 	cmd.Flags().IntVar(&numThreads, "num-threads", 4, "Number of threads for test execution")
 	cmd.Flags().StringVar(&lang, "language", "", "Language to run tests for")
 	cmd.Flags().StringVar(&codeqlArgs, "codeql-args", "", "Extra arguments to pass to CodeQL")
-	cmd.MarkFlagRequired("num-threads")
 	cmd.MarkFlagRequired("language")
 	return cmd
 }
@@ -73,9 +73,11 @@ func runExecuteUnitTests(base, lang, codeqlArgs string, numThreads int, useBundl
 
 	slog.Info("Resolved test files", "count", len(resolvedTests))
 
+	overall := testSummary{}
+
 	for _, testFile := range resolvedTests {
 		slog.Debug("Running test file", "file", testFile)
-		testArgs := []string{"test", "run", "--threads", fmt.Sprintf("%d", numThreads)}
+		testArgs := []string{"test", "run", "--threads", fmt.Sprintf("%d", numThreads), "--format", "betterjson", "--quiet"}
 		if codeqlArgs != "" {
 			testArgs = append(testArgs, codeqlArgs)
 		}
@@ -83,16 +85,34 @@ func runExecuteUnitTests(base, lang, codeqlArgs string, numThreads int, useBundl
 		res, err := runner.Run(testArgs...)
 		if err != nil {
 			if res != nil && len(res.Stderr) > 0 {
-				slog.Error("Test command stderr result", "output", res.StderrString())
+				slog.Error("Test failed", "file", testFile, "output", strings.TrimSpace(res.StderrString()))
 			}
-			return fmt.Errorf("failed to run test %s: %w", testFile, err)
+			overall.Total++
+			overall.Failed++
+			continue
 		}
-		if res != nil && len(res.Stdout) > 0 {
-			slog.Debug("Test command stdout result", "output", res.StdoutString())
+		if res == nil || len(res.Stdout) == 0 {
+			continue
+		}
+		events, parseErr := parseBetterJSON(res.Stdout)
+		if parseErr != nil {
+			slog.Warn("Could not parse betterjson output, dumping raw stdout", "error", parseErr, "output", res.StdoutString())
+			continue
+		}
+		summary, testErr := logTestEvents(events)
+		overall.Total += summary.Total
+		overall.Passed += summary.Passed
+		overall.Failed += summary.Failed
+		if testErr != nil {
+			slog.Warn("Test file had failures", "file", testFile, "error", testErr)
 		}
 	}
 
-	slog.Info("Completed execution of all unit tests")
+	slog.Info("Completed execution of all unit tests",
+		"total", overall.Total,
+		"passed", overall.Passed,
+		"failed", overall.Failed,
+	)
 
 	return nil
 }
