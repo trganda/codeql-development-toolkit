@@ -20,6 +20,12 @@ import (
 //	$HOME/DefaultCLIDir/<tag>/codeql-<platform>.zip.checksum.txt
 const DefaultCLIDir = ".qlt/codeql"
 
+// DefaultBundleDir is the per-user directory (relative to $HOME) where qlt
+// stores downloaded CodeQL bundle archives. The layout is:
+//
+//	$HOME/DefaultBundleDir/<bundle-name>.tar.gz
+const DefaultBundleDir = ".qlt/bundles"
+
 // VersionTag normalizes a version string to a "v"-prefixed git tag
 // (e.g. "2.25.1" → "v2.25.1", "v2.25.1" → "v2.25.1").
 func VersionTag(version string) string {
@@ -47,6 +53,16 @@ func codeQLBinary(version string) (string, error) {
 		bin = "codeql.exe"
 	}
 	return filepath.Join(dir, "codeql", bin), nil
+}
+
+// BundleArchivePath returns the expected path for a named bundle archive under
+// $HOME/.qlt/bundles/. The archive name is <bundleName>.tar.gz.
+func BundleArchivePath(bundleName string) (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, DefaultBundleDir, bundleName+".tar.gz"), nil
 }
 
 // resolveCodeQLBinary returns the path to the codeql binary. It first looks

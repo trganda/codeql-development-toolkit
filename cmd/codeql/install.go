@@ -1,7 +1,6 @@
 package codeql
 
 import (
-	"archive/zip"
 	"bufio"
 	"bytes"
 	"crypto/sha256"
@@ -18,6 +17,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/trganda/codeql-development-toolkit/internal/archive"
 	"github.com/trganda/codeql-development-toolkit/internal/config"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
@@ -186,54 +186,6 @@ func downloadFile(url, dst string) error {
 	return os.Rename(tmp, dst)
 }
 
-// extractZip extracts the zip archive at src into installDir.
-func extractZip(src, installDir string) error {
-	r, err := zip.OpenReader(src)
-	if err != nil {
-		return fmt.Errorf("open zip: %w", err)
-	}
-	defer r.Close()
-
-	for _, f := range r.File {
-		// Sanitize path to prevent zip-slip.
-		target := filepath.Join(installDir, filepath.FromSlash(f.Name))
-		if !strings.HasPrefix(target, filepath.Clean(installDir)+string(os.PathSeparator)) {
-			return fmt.Errorf("zip entry %q escapes install directory", f.Name)
-		}
-
-		if f.FileInfo().IsDir() {
-			if err := os.MkdirAll(target, f.Mode()); err != nil {
-				return err
-			}
-			continue
-		}
-
-		if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
-			return err
-		}
-		if err := writeZipEntry(f, target); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func writeZipEntry(f *zip.File, dst string) error {
-	rc, err := f.Open()
-	if err != nil {
-		return err
-	}
-	defer rc.Close()
-
-	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, f.Mode())
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-	_, err = io.Copy(out, rc)
-	return err
-}
-
 // installCLI downloads and unpacks the CodeQL CLI to
 // $HOME/.qlt/codeql/<version>. Skips the download if a local zip with a
 // matching checksum already exists.
@@ -268,7 +220,7 @@ func installCLI(base, version, platform string) error {
 				return nil
 			}
 			slog.Info("Extracting existing archive", "zip", zipPath, "dest", installDir)
-			if err := extractZip(zipPath, installDir); err != nil {
+			if err := archive.ExtractZip(zipPath, installDir); err != nil {
 				return fmt.Errorf("extract: %w", err)
 			}
 			fmt.Printf("CodeQL CLI %s installed at %s\n", version, codeqlDir)
@@ -296,7 +248,7 @@ func installCLI(base, version, platform string) error {
 	if err := os.RemoveAll(codeqlDir); err != nil {
 		return fmt.Errorf("remove stale install: %w", err)
 	}
-	if err := extractZip(zipPath, installDir); err != nil {
+	if err := archive.ExtractZip(zipPath, installDir); err != nil {
 		return fmt.Errorf("extract: %w", err)
 	}
 
