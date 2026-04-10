@@ -44,6 +44,22 @@ cmd/
 
 **Shared `--base` flag** points to the target CodeQL repository being managed (not this repo itself). All file writes go relative to `--base`.
 
+## cmd/ vs internal/ boundary
+
+**`cmd/` contains only:**
+- Cobra `Command` definitions (`Use`, `Short`, `Long`, `RunE`)
+- Flag declarations (`cmd.Flags()`, `MarkFlagRequired`)
+- User-facing stdout output (`fmt.Print*`)
+- Thin glue that reads flags and calls into `internal/`
+
+**`internal/` contains everything else:**
+- Business logic, data transformation, file I/O
+- External process invocation (`executil.Runner`)
+- Structs used across more than one command
+- Any function that could be unit-tested without a cobra context
+
+The rule of thumb: if a function doesn't reference `*cobra.Command` or flag variables, it belongs in `internal/`. A `cmd/` file that grows beyond ~50 lines of non-flag code is a signal that logic should be extracted.
+
 **`internal/` packages:**
 
 - `internal/config` — reads/writes `qlt.conf.json` (`QLTConfig` struct). Key fields: `CodeQLCLI`, `CodeQLCLIBundle`, `EnableCustomCodeQLBundles`, `CodeQLPackConfiguration`. `LoadFromFile` returns nil if missing; `MustLoadFromFile` errors. `UpsertPackConfig(name, bundle)` upserts an entry in `CodeQLPackConfiguration`.
@@ -53,6 +69,10 @@ cmd/
 - `internal/executil` — thin wrapper around `os/exec`. `NewRunner(binary)` returns a `Runner` that captures stdout/stderr into a `Result`. On non-zero exit, `Run` returns a `*RunError` (implements `error` and `Unwrap`) carrying the binary, args, exit code, and trimmed stderr. Callers check `res.Stdout`/`res.Stderr` directly or use the `StdoutString()`/`StderrString()` convenience methods.
 - `internal/language` — helpers mapping language names to directories (`c`/`cpp` → `"cpp"`), CodeQL import names, and source file extensions.
 - `internal/paths` — content-addressed path layout under `$HOME/.qlt/`. All versioned directories use an MD5 hash of the version string. Key functions: `CLIInstallDir`, `BundleInstallDir`, `CustomBundlePath`, `BundleArchivePath`, `ResolveCodeQLBinary`.
+- `internal/codeql` — CLI/bundle download, checksum verification, platform detection, and extraction. `Install(base, version, platform)` is the single entry point used by `cmd/codeql install`.
+- `internal/query` — CodeQL query execution (`RunQuery`), compilation (`RunCompile`), and pack dependency installation (`RunPackInstall`), plus filesystem helpers like `findQueryFile` and `isSubpath`.
+- `internal/pack` — `FindQlpacks(base, lang, pack)` runs `codeql pack ls` and returns `[]Entry`; used by both `cmd/pack list` and `cmd/pack publish`.
+- `internal/matrix` — `Build(osVersions, cliVersion)` constructs and marshals a GitHub Actions CI matrix JSON.
 
 ## Logger
 
