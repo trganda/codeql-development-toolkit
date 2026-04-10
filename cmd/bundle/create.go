@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/trganda/codeql-development-toolkit/internal/bundle"
@@ -26,21 +27,24 @@ func newCreateCmd(base *string) *cobra.Command {
 		Long: `Create a custom CodeQL bundle by extending the base bundle specified in
 qlt.conf.json with additional CodeQL packs from the workspace.
 
-The base bundle archive is expected at $HOME/.qlt/bundles/<CodeQLCLIBundle>.tar.gz
-unless overridden with --bundle.`,
+The base bundle archive is expected at $HOME/.qlt/bundle/<hash>/codeql-bundle.tar.gz
+(downloaded by 'qlt codeql install' when EnableCustomCodeQLBundles=true) unless
+overridden with --bundle.
+
+The output defaults to $HOME/.qlt/custom-bundle/<hash>/codeql-bundle.tar.gz
+unless overridden with --output.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing bundle create command", "base", *base)
 			return runBundleCreate(*base, bundlePath, output, packs, platforms, noPrecompile)
 		},
 	}
 
-	cmd.Flags().StringVar(&bundlePath, "bundle", "", "Path to the base CodeQL bundle archive (.tar.gz); defaults to $HOME/.qlt/bundles/<CodeQLCLIBundle>.tar.gz from config")
-	cmd.Flags().StringVar(&output, "output", "", "Output path: a .tar.gz file for platform-agnostic, or a directory when --platform is used")
+	cmd.Flags().StringVar(&bundlePath, "bundle", "", "Path to the base CodeQL bundle archive (.tar.gz); defaults to $HOME/.qlt/bundle/<hash>/codeql-bundle.tar.gz from config")
+	cmd.Flags().StringVar(&output, "output", "", "Output path (.tar.gz); defaults to $HOME/.qlt/custom-bundle/<hash>/codeql-bundle.tar.gz")
 	cmd.Flags().StringArrayVar(&packs, "pack", nil, "Pack name to include (repeatable); e.g. --pack foo/cpp-customizations")
 	cmd.Flags().StringArrayVar(&platforms, "platform", nil, "Target platform: linux64, osx64, win64 (repeatable); omit for platform-agnostic")
 	cmd.Flags().BoolVar(&noPrecompile, "no-precompile", false, "Skip pre-compilation when bundling packs")
 
-	cmd.MarkFlagRequired("output")
 	cmd.MarkFlagRequired("pack")
 
 	return cmd
@@ -65,6 +69,23 @@ func runBundleCreate(base, bundlePath, output string, packs, platforms []string,
 
 	if _, err := os.Stat(bundlePath); err != nil {
 		return fmt.Errorf("bundle archive not found at %s: %w", bundlePath, err)
+	}
+
+	// Resolve default output path.
+	if output == "" {
+		if cfg.CodeQLCLIBundle == "" {
+			return fmt.Errorf("CodeQLCLIBundle is not set in qlt.conf.json; provide --output or run 'qlt codeql set version'")
+		}
+		output, err = paths.CustomBundlePath(cfg.CodeQLCLIBundle)
+		if err != nil {
+			return fmt.Errorf("resolving custom bundle output path: %w", err)
+		}
+		slog.Info("Using default custom bundle output path", "path", output)
+	}
+
+	// Ensure output directory exists.
+	if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
+		return fmt.Errorf("create output directory: %w", err)
 	}
 
 	// Validate platforms.

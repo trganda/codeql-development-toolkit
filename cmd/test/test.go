@@ -5,14 +5,14 @@ import (
 )
 
 // NewCommand returns the `test` cobra command.
-func NewCommand(base, automationType *string, useBundle *bool) *cobra.Command {
+func NewCommand(base, automationType *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "test",
 		Short: "Unit testing commands",
 	}
 	cmd.AddCommand(newInitCmd(base))
 	cmd.AddCommand(newGetMatrixCmd(base))
-	cmd.AddCommand(newRunUnitTestsCmd(base, useBundle))
+	cmd.AddCommand(newRunUnitTestsCmd(base))
 	cmd.AddCommand(newValidateUnitTestsCmd())
 	return cmd
 }

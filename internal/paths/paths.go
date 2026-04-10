@@ -2,6 +2,8 @@
 package paths
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,19 +14,33 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/config"
 )
 
-// DefaultCLIDir is the per-user directory (relative to $HOME) where qlt
+// DefaultPackagesDir is the per-user directory (relative to $HOME) where qlt
 // installs CodeQL CLI binaries. The layout is:
 //
-//	$HOME/DefaultCLIDir/<tag>/codeql/                  ← extracted CLI
-//	$HOME/DefaultCLIDir/<tag>/codeql-<platform>.zip    ← cached archive
-//	$HOME/DefaultCLIDir/<tag>/codeql-<platform>.zip.checksum.txt
-const DefaultCLIDir = ".qlt/codeql"
+//	$HOME/DefaultPackagesDir/<md5(version)>/codeql/              ← extracted CLI
+//	$HOME/DefaultPackagesDir/<md5(version)>/codeql-<platform>.zip
+//	$HOME/DefaultPackagesDir/<md5(version)>/codeql-<platform>.zip.checksum.txt
+const DefaultPackagesDir = ".qlt/packages"
 
 // DefaultBundleDir is the per-user directory (relative to $HOME) where qlt
 // stores downloaded CodeQL bundle archives. The layout is:
 //
-//	$HOME/DefaultBundleDir/<bundle-name>.tar.gz
-const DefaultBundleDir = ".qlt/bundles"
+//	$HOME/DefaultBundleDir/<md5(bundleName)>/codeql/             ← extracted bundle
+//	$HOME/DefaultBundleDir/<md5(bundleName)>/codeql-bundle.tar.gz
+//	$HOME/DefaultBundleDir/<md5(bundleName)>/codeql-bundle.tar.gz.checksum.txt
+const DefaultBundleDir = ".qlt/bundle"
+
+// DefaultCustomBundleDir is the per-user directory (relative to $HOME) where qlt
+// stores custom CodeQL bundles created by `qlt bundle create`. The layout is:
+//
+//	$HOME/DefaultCustomBundleDir/<md5(bundleName)>/codeql-bundle.tar.gz
+const DefaultCustomBundleDir = ".qlt/custom-bundle"
+
+// versionHash returns the lowercase MD5 hex digest of s (32 chars).
+func versionHash(s string) string {
+	h := md5.Sum([]byte(s))
+	return hex.EncodeToString(h[:])
+}
 
 // VersionTag normalizes a version string to a "v"-prefixed git tag
 // (e.g. "2.25.1" → "v2.25.1", "v2.25.1" → "v2.25.1").
@@ -32,17 +48,17 @@ func VersionTag(version string) string {
 	return "v" + strings.TrimPrefix(version, "v")
 }
 
-// CLIInstallDir returns $HOME/.qlt/codeql/<tag> for the given version.
+// CLIInstallDir returns $HOME/.qlt/packages/<md5(version)> for the given version.
 func CLIInstallDir(version string) (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(home, DefaultCLIDir, VersionTag(version)), nil
+	return filepath.Join(home, DefaultPackagesDir, versionHash(version)), nil
 }
 
 // codeQLBinary returns the absolute path to the codeql executable for the
-// given installed version.
+// given installed CLI version.
 func codeQLBinary(version string) (string, error) {
 	dir, err := CLIInstallDir(version)
 	if err != nil {
@@ -55,24 +71,65 @@ func codeQLBinary(version string) (string, error) {
 	return filepath.Join(dir, "codeql", bin), nil
 }
 
-// BundleArchivePath returns the expected path for a named bundle archive under
-// $HOME/.qlt/bundles/. The archive name is <bundleName>.tar.gz.
-func BundleArchivePath(bundleName string) (string, error) {
+// BundleInstallDir returns $HOME/.qlt/bundle/<md5(bundleName)> for the given bundle.
+func BundleInstallDir(bundleName string) (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(home, DefaultBundleDir, bundleName+".tar.gz"), nil
+	return filepath.Join(home, DefaultBundleDir, versionHash(bundleName)), nil
 }
 
-// resolveCodeQLBinary returns the path to the codeql binary. It first looks
-// at the version recorded in <base>/qlt.conf.json (installed by
-// 'qlt codeql install'), then falls back to PATH.
+// bundleCodeQLBinary returns the codeql binary path inside an installed bundle.
+func bundleCodeQLBinary(bundleName string) (string, error) {
+	dir, err := BundleInstallDir(bundleName)
+	if err != nil {
+		return "", err
+	}
+	bin := "codeql"
+	if runtime.GOOS == "windows" {
+		bin = "codeql.exe"
+	}
+	return filepath.Join(dir, "codeql", bin), nil
+}
+
+// BundleArchivePath returns the expected path for a named bundle archive:
+// $HOME/.qlt/bundle/<md5(bundleName)>/codeql-bundle.tar.gz.
+func BundleArchivePath(bundleName string) (string, error) {
+	dir, err := BundleInstallDir(bundleName)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "codeql-bundle.tar.gz"), nil
+}
+
+// CustomBundlePath returns the output path for a custom bundle created by
+// `qlt bundle create`: $HOME/.qlt/custom-bundle/<md5(bundleName)>/codeql-bundle.tar.gz.
+func CustomBundlePath(bundleName string) (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, DefaultCustomBundleDir, versionHash(bundleName), "codeql-bundle.tar.gz"), nil
+}
+
+// ResolveCodeQLBinary returns the path to the codeql binary. When
+// EnableCustomCodeQLBundles is true in config it resolves the binary from the
+// installed bundle; otherwise it resolves the standalone CLI installation.
+// Falls back to codeql found on PATH.
 func ResolveCodeQLBinary(base string) (string, error) {
-	if cfg, _ := config.LoadFromFile(base); cfg != nil && cfg.CodeQLCLI != "" {
-		if bin, err := codeQLBinary(cfg.CodeQLCLI); err == nil {
-			if _, err := os.Stat(bin); err == nil {
-				return bin, nil
+	if cfg, _ := config.LoadFromFile(base); cfg != nil {
+		if cfg.EnableCustomCodeQLBundles && cfg.CodeQLCLIBundle != "" {
+			if bin, err := bundleCodeQLBinary(cfg.CodeQLCLIBundle); err == nil {
+				if _, err := os.Stat(bin); err == nil {
+					return bin, nil
+				}
+			}
+		} else if cfg.CodeQLCLI != "" {
+			if bin, err := codeQLBinary(cfg.CodeQLCLI); err == nil {
+				if _, err := os.Stat(bin); err == nil {
+					return bin, nil
+				}
 			}
 		}
 	}

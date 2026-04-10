@@ -8,31 +8,35 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/trganda/codeql-development-toolkit/internal/config"
 	tmpl "github.com/trganda/codeql-development-toolkit/internal/template"
 )
 
 // NewCommand returns the `query` cobra command.
-func NewCommand(base, automationType *string, useBundle *bool) *cobra.Command {
+func NewCommand(base, automationType *string) *cobra.Command {
+	var useBundle bool
 	cmd := &cobra.Command{
 		Use:   "query",
 		Short: "Query feature commands",
 	}
-	cmd.AddCommand(newInitCmd(base))
-	cmd.AddCommand(newGenerateCmd(base))
+	cmd.PersistentFlags().BoolVar(&useBundle, "use-bundle", false, "Use a custom CodeQL bundle")
+
+	cmd.AddCommand(newInitCmd(base, &useBundle))
+	cmd.AddCommand(newGenerateCmd(base, &useBundle))
 	cmd.AddCommand(newInstallCmd(base))
 	cmd.AddCommand(newCompileCmd(base))
-	cmd.AddCommand(newRunCmd(base, useBundle))
+	cmd.AddCommand(newRunCmd(base))
 	return cmd
 }
 
 // newInitCmd returns `query init`.
-func newInitCmd(base *string) *cobra.Command {
+func newInitCmd(base *string, useBundle *bool) *cobra.Command {
 	var overwriteExisting bool
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Initialize CodeQL query workspace",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing query init command", "base", *base)
+			slog.Debug("Executing query init command", "base", *base, "use-bundle", *useBundle)
 			if err := os.MkdirAll(*base, 0755); err != nil {
 				return fmt.Errorf("create base directory: %w", err)
 			}
@@ -45,6 +49,21 @@ func newInitCmd(base *string) *cobra.Command {
 				return err
 			}
 			slog.Info("Initialized CodeQL workspace", "path", dst)
+
+			if *useBundle {
+				cfg, err := config.LoadFromFile(*base)
+				if err != nil {
+					return fmt.Errorf("load config: %w", err)
+				}
+				if cfg == nil {
+					cfg = &config.QLTConfig{}
+				}
+				cfg.EnableCustomCodeQLBundles = true
+				if err := cfg.SaveToFile(*base); err != nil {
+					return fmt.Errorf("save config: %w", err)
+				}
+				slog.Info("Enabled custom CodeQL bundles in config")
+			}
 			return nil
 		},
 	}
@@ -53,7 +72,7 @@ func newInitCmd(base *string) *cobra.Command {
 }
 
 // newRunCmd returns `query run`.
-func newRunCmd(base *string, useBundle *bool) *cobra.Command {
+func newRunCmd(base *string) *cobra.Command {
 	var (
 		queryName       string
 		database        string
@@ -74,9 +93,9 @@ The query is located by name in order:
   2. Filesystem search up to 3 levels under <base>/<language>/[pack]
 
 The CodeQL binary is resolved in order:
-  1. $HOME/.qlt/codeql/<version>/codeql/codeql (installed by 'qlt codeql install';
-     version read from qlt.conf.json)
-  2. codeql found on PATH`,
+  1. Bundle binary at $HOME/.qlt/bundle/<hash>/codeql/codeql (when EnableCustomCodeQLBundles=true)
+  2. CLI binary at $HOME/.qlt/packages/<hash>/codeql/codeql (installed by 'qlt codeql install')
+  3. codeql found on PATH`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing query run",
 				"query", queryName, "database", database, "language", lang,

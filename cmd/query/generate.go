@@ -9,22 +9,23 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/trganda/codeql-development-toolkit/internal/config"
 	"github.com/trganda/codeql-development-toolkit/internal/language"
 	tmpl "github.com/trganda/codeql-development-toolkit/internal/template"
 )
 
 // newGenerateCmd returns `query generate`.
-func newGenerateCmd(base *string) *cobra.Command {
+func newGenerateCmd(base *string, useBundle *bool) *cobra.Command {
 	gen := &cobra.Command{
 		Use:   "generate",
 		Short: "Generate CodeQL query scaffolding",
 	}
-	gen.AddCommand(newNewQueryCmd(base))
+	gen.AddCommand(newNewQueryCmd(base, useBundle))
 	return gen
 }
 
 // newNewQueryCmd returns `query generate new-query`.
-func newNewQueryCmd(base *string) *cobra.Command {
+func newNewQueryCmd(base *string, useBundle *bool) *cobra.Command {
 	var (
 		queryName         string
 		lang              string
@@ -41,8 +42,8 @@ func newNewQueryCmd(base *string) *cobra.Command {
 		Short: "Create a new CodeQL query with scaffolding",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing query generate new-query command",
-				"name", queryName, "language", lang, "pack", pack, "kind", queryKind)
-			return runNewQuery(*base, queryName, lang, pack, scope, queryKind, createQueryPack, createTests, overwriteExisting)
+				"name", queryName, "language", lang, "pack", pack, "kind", queryKind, "use-bundle", *useBundle)
+			return runNewQuery(*base, queryName, lang, pack, scope, queryKind, createQueryPack, createTests, overwriteExisting, *useBundle)
 		},
 	}
 
@@ -74,7 +75,7 @@ type queryData struct {
 	TestFilePrefix      string
 }
 
-func runNewQuery(base, queryName, lang, pack, scope, queryKind string, createQueryPack, createTests, overwrite bool) error {
+func runNewQuery(base, queryName, lang, pack, scope, queryKind string, createQueryPack, createTests, overwrite bool, useBundle bool) error {
 	langDir := language.ToDirectory(lang)
 	langImport := language.ToImport(lang)
 	langExt := language.ToExtension(lang)
@@ -197,6 +198,22 @@ func runNewQuery(base, queryName, lang, pack, scope, queryKind string, createQue
 	}
 
 	slog.Info("Created new query", "name", queryName, "language", lang, "pack", pack)
+
+	// Upsert CodeQLPackConfiguration when --use-bundle is set.
+	if useBundle {
+		cfg, err := config.LoadFromFile(base)
+		if err != nil {
+			return fmt.Errorf("load config for pack config upsert: %w", err)
+		}
+		if cfg == nil {
+			cfg = &config.QLTConfig{}
+		}
+		cfg.UpsertPackConfig(packFullName, true)
+		if err := cfg.SaveToFile(base); err != nil {
+			return fmt.Errorf("save config after pack config upsert: %w", err)
+		}
+		slog.Info("Upserted pack configuration", "name", packFullName, "bundle", true)
+	}
 
 	return nil
 }

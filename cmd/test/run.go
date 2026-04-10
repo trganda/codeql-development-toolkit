@@ -15,7 +15,7 @@ import (
 )
 
 // newRunUnitTestsCmd returns `test run`.
-func newRunUnitTestsCmd(base *string, useBundle *bool) *cobra.Command {
+func newRunUnitTestsCmd(base *string) *cobra.Command {
 	var (
 		numThreads int
 		lang       string
@@ -27,7 +27,7 @@ func newRunUnitTestsCmd(base *string, useBundle *bool) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing test run execute command",
 				"language", lang, "threads", numThreads)
-			return runExecuteUnitTests(*base, lang, codeqlArgs, numThreads, *useBundle)
+			return runExecuteUnitTests(*base, lang, codeqlArgs, numThreads)
 		},
 	}
 	cmd.Flags().IntVar(&numThreads, "num-threads", 4, "Number of threads for test execution")
@@ -37,8 +37,8 @@ func newRunUnitTestsCmd(base *string, useBundle *bool) *cobra.Command {
 	return cmd
 }
 
-func runExecuteUnitTests(base, lang, codeqlArgs string, numThreads int, useBundle bool) error {
-	slog.Debug("Running unit tests", "base", base, "lang", lang, "threads", numThreads, "use-bundle", useBundle)
+func runExecuteUnitTests(base, lang, codeqlArgs string, numThreads int) error {
+	slog.Debug("Running unit tests", "base", base, "lang", lang, "threads", numThreads)
 	cfg, err := config.MustLoadFromFile(base)
 	if err != nil {
 		return err
@@ -49,7 +49,6 @@ func runExecuteUnitTests(base, lang, codeqlArgs string, numThreads int, useBundl
 		"codeql-cli", cfg.CodeQLCLI,
 		"threads", numThreads,
 		"codeql-args", codeqlArgs,
-		"use-bundle", useBundle,
 	)
 
 	codeql, err := paths.ResolveCodeQLBinary(base)

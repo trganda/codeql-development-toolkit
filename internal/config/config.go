@@ -25,12 +25,27 @@ type QueryEntry struct {
 
 // QLTConfig holds the QLT configuration loaded from qlt.conf.json.
 type QLTConfig struct {
-	CodeQLCLI               string                    `json:"CodeQLCLI"`
-	CodeQLCLIDigest         string                    `json:"CodeQLCLIDigest,omitempty"`
-	CodeQLCLIBundle         string                    `json:"CodeQLCLIBundle"`
-	CodeQLConfiguration     string                    `json:"CodeQLConfiguration,omitempty"`
-	CodeQLPackConfiguration []CodeQLPackConfiguration `json:"CodeQLPackConfiguration,omitempty"`
-	base                    string
+	CodeQLCLI                 string                    `json:"CodeQLCLI"`
+	CodeQLCLIDigest           string                    `json:"CodeQLCLIDigest,omitempty"`
+	CodeQLCLIBundle           string                    `json:"CodeQLCLIBundle"`
+	CodeQLConfiguration       string                    `json:"CodeQLConfiguration,omitempty"`
+	EnableCustomCodeQLBundles bool                      `json:"EnableCustomCodeQLBundles,omitempty"`
+	CodeQLPackConfiguration   []CodeQLPackConfiguration `json:"CodeQLPackConfiguration,omitempty"`
+	base                      string
+}
+
+// UpsertPackConfig adds or updates the CodeQLPackConfiguration entry for the given name.
+func (c *QLTConfig) UpsertPackConfig(name string, bundle bool) {
+	for i, p := range c.CodeQLPackConfiguration {
+		if p.Name == name {
+			c.CodeQLPackConfiguration[i].Bundle = bundle
+			return
+		}
+	}
+	c.CodeQLPackConfiguration = append(c.CodeQLPackConfiguration, CodeQLPackConfiguration{
+		Name:   name,
+		Bundle: bundle,
+	})
 }
 
 // ConfigFilePath returns the path to qlt.conf.json under the base directory.

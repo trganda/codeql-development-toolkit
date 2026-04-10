@@ -23,31 +23,43 @@ import (
 )
 
 const cliDownloadBase = "https://github.com/github/codeql-cli-binaries/releases/download"
+const bundleDownloadBase = "https://github.com/github/codeql-action/releases/download"
 
 var downloadClient = &http.Client{Timeout: 30 * time.Minute}
 
-func newInstallCmd(base *string, useBundle *bool) *cobra.Command {
+func newInstallCmd(base *string) *cobra.Command {
 	var version, platform string
 	cmd := &cobra.Command{
 		Use:   "install",
 		Short: "Download and install the CodeQL CLI binary",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing codeql install command",
-				"base", *base, "use-bundle", *useBundle, "version", version, "platform", platform)
+				"base", *base, "version", version, "platform", platform)
 			return runInstall(*base, version, platform)
 		},
 	}
 	cmd.Flags().StringVar(&version, "version", "", "CodeQL CLI version to install (e.g. 2.25.1); reads qlt.conf.json when omitted")
-	cmd.Flags().StringVar(&platform, "platform", "", "Platform override (e.g. linux64, osx-arm64, win64); auto-detected when empty")
+	cmd.Flags().StringVar(&platform, "platform", "", "Platform override (e.g. linux64, osx64, win64, all); auto-detected when empty. Use 'all' to download the multi-arch bundle.")
 	return cmd
 }
 
 func runInstall(base, version, platform string) error {
-	if version == "" {
-		cfg, err := config.LoadFromFile(base)
-		if err != nil {
-			return fmt.Errorf("load config: %w", err)
+	cfg, err := config.LoadFromFile(base)
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+
+	if cfg != nil && cfg.EnableCustomCodeQLBundles {
+		bundleName := cfg.CodeQLCLIBundle
+		if bundleName == "" {
+			return fmt.Errorf("EnableCustomCodeQLBundles is true but CodeQLCLIBundle is not set in qlt.conf.json\n" +
+				"hint: run `qlt codeql set version` first")
 		}
+		slog.Info("Installing CodeQL bundle (EnableCustomCodeQLBundles=true)", "bundle", bundleName)
+		return installBundle(base, bundleName, platform)
+	}
+
+	if version == "" {
 		if cfg != nil && cfg.CodeQLCLI != "" {
 			version = cfg.CodeQLCLI
 		} else {
@@ -57,6 +69,145 @@ func runInstall(base, version, platform string) error {
 	}
 	slog.Info("Installing CodeQL CLI", "version", version)
 	return installCLI(base, version, platform)
+}
+
+// bundlePlatformAsset returns the release asset filename for the CodeQL bundle.
+// With platform "all" or the multi-arch default, returns "codeql-bundle.tar.gz".
+// Otherwise returns "codeql-bundle-<platform>.tar.gz", auto-detecting the
+// platform from the current OS when platform is empty.
+func bundlePlatformAsset(platform string) (string, error) {
+	if platform != "" {
+		if platform != "all" {
+			return "codeql-bundle-" + platform + ".tar.gz", nil
+		} else {
+			return "codeql-bundle.tar.gz", nil
+		}
+	}
+
+	switch runtime.GOOS {
+	case "linux":
+		return "codeql-bundle-linux64.tar.gz", nil
+	case "darwin":
+		return "codeql-bundle-osx64.tar.gz", nil
+	case "windows":
+		return "codeql-bundle-win64.tar.gz", nil
+	default:
+		return "", fmt.Errorf("unsupported platform %s; use --platform to override", runtime.GOOS)
+	}
+}
+
+// installBundle downloads and unpacks the CodeQL bundle to
+// $HOME/.qlt/bundle/<md5(bundleName)>. Skips the download if a local archive
+// with a matching checksum already exists.
+func installBundle(base, bundleName, platform string) error {
+	installDir, err := paths.BundleInstallDir(bundleName)
+	if err != nil {
+		return fmt.Errorf("resolve bundle install directory: %w", err)
+	}
+
+	archiveName, err := bundlePlatformAsset(platform)
+	if err != nil {
+		return err
+	}
+	assetURL := fmt.Sprintf("%s/%s/%s", bundleDownloadBase, bundleName, archiveName)
+	archivePath := filepath.Join(installDir, archiveName)
+	codeqlDir := filepath.Join(installDir, "codeql")
+
+	remoteDigest, err := fetchBundleRemoteChecksum(bundleName, archiveName, installDir)
+	if err != nil {
+		return fmt.Errorf("resolve remote bundle checksum: %w", err)
+	}
+
+	// Skip download when the cached archive already matches.
+	if _, statErr := os.Stat(archivePath); statErr == nil {
+		localDigest, err := localFileSHA256(archivePath)
+		if err == nil && localDigest == remoteDigest {
+			slog.Info("CodeQL bundle already up-to-date, skipping download", "bundle", bundleName)
+			if _, statErr := os.Stat(codeqlDir); statErr == nil {
+				fmt.Printf("CodeQL bundle %s already installed at %s\n", bundleName, codeqlDir)
+				return nil
+			}
+			slog.Info("Extracting existing bundle archive", "archive", archivePath, "dest", installDir)
+			if err := archive.ExtractTarGz(archivePath, installDir); err != nil {
+				return fmt.Errorf("extract bundle: %w", err)
+			}
+			fmt.Printf("CodeQL bundle %s installed at %s\n", bundleName, codeqlDir)
+			return nil
+		}
+	}
+
+	fmt.Printf("Downloading CodeQL bundle %s...\n", bundleName)
+	slog.Debug("Downloading bundle", "url", assetURL, "dest", archivePath)
+	if err := downloadFile(assetURL, archivePath); err != nil {
+		return fmt.Errorf("download bundle: %w", err)
+	}
+
+	localDigest, err := localFileSHA256(archivePath)
+	if err != nil {
+		return fmt.Errorf("compute bundle checksum: %w", err)
+	}
+	if localDigest != remoteDigest {
+		_ = os.Remove(archivePath)
+		return fmt.Errorf("bundle checksum mismatch: expected %s, got %s", remoteDigest, localDigest)
+	}
+	slog.Debug("Bundle checksum verified", "digest", localDigest)
+
+	fmt.Printf("Extracting bundle to %s...\n", installDir)
+	if err := os.RemoveAll(codeqlDir); err != nil {
+		return fmt.Errorf("remove stale bundle install: %w", err)
+	}
+	if err := archive.ExtractTarGz(archivePath, installDir); err != nil {
+		return fmt.Errorf("extract bundle: %w", err)
+	}
+
+	fmt.Printf("CodeQL bundle %s installed at %s\n", bundleName, codeqlDir)
+	saveBundleInstallDigest(base, bundleName, remoteDigest)
+	return nil
+}
+
+// fetchBundleRemoteChecksum downloads the .checksum.txt for the bundle archive.
+func fetchBundleRemoteChecksum(bundleName, assetName, destDir string) (string, error) {
+	url := fmt.Sprintf("%s/%s/%s.checksum.txt", bundleDownloadBase, bundleName, assetName)
+	slog.Debug("Fetching bundle checksum file", "url", url)
+
+	resp, err := downloadClient.Get(url)
+	if err != nil {
+		return "", fmt.Errorf("fetch bundle checksum: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("bundle checksum file returned status %d (%s)", resp.StatusCode, url)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("read bundle checksum body: %w", err)
+	}
+
+	if err := os.MkdirAll(destDir, 0755); err != nil {
+		return "", fmt.Errorf("create bundle dest dir: %w", err)
+	}
+	checksumPath := filepath.Join(destDir, assetName+".checksum.txt")
+	if err := os.WriteFile(checksumPath, body, 0644); err != nil {
+		return "", fmt.Errorf("save bundle checksum file: %w", err)
+	}
+	slog.Debug("Saved bundle checksum file", "path", checksumPath)
+
+	return parseChecksum(body, assetName)
+}
+
+// saveBundleInstallDigest persists the installed bundle name and its digest to
+// <base>/qlt.conf.json.
+func saveBundleInstallDigest(base, bundleName, digest string) {
+	cfg, err := config.LoadFromFile(base)
+	if err != nil || cfg == nil {
+		cfg = &config.QLTConfig{}
+	}
+	cfg.CodeQLCLIBundle = bundleName
+	cfg.CodeQLCLIDigest = digest
+	if err := cfg.SaveToFile(base); err != nil {
+		slog.Info("Warning: could not save bundle install digest to config", "error", err)
+	}
 }
 
 // fetchRemoteChecksum downloads the .checksum.txt file published alongside each
@@ -187,7 +338,7 @@ func downloadFile(url, dst string) error {
 }
 
 // installCLI downloads and unpacks the CodeQL CLI to
-// $HOME/.qlt/codeql/<version>. Skips the download if a local zip with a
+// $HOME/.qlt/packages/<md5(version)>. Skips the download if a local zip with a
 // matching checksum already exists.
 func installCLI(base, version, platform string) error {
 	asset, err := platformAsset(platform)
