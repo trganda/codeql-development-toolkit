@@ -54,6 +54,10 @@ cmd/
 - `internal/language` — helpers mapping language names to directories (`c`/`cpp` → `"cpp"`), CodeQL import names, and source file extensions.
 - `internal/paths` — content-addressed path layout under `$HOME/.qlt/`. All versioned directories use an MD5 hash of the version string. Key functions: `CLIInstallDir`, `BundleInstallDir`, `CustomBundlePath`, `BundleArchivePath`, `ResolveCodeQLBinary`.
 
+## Logger
+
+The `internal/log` package wraps `log/slog`. Alwasys use the logger to provide structured logs with context (e.g. `slog.Info("Installed CodeQL CLI", "version", version, "path", path)`). Use `fmt.Print*` only for user-facing output that should not be treated as logs.
+
 ## Templates
 
 Templates live under `internal/template/files/` and are embedded at compile time. Template subdirectories map to features:
