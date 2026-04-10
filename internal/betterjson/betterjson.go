@@ -1,4 +1,5 @@
-package test
+// Package betterjson parses and interprets the CodeQL betterjson test output format.
+package betterjson
 
 import (
 	"encoding/json"
@@ -7,46 +8,46 @@ import (
 	"path/filepath"
 )
 
-// testEvent represents a single event from the CodeQL betterjson output format.
-type testEvent struct {
-	Type            string        `json:"type"`
-	Test            string        `json:"test,omitempty"`
-	TestDirectory   string        `json:"testDirectory,omitempty"`
-	DatasetDirectory string       `json:"datasetDirectory,omitempty"`
-	Pass            bool          `json:"pass,omitempty"`
-	Messages        []testMessage `json:"messages,omitempty"`
-	CompilationMs   int           `json:"compilationMs,omitempty"`
-	EvaluationMs    int           `json:"evaluationMs,omitempty"`
-	Expected        string        `json:"expected,omitempty"`
-	FailureMessage  string        `json:"failureMessage,omitempty"`
+// Event represents a single event from the CodeQL betterjson output format.
+type Event struct {
+	Type             string    `json:"type"`
+	Test             string    `json:"test,omitempty"`
+	TestDirectory    string    `json:"testDirectory,omitempty"`
+	DatasetDirectory string    `json:"datasetDirectory,omitempty"`
+	Pass             bool      `json:"pass,omitempty"`
+	Messages         []Message `json:"messages,omitempty"`
+	CompilationMs    int       `json:"compilationMs,omitempty"`
+	EvaluationMs     int       `json:"evaluationMs,omitempty"`
+	Expected         string    `json:"expected,omitempty"`
+	FailureMessage   string    `json:"failureMessage,omitempty"`
 }
 
-// testMessage is an inline diagnostic message attached to a testCompleted event.
-type testMessage struct {
+// Message is an inline diagnostic message attached to a testCompleted event.
+type Message struct {
 	Message  string `json:"message,omitempty"`
 	Severity string `json:"severity,omitempty"`
 }
 
-// testSummary accumulates pass/fail counts across all events.
-type testSummary struct {
+// Summary accumulates pass/fail counts across all events.
+type Summary struct {
 	Total  int
 	Passed int
 	Failed int
 }
 
-// parseBetterJSON decodes the betterjson array from raw bytes.
-func parseBetterJSON(data []byte) ([]testEvent, error) {
-	var events []testEvent
+// Parse decodes the betterjson array from raw bytes.
+func Parse(data []byte) ([]Event, error) {
+	var events []Event
 	if err := json.Unmarshal(data, &events); err != nil {
 		return nil, fmt.Errorf("failed to parse betterjson output: %w", err)
 	}
 	return events, nil
 }
 
-// logTestEvents processes events and emits structured log lines.
+// LogEvents processes events and emits structured log lines.
 // It returns a summary and any test failures as an error.
-func logTestEvents(events []testEvent) (testSummary, error) {
-	var summary testSummary
+func LogEvents(events []Event) (Summary, error) {
+	var summary Summary
 	var failures []string
 
 	for _, e := range events {
