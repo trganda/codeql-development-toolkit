@@ -12,59 +12,8 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
 
-// resolveQueryFile finds the .ql file for queryName.
-//
-// Resolution order:
-//  1. Filesystem search: walk up to 3 levels under <base>/<langDir>/[pack] looking
-//     for <queryName>.ql. This covers queries created manually outside the generator.
-func resolveQueryFile(base, queryName, lang, pack string) (string, error) {
-	langDir := language.ToDirectory(lang)
-
-	// 2. Filesystem search.
-	searchRoot := filepath.Join(base, langDir)
-	if pack != "" {
-		searchRoot = filepath.Join(searchRoot, pack)
-	}
-	found, err := findQueryFile(searchRoot, queryName+".ql", 3)
-	if err != nil {
-		return "", fmt.Errorf("query %q not found under %s: %w", queryName, searchRoot, err)
-	}
-	slog.Debug("Resolved query by filesystem search", "path", found)
-	return found, nil
-}
-
-// findQueryFile recursively searches dir for a file named target up to maxDepth levels deep.
-func findQueryFile(dir, target string, maxDepth int) (string, error) {
-	var found string
-	var search func(string, int)
-	search = func(d string, depth int) {
-		if found != "" {
-			return
-		}
-		entries, err := os.ReadDir(d)
-		if err != nil {
-			return
-		}
-		for _, e := range entries {
-			path := filepath.Join(d, e.Name())
-			if !e.IsDir() && e.Name() == target {
-				found = path
-				return
-			}
-			if e.IsDir() && depth < maxDepth {
-				search(path, depth+1)
-			}
-		}
-	}
-	search(dir, 0)
-	if found == "" {
-		return "", fmt.Errorf("not found")
-	}
-	return found, nil
-}
-
-// runQuery resolves the query file and runs `codeql database analyze`.
-func runQuery(base, queryName, database, lang, pack, format, output, additionalPacks string, threads int) error {
+// RunQuery resolves the query file and runs `codeql database analyze`.
+func RunQuery(base, queryName, database, lang, pack, format, output, additionalPacks string, threads int) error {
 	queryFile, err := resolveQueryFile(base, queryName, lang, pack)
 	if err != nil {
 		return err
@@ -110,6 +59,56 @@ func runQuery(base, queryName, database, lang, pack, format, output, additionalP
 
 	slog.Info("Results written to ", "path", output)
 	return nil
+}
+
+// resolveQueryFile finds the .ql file for queryName.
+//
+// Resolution order:
+//  1. Filesystem search: walk up to 3 levels under <base>/<langDir>/[pack] looking
+//     for <queryName>.ql. This covers queries created manually outside the generator.
+func resolveQueryFile(base, queryName, lang, pack string) (string, error) {
+	langDir := language.ToDirectory(lang)
+
+	searchRoot := filepath.Join(base, langDir)
+	if pack != "" {
+		searchRoot = filepath.Join(searchRoot, pack)
+	}
+	found, err := findQueryFile(searchRoot, queryName+".ql", 3)
+	if err != nil {
+		return "", fmt.Errorf("query %q not found under %s: %w", queryName, searchRoot, err)
+	}
+	slog.Debug("Resolved query by filesystem search", "path", found)
+	return found, nil
+}
+
+// findQueryFile recursively searches dir for a file named target up to maxDepth levels deep.
+func findQueryFile(dir, target string, maxDepth int) (string, error) {
+	var found string
+	var search func(string, int)
+	search = func(d string, depth int) {
+		if found != "" {
+			return
+		}
+		entries, err := os.ReadDir(d)
+		if err != nil {
+			return
+		}
+		for _, e := range entries {
+			path := filepath.Join(d, e.Name())
+			if !e.IsDir() && e.Name() == target {
+				found = path
+				return
+			}
+			if e.IsDir() && depth < maxDepth {
+				search(path, depth+1)
+			}
+		}
+	}
+	search(dir, 0)
+	if found == "" {
+		return "", fmt.Errorf("not found")
+	}
+	return found, nil
 }
 
 func buildAnalyzeArgs(database, queryFile, format, output, additionalPacks string, threads int) []string {

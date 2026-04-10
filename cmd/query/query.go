@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/trganda/codeql-development-toolkit/internal/config"
+	"github.com/trganda/codeql-development-toolkit/internal/query"
 	tmpl "github.com/trganda/codeql-development-toolkit/internal/template"
 )
 
@@ -114,7 +115,7 @@ The CodeQL binary is resolved in order:
 			slog.Debug("Executing query run",
 				"query", queryName, "database", database, "language", lang,
 				"pack", pack, "format", format, "output", output, "threads", threads)
-			return runQuery(*base, queryName, database, lang, pack, format, output, additionalPacks, threads)
+			return query.RunQuery(*base, queryName, database, lang, pack, format, output, additionalPacks, threads)
 		},
 	}
 	run.Flags().StringVar(&queryName, "query", "", "Query name to run, e.g. MyQuery (required)")
