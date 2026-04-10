@@ -55,9 +55,9 @@ func newNewQueryCmd(base *string, useBundle *bool) *cobra.Command {
 	cmd.Flags().BoolVar(&createQueryPack, "create-query-pack", true, "Create query pack definition")
 	cmd.Flags().BoolVar(&createTests, "create-tests", true, "Create test scaffolding")
 	cmd.Flags().BoolVar(&overwriteExisting, "overwrite-existing", false, "Overwrite existing files")
-	_ = cmd.MarkFlagRequired("query-name")
-	_ = cmd.MarkFlagRequired("language")
-	_ = cmd.MarkFlagRequired("pack")
+	cmd.MarkFlagRequired("query-name")
+	cmd.MarkFlagRequired("language")
+	cmd.MarkFlagRequired("pack")
 	return cmd
 }
 
@@ -79,6 +79,17 @@ func runNewQuery(base, queryName, lang, pack, scope, queryKind string, createQue
 	langDir := language.ToDirectory(lang)
 	langImport := language.ToImport(lang)
 	langExt := language.ToExtension(lang)
+
+	// Fall back to the scope stored in config when --scope is not provided.
+	if scope == "" {
+		cfg, err := config.LoadFromFile(base)
+		if err != nil {
+			return fmt.Errorf("load config: %w", err)
+		}
+		if cfg != nil {
+			scope = cfg.Scope
+		}
+	}
 
 	packFullName := pack
 	if scope != "" {

@@ -9,28 +9,29 @@ import (
 
 // CodeQLPackConfiguration represents a single CodeQL pack entry in qlt.conf.json.
 type CodeQLPackConfiguration struct {
-	Name             string `json:"Name"`
-	Bundle           bool   `json:"Bundle"`
-	Publish          bool   `json:"Publish"`
-	ReferencesBundle bool   `json:"ReferencesBundle"`
+	Name             string `json:"name"`
+	Bundle           bool   `json:"bundle"`
+	Publish          bool   `json:"publish"`
+	ReferencesBundle bool   `json:"referencesBundle"`
 }
 
 // QueryEntry records a generated query so it can be resolved by name later.
 type QueryEntry struct {
-	Name     string `json:"Name"`
-	Language string `json:"Language"`
-	Pack     string `json:"Pack"`
-	Scope    string `json:"Scope,omitempty"`
+	Name     string `json:"name"`
+	Language string `json:"language"`
+	Pack     string `json:"pack"`
+	Scope    string `json:"scope,omitempty"`
 }
 
 // QLTConfig holds the QLT configuration loaded from qlt.conf.json.
 type QLTConfig struct {
-	CodeQLCLI                 string                    `json:"CodeQLCLI"`
-	CodeQLCLIDigest           string                    `json:"CodeQLCLIDigest,omitempty"`
-	CodeQLCLIBundle           string                    `json:"CodeQLCLIBundle"`
-	CodeQLConfiguration       string                    `json:"CodeQLConfiguration,omitempty"`
-	EnableCustomCodeQLBundles bool                      `json:"EnableCustomCodeQLBundles,omitempty"`
-	CodeQLPackConfiguration   []CodeQLPackConfiguration `json:"CodeQLPackConfiguration,omitempty"`
+	CodeQLCLI                 string                    `json:"codeQLCLI"`
+	CodeQLCLIDigest           string                    `json:"codeQLCLIDigest,omitempty"`
+	CodeQLCLIBundle           string                    `json:"codeQLCLIBundle"`
+	CodeQLConfiguration       string                    `json:"codeQLConfiguration,omitempty"`
+	EnableCustomCodeQLBundles bool                      `json:"enableCustomCodeQLBundles,omitempty"`
+	Scope                     string                    `json:"scope,omitempty"`
+	CodeQLPackConfiguration   []CodeQLPackConfiguration `json:"codeQLPackConfiguration,omitempty"`
 	base                      string
 }
 
