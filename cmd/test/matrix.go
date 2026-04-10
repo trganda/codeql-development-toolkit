@@ -59,7 +59,7 @@ func runGetMatrix(base, osVersions string) error {
 		return fmt.Errorf("marshal matrix: %w", err)
 	}
 
-	slog.Info("Generated matrix", "entries", len(entries))
+	slog.Debug("Generated matrix", "entries", len(entries))
 	fmt.Printf("matrix=%s\n", string(out))
 	return nil
 }
