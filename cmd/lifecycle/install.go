@@ -2,13 +2,13 @@ package lifecycle
 
 import (
 	"fmt"
-	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
 
+	"github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/query"
 )
 
@@ -47,21 +47,14 @@ func checkWorkspace(base string) error {
 // runInstallStep warns if no qlpack.yml files exist, then runs pack install.
 // Called by every lifecycle phase that chains through install.
 func runInstallStep(base, lang, packName string) error {
-	if !hasAnyQlpacks(base) {
-		fmt.Println("No CodeQL packs found. Run 'qlt query generate new-query' to create your first query.")
+	packItems, err := pack.FindQlpacks(base, "", "")
+	if err != nil {
+		return fmt.Errorf("finding qlpacks: %w", err)
+	}
+
+	if len(packItems) == 0 {
+		slog.Info("No CodeQL packs found. Run 'qlt query generate new-query' to create your first query.")
+		return nil
 	}
 	return query.RunPackInstall(base, lang, packName)
-}
-
-// hasAnyQlpacks returns true if at least one qlpack.yml exists under base.
-func hasAnyQlpacks(base string) bool {
-	found := false
-	_ = filepath.WalkDir(base, func(_ string, d fs.DirEntry, _ error) error {
-		if !d.IsDir() && d.Name() == "qlpack.yml" {
-			found = true
-			return filepath.SkipAll
-		}
-		return nil
-	})
-	return found
 }
