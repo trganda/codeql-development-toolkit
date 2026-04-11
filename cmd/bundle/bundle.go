@@ -14,7 +14,6 @@ func NewCommand(base, automationType *string) *cobra.Command {
 	}
 	cmd.AddCommand(newInitCmd(base))
 	cmd.AddCommand(newRunCmd(base))
-	cmd.AddCommand(newCreateCmd(base))
 	return cmd
 }
 

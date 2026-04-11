@@ -13,7 +13,6 @@ func NewCommand(base, automationType *string) *cobra.Command {
 		Short: "CodeQL pack management commands",
 	}
 	cmd.AddCommand(newListCmd(base))
-	cmd.AddCommand(newPublishCmd(base))
 	cmd.AddCommand(newRunCmd(base))
 	return cmd
 }

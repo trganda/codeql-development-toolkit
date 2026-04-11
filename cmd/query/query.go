@@ -17,32 +17,10 @@ func NewCommand(base, automationType *string) *cobra.Command {
 	}
 	cmd.PersistentFlags().BoolVar(&useBundle, "use-bundle", false, "Use a custom CodeQL bundle")
 
-	// cmd.AddCommand(newInitCmd(base, &useBundle))
 	cmd.AddCommand(newGenerateCmd(base, &useBundle))
-	cmd.AddCommand(newInstallCmd(base))
-	cmd.AddCommand(newCompileCmd(base))
 	cmd.AddCommand(newRunCmd(base))
 	return cmd
 }
-
-// newInitCmd returns `query init`.
-// func newInitCmd(base *string, useBundle *bool) *cobra.Command {
-// 	var (
-// 		overwriteExisting bool
-// 		scope             string
-// 	)
-// 	cmd := &cobra.Command{
-// 		Use:   "init",
-// 		Short: "Initialize CodeQL query workspace",
-// 		RunE: func(cmd *cobra.Command, args []string) error {
-// 			slog.Debug("Executing query init command", "base", *base, "use-bundle", *useBundle, "scope", scope)
-// 			return query.InitWorkspace(*base, scope, *useBundle, overwriteExisting)
-// 		},
-// 	}
-// 	cmd.Flags().BoolVar(&overwriteExisting, "overwrite-existing", false, "Overwrite existing files")
-// 	cmd.Flags().StringVar(&scope, "scope", "", "CodeQL pack scope (GitHub username or org, e.g. trganda)")
-// 	return cmd
-// }
 
 // newRunCmd returns `query run`.
 func newRunCmd(base *string) *cobra.Command {
