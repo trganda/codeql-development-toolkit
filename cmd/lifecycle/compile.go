@@ -16,12 +16,16 @@ func newCompileCmd(base *string) *cobra.Command {
 		Short: "Compile CodeQL queries",
 		Long: `Compile lifecycle phase: compile CodeQL query files (.ql and .qll).
 
-Runs 'codeql query compile' for packs found under <base>, optionally filtered
-by language and pack name.
-
-Corresponds to: qlt query compile`,
+Runs the full chain: install → compile.
+Requires workspace initialization (run 'qlt lifecycle init' first).`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing lifecycle compile", "base", *base, "language", lang, "pack", packName, "threads", threads)
+			if err := checkWorkspace(*base); err != nil {
+				return err
+			}
+			if err := runInstallStep(*base, lang, packName); err != nil {
+				return err
+			}
 			return query.RunCompile(*base, lang, packName, threads)
 		},
 	}

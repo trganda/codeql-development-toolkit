@@ -33,15 +33,16 @@ cmd/
   root.go          — global flags: --base, --automation-type, --development, --verbose
   version.go       — Version var injected via -ldflags at build time
   lifecycle/       — lifecycle init / install / compile / test / verify / package / publish
-                     high-level lifecycle phases; delegates entirely to internal/ packages
-  query/           — query init / generate new-query / install / compile / run
+                     high-level lifecycle phases; each phase runs the full chain from install
+                     up to and including the requested phase (Maven-style)
+  query/           — query generate new-query / run
                      --use-bundle is a persistent flag scoped to this subcommand only
   codeql/          — codeql set version / get version  (auto-resolves from GitHub API)
                      codeql install downloads CLI or bundle based on EnableCustomCodeQLBundles
-  test/            — test init / run get-matrix / run execute-unit-tests / run validate-unit-tests
+  test/            — test init / get-matrix / validate
   validation/      — validation run check-queries
-  bundle/          — bundle create (extends base bundle with workspace packs)
-  pack/            — pack list / pack publish
+  bundle/          — bundle init (generates GitHub Actions workflows)
+  pack/            — pack list
 ```
 
 **Shared `--base` flag** points to the target CodeQL repository being managed (not this repo itself). All file writes go relative to `--base`.
@@ -127,7 +128,7 @@ $HOME/.qlt/
 ```
 
 - `EnableCustomCodeQLBundles` — set to `true` by `qlt query init --use-bundle`; controls which binary `ResolveCodeQLBinary` returns and which download path `codeql install` uses.
-- `CodeQLPackConfiguration` — upserted by `qlt query generate new-query --use-bundle`; records which packs should be included in the custom bundle.
+- `CodeQLPackConfiguration` — upserted by `qlt query generate new-query`; always records the generated pack (`Bundle=true` only when `--use-bundle` is set).
 
 ## Lifecycle
 
@@ -143,13 +144,17 @@ $HOME/.qlt/
 | package | `qlt lifecycle package` | `internal/bundle.Create` | implemented |
 | publish | `qlt lifecycle publish` | `internal/pack.FindQlpacks` + codeql publish | implemented |
 
-**Two supported flows:**
-1. `init → install → compile → test → verify → publish`
-2. `init → install → compile → test → verify → package → publish` (when using custom bundles)
+**Phase chaining:** Every phase except `init` runs the full chain from `install` up to and including the requested phase. For example, `qlt lifecycle test` runs install → compile → test automatically. `init` is never auto-run — it must be invoked explicitly.
+
+**Workspace guard:** All phases except `init` check that `codeql-workspace.yml` exists under `--base`. If not, they error with guidance to run `lifecycle init` first.
+
+**Two supported flows (parallel alternatives):**
+1. `init → ... → verify → publish`
+2. `init → ... → verify → package → publish` (when using custom bundles; `package` is not a prerequisite of `publish`)
 
 The `package` phase is config-driven: it reads `CodeQLPackConfiguration` entries with `Bundle=true` from `qlt.conf.json` — no `--pack` flags required.
 
-The granular commands (`qlt query`, `qlt test`, `qlt pack`, etc.) are preserved unchanged for CI use or fine-grained control.
+The granular commands (`qlt query`, `qlt test`, `qlt pack`, etc.) are preserved for CI use or fine-grained control.
 
 ## CI / Release Workflows
 

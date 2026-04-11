@@ -80,15 +80,18 @@ func runNewQuery(base, queryName, lang, pack, scope, queryKind string, createQue
 	langImport := language.ToImport(lang)
 	langExt := language.ToExtension(lang)
 
+	// Load config once — used for scope fallback and pack recording.
+	cfg, err := config.LoadFromFile(base)
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+	if cfg == nil {
+		cfg = &config.QLTConfig{}
+	}
+
 	// Fall back to the scope stored in config when --scope is not provided.
-	if scope == "" {
-		cfg, err := config.LoadFromFile(base)
-		if err != nil {
-			return fmt.Errorf("load config: %w", err)
-		}
-		if cfg != nil {
-			scope = cfg.Scope
-		}
+	if scope == "" && cfg.Scope != "" {
+		scope = cfg.Scope
 	}
 
 	packFullName := pack
@@ -210,21 +213,12 @@ func runNewQuery(base, queryName, lang, pack, scope, queryKind string, createQue
 
 	slog.Info("Created new query", "name", queryName, "language", lang, "pack", pack)
 
-	// Upsert CodeQLPackConfiguration when --use-bundle is set.
-	if useBundle {
-		cfg, err := config.LoadFromFile(base)
-		if err != nil {
-			return fmt.Errorf("load config for pack config upsert: %w", err)
-		}
-		if cfg == nil {
-			cfg = &config.QLTConfig{}
-		}
-		cfg.UpsertPackConfig(packFullName, true)
-		if err := cfg.SaveToFile(base); err != nil {
-			return fmt.Errorf("save config after pack config upsert: %w", err)
-		}
-		slog.Info("Upserted pack configuration", "name", packFullName, "bundle", true)
+	// Always record the pack in config; Bundle=true only when --use-bundle was set.
+	cfg.UpsertPackConfig(packFullName, useBundle)
+	if err := cfg.SaveToFile(base); err != nil {
+		return fmt.Errorf("save config: %w", err)
 	}
+	slog.Info("Recorded pack in config", "name", packFullName, "bundle", useBundle)
 
 	return nil
 }

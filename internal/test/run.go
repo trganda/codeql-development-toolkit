@@ -35,7 +35,7 @@ func RunUnitTests(base, lang, codeqlArgs string, numThreads int) error {
 
 	slog.Debug("Using CodeQL binary", "path", codeql)
 
-	args := []string{"resolve", "tests", "--format", "json", fmt.Sprintf("%s/%s", base, language.ToDirectory(lang))}
+	args := []string{"resolve", "tests", "--strict-test-discovery", "--format", "json", fmt.Sprintf("%s/%s", base, language.ToDirectory(lang))}
 	runner := executil.NewRunner(codeql)
 	res, err := runner.Run(args...)
 	if err != nil {

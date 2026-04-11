@@ -9,6 +9,8 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/executil"
 	"github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
+	"github.com/trganda/codeql-development-toolkit/internal/query"
+	qlttest "github.com/trganda/codeql-development-toolkit/internal/test"
 )
 
 func newPublishCmd(base *string) *cobra.Command {
@@ -18,12 +20,27 @@ func newPublishCmd(base *string) *cobra.Command {
 		Short: "Publish CodeQL packs to the GitHub Package Registry",
 		Long: `Publish lifecycle phase: publish CodeQL packs to the GitHub Package Registry.
 
-Scans for packs under <base> (optionally filtered by --language and --pack)
-and publishes each using 'codeql pack publish'.
+Runs the full chain: install → compile → test → verify → publish.
+Requires workspace initialization (run 'qlt lifecycle init' first).
 
-Corresponds to: qlt pack publish`,
+Scans for packs under <base> (optionally filtered by --language and --pack)
+and publishes each using 'codeql pack publish'.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing lifecycle publish", "base", *base, "language", lang, "pack", packName)
+			if err := checkWorkspace(*base); err != nil {
+				return err
+			}
+			if err := runInstallStep(*base, lang, packName); err != nil {
+				return err
+			}
+			if err := query.RunCompile(*base, lang, packName, 0); err != nil {
+				return err
+			}
+			if err := qlttest.RunUnitTests(*base, lang, "", 4); err != nil {
+				return err
+			}
+			fmt.Println("verify: not yet fully implemented.")
+			fmt.Println("Run 'qlt validation run check-queries --language <lang>' for available checks.")
 			return runLifecyclePublish(*base, lang, packName)
 		},
 	}
