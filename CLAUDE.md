@@ -32,6 +32,8 @@ go test ./cmd/query/...
 cmd/
   root.go          — global flags: --base, --automation-type, --development, --verbose
   version.go       — Version var injected via -ldflags at build time
+  lifecycle/       — lifecycle init / install / compile / test / verify / package / publish
+                     high-level lifecycle phases; delegates entirely to internal/ packages
   query/           — query init / generate new-query / install / compile / run
                      --use-bundle is a persistent flag scoped to this subcommand only
   codeql/          — codeql set version / get version  (auto-resolves from GitHub API)
@@ -39,7 +41,7 @@ cmd/
   test/            — test init / run get-matrix / run execute-unit-tests / run validate-unit-tests
   validation/      — validation run check-queries
   bundle/          — bundle create (extends base bundle with workspace packs)
-  pack/            — pack run hello (placeholder)
+  pack/            — pack list / pack publish
 ```
 
 **Shared `--base` flag** points to the target CodeQL repository being managed (not this repo itself). All file writes go relative to `--base`.
@@ -70,8 +72,9 @@ The rule of thumb: if a function doesn't reference `*cobra.Command` or flag vari
 - `internal/language` — helpers mapping language names to directories (`c`/`cpp` → `"cpp"`), CodeQL import names, and source file extensions.
 - `internal/paths` — content-addressed path layout under `$HOME/.qlt/`. All versioned directories use an MD5 hash of the version string. Key functions: `CLIInstallDir`, `BundleInstallDir`, `CustomBundlePath`, `BundleArchivePath`, `ResolveCodeQLBinary`.
 - `internal/codeql` — CLI/bundle download, checksum verification, platform detection, and extraction. `Install(base, version, platform)` is the single entry point used by `cmd/codeql install`.
-- `internal/query` — CodeQL query execution (`RunQuery`), compilation (`RunCompile`), and pack dependency installation (`RunPackInstall`), plus filesystem helpers like `findQueryFile` and `isSubpath`.
-- `internal/pack` — `FindQlpacks(base, lang, pack)` runs `codeql pack ls` and returns `[]Entry`; used by both `cmd/pack list` and `cmd/pack publish`.
+- `internal/query` — CodeQL query execution (`RunQuery`), compilation (`RunCompile`), pack dependency installation (`RunPackInstall`), and workspace initialisation (`InitWorkspace`). Used by both `cmd/query` and `cmd/lifecycle`.
+- `internal/test` — `RunUnitTests(base, lang, codeqlArgs, numThreads)` resolves and runs all `.qlref` test files for a language. Used by both `cmd/test run` and `cmd/lifecycle test`.
+- `internal/pack` — `FindQlpacks(base, lang, pack)` runs `codeql pack ls` and returns `[]Entry`; used by `cmd/pack list`, `cmd/pack publish`, and `cmd/lifecycle publish`.
 - `internal/matrix` — `Build(osVersions, cliVersion)` constructs and marshals a GitHub Actions CI matrix JSON.
 
 ## Logger
@@ -125,6 +128,28 @@ $HOME/.qlt/
 
 - `EnableCustomCodeQLBundles` — set to `true` by `qlt query init --use-bundle`; controls which binary `ResolveCodeQLBinary` returns and which download path `codeql install` uses.
 - `CodeQLPackConfiguration` — upserted by `qlt query generate new-query --use-bundle`; records which packs should be included in the custom bundle.
+
+## Lifecycle
+
+`qlt lifecycle` provides a Maven-inspired, phase-oriented workflow on top of the granular commands. Each phase delegates entirely to an `internal/` package — no business logic lives in `cmd/lifecycle/`.
+
+| Phase | Command | Delegates to | Status |
+|---|---|---|---|
+| initialize | `qlt lifecycle init` | `internal/query.InitWorkspace` | implemented |
+| install | `qlt lifecycle install` | `internal/query.RunPackInstall` | implemented |
+| compile | `qlt lifecycle compile` | `internal/query.RunCompile` | implemented |
+| test | `qlt lifecycle test` | `internal/test.RunUnitTests` | implemented |
+| verify | `qlt lifecycle verify` | — | placeholder |
+| package | `qlt lifecycle package` | `internal/bundle.Create` | implemented |
+| publish | `qlt lifecycle publish` | `internal/pack.FindQlpacks` + codeql publish | implemented |
+
+**Two supported flows:**
+1. `init → install → compile → test → verify → publish`
+2. `init → install → compile → test → verify → package → publish` (when using custom bundles)
+
+The `package` phase is config-driven: it reads `CodeQLPackConfiguration` entries with `Bundle=true` from `qlt.conf.json` — no `--pack` flags required.
+
+The granular commands (`qlt query`, `qlt test`, `qlt pack`, etc.) are preserved unchanged for CI use or fine-grained control.
 
 ## CI / Release Workflows
 

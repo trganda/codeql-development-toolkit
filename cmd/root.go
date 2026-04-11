@@ -9,6 +9,7 @@ import (
 
 	"github.com/trganda/codeql-development-toolkit/cmd/bundle"
 	"github.com/trganda/codeql-development-toolkit/cmd/codeql"
+	"github.com/trganda/codeql-development-toolkit/cmd/lifecycle"
 	"github.com/trganda/codeql-development-toolkit/cmd/pack"
 	"github.com/trganda/codeql-development-toolkit/cmd/query"
 	"github.com/trganda/codeql-development-toolkit/cmd/test"
@@ -54,4 +55,5 @@ func init() {
 	rootCmd.AddCommand(validation.NewCommand(&BasePath, &AutomationType))
 	rootCmd.AddCommand(pack.NewCommand(&BasePath, &AutomationType))
 	rootCmd.AddCommand(bundle.NewCommand(&BasePath, &AutomationType))
+	rootCmd.AddCommand(lifecycle.NewCommand(&BasePath, &AutomationType))
 }

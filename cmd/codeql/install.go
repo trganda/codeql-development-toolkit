@@ -16,7 +16,7 @@ func newInstallCmd(base *string) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing codeql install command",
 				"base", *base, "version", version, "platform", platform)
-			return codeql.Install(*base, version, platform)
+			return codeql.Install(*base, version, nil)
 		},
 	}
 	cmd.Flags().StringVar(&version, "version", "", "CodeQL CLI version to install (e.g. 2.25.1); reads qlt.conf.json when omitted")

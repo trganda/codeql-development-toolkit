@@ -1,16 +1,11 @@
 package query
 
 import (
-	"fmt"
 	"log/slog"
-	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
-	"github.com/trganda/codeql-development-toolkit/internal/config"
 	"github.com/trganda/codeql-development-toolkit/internal/query"
-	tmpl "github.com/trganda/codeql-development-toolkit/internal/template"
 )
 
 // NewCommand returns the `query` cobra command.
@@ -22,7 +17,7 @@ func NewCommand(base, automationType *string) *cobra.Command {
 	}
 	cmd.PersistentFlags().BoolVar(&useBundle, "use-bundle", false, "Use a custom CodeQL bundle")
 
-	cmd.AddCommand(newInitCmd(base, &useBundle))
+	// cmd.AddCommand(newInitCmd(base, &useBundle))
 	cmd.AddCommand(newGenerateCmd(base, &useBundle))
 	cmd.AddCommand(newInstallCmd(base))
 	cmd.AddCommand(newCompileCmd(base))
@@ -31,60 +26,23 @@ func NewCommand(base, automationType *string) *cobra.Command {
 }
 
 // newInitCmd returns `query init`.
-func newInitCmd(base *string, useBundle *bool) *cobra.Command {
-	var (
-		overwriteExisting bool
-		scope             string
-	)
-	cmd := &cobra.Command{
-		Use:   "init",
-		Short: "Initialize CodeQL query workspace",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing query init command", "base", *base, "use-bundle", *useBundle, "scope", scope)
-			if err := os.MkdirAll(*base, 0755); err != nil {
-				return fmt.Errorf("create base directory: %w", err)
-			}
-			tmplContent, err := tmpl.Get("query/codeql-workspace.tmpl")
-			if err != nil {
-				return fmt.Errorf("load workspace template: %w", err)
-			}
-			dst := filepath.Join(*base, "codeql-workspace.yml")
-			if err := tmpl.WriteFile(tmplContent, dst, nil, overwriteExisting); err != nil {
-				return err
-			}
-			slog.Info("Initialized CodeQL workspace", "path", dst)
-
-			if *useBundle || scope != "" {
-				cfg, err := config.LoadFromFile(*base)
-				if err != nil {
-					return fmt.Errorf("load config: %w", err)
-				}
-				if cfg == nil {
-					cfg = &config.QLTConfig{}
-				}
-				if *useBundle {
-					cfg.EnableCustomCodeQLBundles = true
-				}
-				if scope != "" {
-					cfg.Scope = scope
-				}
-				if err := cfg.SaveToFile(*base); err != nil {
-					return fmt.Errorf("save config: %w", err)
-				}
-				if *useBundle {
-					slog.Info("Enabled custom CodeQL bundles in config")
-				}
-				if scope != "" {
-					slog.Info("Saved scope to config", "scope", scope)
-				}
-			}
-			return nil
-		},
-	}
-	cmd.Flags().BoolVar(&overwriteExisting, "overwrite-existing", false, "Overwrite existing files")
-	cmd.Flags().StringVar(&scope, "scope", "", "CodeQL pack scope (GitHub username or org, e.g. trganda)")
-	return cmd
-}
+// func newInitCmd(base *string, useBundle *bool) *cobra.Command {
+// 	var (
+// 		overwriteExisting bool
+// 		scope             string
+// 	)
+// 	cmd := &cobra.Command{
+// 		Use:   "init",
+// 		Short: "Initialize CodeQL query workspace",
+// 		RunE: func(cmd *cobra.Command, args []string) error {
+// 			slog.Debug("Executing query init command", "base", *base, "use-bundle", *useBundle, "scope", scope)
+// 			return query.InitWorkspace(*base, scope, *useBundle, overwriteExisting)
+// 		},
+// 	}
+// 	cmd.Flags().BoolVar(&overwriteExisting, "overwrite-existing", false, "Overwrite existing files")
+// 	cmd.Flags().StringVar(&scope, "scope", "", "CodeQL pack scope (GitHub username or org, e.g. trganda)")
+// 	return cmd
+// }
 
 // newRunCmd returns `query run`.
 func newRunCmd(base *string) *cobra.Command {

@@ -29,10 +29,13 @@ var downloadClient = &http.Client{Timeout: 30 * time.Minute}
 // When EnableCustomCodeQLBundles is true in config, the bundle is installed;
 // otherwise the standalone CLI is used. version overrides the config value for
 // CLI installs.
-func Install(base, version, platform string) error {
-	cfg, err := config.LoadFromFile(base)
-	if err != nil {
-		return fmt.Errorf("load config: %w", err)
+func Install(base, platform string, cfg *config.QLTConfig) error {
+	if cfg == nil {
+		var err error
+		cfg, err = config.LoadFromFile(base)
+		if err != nil {
+			return fmt.Errorf("load config: %w", err)
+		}
 	}
 
 	if cfg != nil && cfg.EnableCustomCodeQLBundles {
@@ -45,14 +48,14 @@ func Install(base, version, platform string) error {
 		return installBundle(base, bundleName, platform)
 	}
 
-	if version == "" {
-		if cfg != nil && cfg.CodeQLCLI != "" {
-			version = cfg.CodeQLCLI
-		} else {
-			return fmt.Errorf("no version specified and qlt.conf.json is missing or has no CodeQLCLI field\n" +
-				"hint: run `qlt codeql set version` first, or pass --version")
-		}
+	var version string
+	if cfg != nil && cfg.CodeQLCLI != "" {
+		version = cfg.CodeQLCLI
+	} else {
+		return fmt.Errorf("no version specified and qlt.conf.json is missing or has no CodeQLCLI field\n" +
+			"hint: run `qlt codeql set version` first, or pass --version")
 	}
+
 	slog.Info("Installing CodeQL CLI", "version", version)
 	return installCLI(base, version, platform)
 }
