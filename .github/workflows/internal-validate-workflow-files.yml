@@ -55,7 +55,6 @@ jobs:
             exit 1
           fi
 
-
       - name: Check Git Clean Status 
         shell: bash
         run: |
@@ -67,5 +66,3 @@ jobs:
             git diff .github
             exit 1
           fi
-
-

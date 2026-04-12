@@ -61,7 +61,7 @@ func runTestInit(base, lang, useRunner, branch string, numThreads int, overwrite
 	}
 
 	// Write install-qlt action
-	installTmpl, err := tmpl.Get("test/actions/install-qlt.tmpl")
+	installTmpl, err := tmpl.Get("shared/actions/install-qlt.tmpl")
 	if err != nil {
 		return fmt.Errorf("load install-qlt template: %w", err)
 	}

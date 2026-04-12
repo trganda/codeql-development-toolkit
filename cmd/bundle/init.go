@@ -39,7 +39,7 @@ func runBundleInit(base, lang string, overwrite bool) error {
 	}
 
 	// Write install-qlt action
-	installTmpl, err := tmpl.Get("bundle/actions/install-qlt.tmpl")
+	installTmpl, err := tmpl.Get("shared/actions/install-qlt.tmpl")
 	if err != nil {
 		return fmt.Errorf("load install-qlt template: %w", err)
 	}

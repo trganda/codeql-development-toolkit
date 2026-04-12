@@ -20,7 +20,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-
       - name: Install QLT
         id: install-qlt
         uses: ./.github/actions/install-qlt-local
@@ -47,8 +46,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-
-
       - name: Install QLT
         id: install-qlt
         uses: ./.github/actions/install-qlt-local
@@ -56,7 +53,6 @@ jobs:
           qlt-version: 'latest'
           add-to-path: true
 
-      
       - name: Install CodeQL
         id: install-codeql
         shell: bash
@@ -77,12 +73,10 @@ jobs:
           echo "QLT Home: ${{ steps.install-qlt.outputs.qlt-home }}"
           qlt version
 
-
       - name: Install QL Packs
         shell: bash
         run: |
           qlt query run install-packs --base example/
-
 
       - name: Run validation tests
         shell: bash
