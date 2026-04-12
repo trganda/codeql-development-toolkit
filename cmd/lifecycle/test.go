@@ -7,6 +7,7 @@ import (
 
 	"github.com/trganda/codeql-development-toolkit/internal/query"
 	qlttest "github.com/trganda/codeql-development-toolkit/internal/test"
+	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
 func newTestCmd(base *string) *cobra.Command {
@@ -21,10 +22,10 @@ Runs the full chain: install → compile → test.
 Requires workspace initialization (run 'qlt lifecycle init' first).`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing lifecycle test", "base", *base, "language", lang, "threads", numThreads)
-			if err := checkWorkspace(*base); err != nil {
+			if err := utils.CheckWorkspace(*base); err != nil {
 				return err
 			}
-			if err := runInstallStep(*base, lang, ""); err != nil {
+			if err := query.RunPackInstall(*base, lang, ""); err != nil {
 				return err
 			}
 			if err := query.RunCompile(*base, lang, "", 0); err != nil {

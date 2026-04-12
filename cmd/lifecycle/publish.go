@@ -11,6 +11,7 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 	"github.com/trganda/codeql-development-toolkit/internal/query"
 	qlttest "github.com/trganda/codeql-development-toolkit/internal/test"
+	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
 func newPublishCmd(base *string) *cobra.Command {
@@ -27,10 +28,10 @@ Scans for packs under <base> (optionally filtered by --language and --pack)
 and publishes each using 'codeql pack publish'.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing lifecycle publish", "base", *base, "language", lang, "pack", packName)
-			if err := checkWorkspace(*base); err != nil {
+			if err := utils.CheckWorkspace(*base); err != nil {
 				return err
 			}
-			if err := runInstallStep(*base, lang, packName); err != nil {
+			if err := query.RunPackInstall(*base, lang, packName); err != nil {
 				return err
 			}
 			if err := query.RunCompile(*base, lang, packName, 0); err != nil {

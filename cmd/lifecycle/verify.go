@@ -8,6 +8,7 @@ import (
 
 	"github.com/trganda/codeql-development-toolkit/internal/query"
 	qlttest "github.com/trganda/codeql-development-toolkit/internal/test"
+	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
 func newVerifyCmd(base *string) *cobra.Command {
@@ -26,10 +27,10 @@ metadata and run integration checks.
 For now, use: qlt validation run check-queries --language <lang>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing lifecycle verify", "base", *base, "language", lang)
-			if err := checkWorkspace(*base); err != nil {
+			if err := utils.CheckWorkspace(*base); err != nil {
 				return err
 			}
-			if err := runInstallStep(*base, lang, ""); err != nil {
+			if err := query.RunPackInstall(*base, lang, ""); err != nil {
 				return err
 			}
 			if err := query.RunCompile(*base, lang, "", 0); err != nil {

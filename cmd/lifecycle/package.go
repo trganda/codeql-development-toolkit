@@ -13,6 +13,7 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 	"github.com/trganda/codeql-development-toolkit/internal/query"
 	qlttest "github.com/trganda/codeql-development-toolkit/internal/test"
+	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
 func newPackageCmd(base *string) *cobra.Command {
@@ -35,10 +36,10 @@ Reads packs from qlt.conf.json where Bundle=true and builds a custom bundle
 using the base bundle archive downloaded by 'qlt codeql install'.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing lifecycle package", "base", *base, "language", lang)
-			if err := checkWorkspace(*base); err != nil {
+			if err := utils.CheckWorkspace(*base); err != nil {
 				return err
 			}
-			if err := runInstallStep(*base, lang, ""); err != nil {
+			if err := query.RunPackInstall(*base, lang, ""); err != nil {
 				return err
 			}
 			if err := query.RunCompile(*base, lang, "", 0); err != nil {

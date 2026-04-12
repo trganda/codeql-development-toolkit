@@ -42,7 +42,7 @@ func RunPackInstall(base, lang, pack string) error {
 		return err
 	}
 	if len(qlpacks) == 0 {
-		return fmt.Errorf("no query pack qlpack.yml files found under %s", targetPath)
+		return fmt.Errorf("No CodeQL packs found under %s. Run 'qlt query generate new-query' to create your first query.", targetPath)
 	}
 
 	for _, qlpack := range qlpacks {

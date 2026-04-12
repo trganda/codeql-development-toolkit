@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/trganda/codeql-development-toolkit/internal/query"
+	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
 func newCompileCmd(base *string) *cobra.Command {
@@ -20,10 +21,10 @@ Runs the full chain: install → compile.
 Requires workspace initialization (run 'qlt lifecycle init' first).`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing lifecycle compile", "base", *base, "language", lang, "pack", packName, "threads", threads)
-			if err := checkWorkspace(*base); err != nil {
+			if err := utils.CheckWorkspace(*base); err != nil {
 				return err
 			}
-			if err := runInstallStep(*base, lang, packName); err != nil {
+			if err := query.RunPackInstall(*base, lang, packName); err != nil {
 				return err
 			}
 			return query.RunCompile(*base, lang, packName, threads)
