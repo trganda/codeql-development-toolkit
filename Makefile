@@ -12,7 +12,7 @@ all: build
 ## build: compile the binary into dist/
 build:
 	mkdir -p $(BUILD_DIR)
-	go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY) .
+	CGO_ENABLED=0 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY) .
 
 ## install: install the binary to $GOPATH/bin (or ~/go/bin)
 install:

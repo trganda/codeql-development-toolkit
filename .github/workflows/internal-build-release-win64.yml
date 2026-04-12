@@ -22,13 +22,8 @@ jobs:
         go-version-file: go.mod
 
     - name: Build
-      shell: pwsh
-      run: |
-        New-Item -ItemType Directory -Force -Path dist | Out-Null
-        $env:CGO_ENABLED = "0"
-        go build `
-          -ldflags "-X github.com/trganda/codeql-development-toolkit/cmd.Version=${{ inputs.version }}" `
-          -o dist/qlt.exe .
+      shell: bash
+      run: make build VERSION=${{ inputs.version }} BINARY=qlt.exe
 
     - name: Build Archive
       shell: pwsh

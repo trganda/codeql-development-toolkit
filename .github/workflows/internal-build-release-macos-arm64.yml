@@ -10,7 +10,7 @@ on:
         type: string
 
 jobs:
-  build-macos64:
+  build-macos-arm64:
     runs-on: macos-14 # arm64
 
     steps:
@@ -22,12 +22,7 @@ jobs:
         go-version-file: go.mod
 
     - name: Build
-      run: |
-        mkdir -p dist
-        go build \
-          -ldflags "-X github.com/trganda/codeql-development-toolkit/cmd.Version=${{ inputs.version }}" \
-          -o dist/qlt .
-        chmod +x dist/qlt
+      run: make build VERSION=${{ inputs.version }}
 
     - name: Build Archive
       run: |

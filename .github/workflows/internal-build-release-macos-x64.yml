@@ -1,4 +1,4 @@
-name: 🐧 Build Release (Linux x64)
+name: 🍏 Build Release (MacOS x64)
 
 on:
   workflow_call:
@@ -10,8 +10,8 @@ on:
         type: string
 
 jobs:
-  build-linux64:
-    runs-on: ubuntu-latest
+  build-macos-x64:
+    runs-on: macos-13 # x64
 
     steps:
     - uses: actions/checkout@v4
@@ -26,7 +26,7 @@ jobs:
 
     - name: Build Archive
       run: |
-        ARCHIVE="$(pwd)/qlt-linux-x86_64.zip"
+        ARCHIVE="$(pwd)/qlt-macos-x64.zip"
         pushd dist
         zip -r "$ARCHIVE" qlt
         popd
@@ -34,10 +34,10 @@ jobs:
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: qlt-dist-linux64
-        path: qlt-linux-x86_64.zip
+        name: qlt-dist-macos-x64
+        path: qlt-macos-x64.zip
 
     - name: Upload to GitHub Release
-      run: gh release upload v${{ inputs.version }} ./qlt-linux-x86_64.zip
+      run: gh release upload v${{ inputs.version }} ./qlt-macos-x64.zip
       env:
         GH_TOKEN: ${{ github.token }}
