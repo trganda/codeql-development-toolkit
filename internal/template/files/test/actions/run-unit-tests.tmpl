@@ -51,27 +51,20 @@ jobs:
           qlt-version: 'latest'
           add-to-path: true
 
-      - name: Install CodeQL
-        id: install-codeql
-        shell: bash
-        run: |
-          echo "Installing CodeQL"
-          qlt codeql install
-
       - name: Verify Versions of Tooling
         shell: bash
         run: |
-          echo -e "Checking CodeQL Version:"
-          $QLT_CODEQL_PATH --version
-
-          echo -e "Checking QLT Version:"
-          echo "QLT Home: ${{ steps.install-qlt.outputs.qlt-home }}"
           qlt version
+
+      - name: Install CodeQL CLI
+        shell: bash
+        run: |
+          qlt codeql install
 
       - name: Install QL Packs
         shell: bash
         run: |
-          qlt query run install
+          qlt lifecycle install
 
       - name: Run test suites
         id: run-test-suites
@@ -81,12 +74,11 @@ jobs:
           RUNNER_TMP: ${{ runner.temp }}
         shell: bash
         run: >
-          qlt test run execute-unit-tests
+          qlt lifecycle test
           --codeql-args "[[ .CodeqlArgs ]]"
           --num-threads [[ .NumThreads ]]
           --language [[ .Language ]]
-          --runner-os $RUNNER_OS
-          --work-dir $RUNNER_TMP
+
       - name: Upload test results
         uses: actions/upload-artifact@v6
         with:
@@ -103,12 +95,14 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Install QLT
         id: install-qlt
         uses: ./.github/actions/install-qlt
         with:
           qlt-version: 'latest'
           add-to-path: true
+  
       - name: Collect test results
         uses: actions/download-artifact@v7
 
