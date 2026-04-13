@@ -15,8 +15,8 @@ import (
 type PackKind int
 
 const (
-	QueryPack        PackKind = iota
-	LibraryPack      PackKind = iota
+	QueryPack         PackKind = iota
+	LibraryPack       PackKind = iota
 	CustomizationPack PackKind = iota
 )
 
@@ -27,6 +27,11 @@ type QlpackConfig struct {
 	Library      bool              `yaml:"library"`
 	Dependencies map[string]string `yaml:"dependencies"`
 	Extractor    string            `yaml:"extractor"`
+}
+
+// HasExtractor returns true if the pack has an extractor field set.
+func (c *QlpackConfig) HasExtractor() bool {
+	return c.Extractor != ""
 }
 
 // Scope returns the scope part of the pack name (before "/").
@@ -61,6 +66,22 @@ type Pack struct {
 
 // Dir returns the directory containing qlpack.yml.
 func (p *Pack) Dir() string { return filepath.Dir(p.YmlPath) }
+
+// IsTestPack returns true if the pack is a test pack, identified by either
+// having an extractor field set or being located under a test/ directory.
+func (p *Pack) IsTestPack() bool {
+	for dir := p.Dir(); dir != "/" && dir != "."; dir = filepath.Dir(dir) {
+		if filepath.Base(dir) == "test" {
+			return true
+		}
+	}
+
+	if p.Config.HasExtractor() {
+		return true
+	}
+
+	return false
+}
 
 // CustomizationsPath returns the expected path for Customizations.qll.
 func (p *Pack) CustomizationsPath() string {

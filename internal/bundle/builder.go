@@ -87,9 +87,19 @@ func Create(opts CreateOptions) error {
 	}
 
 	slog.Info("Listing workspace packs", "dir", opts.WorkspaceDir)
-	workspacePacks, err := ListPacks(codeqlBin, opts.WorkspaceDir)
+	allWorkspacePacks, err := ListPacks(codeqlBin, opts.WorkspaceDir)
 	if err != nil {
 		return fmt.Errorf("listing workspace packs: %w", err)
+	}
+
+	// Filter out test packs (packs with an extractor field).
+	var workspacePacks []*Pack
+	for _, p := range allWorkspacePacks {
+		if p.IsTestPack() {
+			slog.Debug("Skipping test pack", "pack", p.Config.Name)
+			continue
+		}
+		workspacePacks = append(workspacePacks, p)
 	}
 
 	// Validate: all packs must have a scope.
@@ -324,7 +334,7 @@ func (c *buildCtx) recreateQueryPack(p *Pack) error {
 		return fmt.Errorf("rewriting dependencies: %w", err)
 	}
 
-	return c.packCreate(packCopy)
+	return c.packCreate(packCopy, c.bundleDir)
 }
 
 // packBundle runs `codeql pack bundle --pack-path=<qlpacksDir> -- <packDir>`.

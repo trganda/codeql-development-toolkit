@@ -30,11 +30,11 @@ const DefaultPackagesDir = ".qlt/packages"
 //	$HOME/DefaultBundleDir/<md5(bundleName)>/codeql-bundle.tar.gz.checksum.txt
 const DefaultBundleDir = ".qlt/bundle"
 
-// DefaultCustomBundleDir is the per-user directory (relative to $HOME) where qlt
-// stores custom CodeQL bundles created by `qlt bundle create`. The layout is:
+// DefaultCustomBundleDir is the directory (relative to --base) where qlt
+// stores custom CodeQL bundles created by `qlt lifecycle package`. The layout is:
 //
-//	$HOME/DefaultCustomBundleDir/<md5(bundleName)>/codeql-bundle.tar.gz
-const DefaultCustomBundleDir = ".qlt/custom-bundle"
+//	<base>/target/custom-bundle/<md5(bundleName)>/codeql-bundle.tar.gz
+const DefaultCustomBundleDir = "target/custom-bundle"
 
 // versionHash returns the lowercase MD5 hex digest of s (32 chars).
 func versionHash(s string) string {
@@ -104,13 +104,9 @@ func BundleArchivePath(bundleName string) (string, error) {
 }
 
 // CustomBundlePath returns the output path for a custom bundle created by
-// `qlt bundle create`: $HOME/.qlt/custom-bundle/<md5(bundleName)>/codeql-bundle.tar.gz.
-func CustomBundlePath(bundleName string) (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, DefaultCustomBundleDir, versionHash(bundleName), "codeql-bundle.tar.gz"), nil
+// `qlt lifecycle package`: <base>/target/custom-bundle/<md5(bundleName)>/codeql-bundle.tar.gz.
+func CustomBundlePath(base, bundleName string) (string, error) {
+	return filepath.Join(base, DefaultCustomBundleDir, versionHash(bundleName), "codeql-bundle.tar.gz"), nil
 }
 
 // ResolveCodeQLBinary returns the path to the codeql binary. When
