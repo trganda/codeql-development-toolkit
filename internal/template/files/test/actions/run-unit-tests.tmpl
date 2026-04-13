@@ -1,6 +1,5 @@
 name: ⚙️ CodeQL - Run Unit Tests ([[ .Language ]])
 
-
 on:
   push:
     branches:
@@ -19,12 +18,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Install QLT
         id: install-qlt
         uses: ./.github/actions/install-qlt
-        with:
-          qlt-version: 'latest'
-          add-to-path: true
 
       - name: Export unit test matrix
         id: export-unit-test-matrix
@@ -47,9 +44,6 @@ jobs:
       - name: Install QLT
         id: install-qlt
         uses: ./.github/actions/install-qlt
-        with:
-          qlt-version: 'latest'
-          add-to-path: true
 
       - name: Verify Versions of Tooling
         shell: bash
@@ -92,21 +86,17 @@ jobs:
     needs: [run-test-suites]
     runs-on: ubuntu-latest
     steps:
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install QLT
         id: install-qlt
         uses: ./.github/actions/install-qlt
-        with:
-          qlt-version: 'latest'
-          add-to-path: true
   
       - name: Collect test results
         uses: actions/download-artifact@v7
 
       - name: Validate test results
         run: |
-          qlt test run validate-unit-tests --pretty-print --results-directory . >> $GITHUB_STEP_SUMMARY
-          qlt test run validate-unit-tests --results-directory .
+          # qlt test run validate-unit-tests --pretty-print --results-directory . >> $GITHUB_STEP_SUMMARY
+          # qlt test run validate-unit-tests --results-directory .

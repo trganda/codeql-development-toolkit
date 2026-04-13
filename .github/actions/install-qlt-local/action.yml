@@ -1,10 +1,10 @@
 name: Install QLT Local
 description: |
-  Installs a local copy of QLT. 
-inputs:  
-  qlt-version:
+  Builds and installs QLT from the local checkout.
+inputs:
+  go-version:
     description: |
-      The version of QLT to be downloaded.
+      The Go version to use for building QLT.
     required: false
     default: 'latest'
 
@@ -13,7 +13,6 @@ inputs:
       Add QLT to the system path
     required: false
     default: 'true'
-    
 
 outputs:
   qlt-home:
@@ -23,118 +22,29 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
+    - name: Setup Go
+      uses: actions/setup-go@v5
       with:
-        dotnet-version: 6.0.x
-
-    - name: Restore dependencies
-      shell: bash
-      run: dotnet restore
-    - name: Build
-      shell: bash
-      run: dotnet build -c Release --no-restore
-  
-      # create archive in \src\CodeQLToolkit.Core\bin\Release\net6.0\publish\linux-x64
-    - name: Build Bundle (Linux)
-      shell: bash
-      run: |
-        echo "Current Directory $(pwd)"
-        # build the project 
-        dotnet publish ./src/CodeQLToolkit.Core/CodeQLToolkit.Core.csproj /p:PublishProfile=./src/CodeQLToolkit.Core/Properties/PublishProfiles/Linux-Profile.pubxml
-        cp ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/linux-x64/CodeQLToolkit.Core ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/linux-x64/qlt
-        
-        # repair permissions
-        chmod +x ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/linux-x64/qlt
-        chmod +r -R ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/linux-x64        
-      
-    - uses: actions/setup-python@v6
-      with:
-        python-version: '3.11'
-
-    - name: Build CodeQL Bundle Tool for Packaging
-      shell: pwsh 
-      run: |
-        # need this for the bundling to work.
-        pip install poetry 
-        pip install -U pyinstaller 
-
-        # run the packaging 
-        ./scripts/build_codeql_bundle_dist.ps1 -Version 0.4.1 -WorkDirectory dist -DestinationDirectory ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/linux-x64/tools/
-      env:
-        GH_TOKEN: ${{ github.token }}
-
-    - name: Build Bundle Archive
-      shell: bash
-      run: |
-        echo "Current Directory $(pwd)"
-
-        # create bundle 
-        ARCHIVE="$(pwd)/qlt-linux-x86_64.zip"        
-        pushd ./src/CodeQLToolkit.Core/bin/Release/net6.0/publish/linux-x64
-        zip -r $ARCHIVE .
-        popd
-
-
-
-    - name: Move Artifacts
-      shell: pwsh
-      run: |
-        Write-Host (Get-Location)
-        New-Item -ItemType "directory" -Path . -Name "artifacts"
-        Move-Item qlt-linux-x86_64.zip artifacts\
+        go-version: ${{ inputs.go-version }}
 
     - name: Install QLT (Local)
       id: install-qlt
       env:
         ADD_TO_PATH: ${{ inputs.add-to-path }}
-        QLT_HOME: ${{ inputs.qlt-home }}
-        RUNNER_OS: ${{ runner.os }}
-        RUNNER_TEMP: ${{ runner.temp }}
-        QLT_VERSION: ${{ inputs.qlt-version }}
-
       shell: bash
       run: |
-        echo -e "\e[0;32m[QLT]\e[0m Determining QLT release for $RUNNER_OS"
-        case $RUNNER_OS in
-          "Linux")
-            RELEASE_PATTERN="qlt-linux-x86_64.zip"
-            ;;
-          *)
-            echo "::error::Unsupported runner operating system $RUNNER_OS"
-            exit 1
-            ;;
-        esac
-        echo -e "\e[0;32m[QLT]\e[0m Selected $RELEASE_PATTERN"
+        echo -e "\e[0;32m[QLT]\e[0m Building and installing QLT from local checkout"
 
-        if [ "$QLT_HOME" == "" ]
-        then
-          echo -e "\e[0;32m[QLT]\e[0m Creating temporary QLT home"
-          QLT_HOME=$(mktemp -d -p $RUNNER_TEMP qlt-home-XXXXXXXXXX)
-        else
-          echo -e "\e[0;32m[QLT]\e[0m Creating CodeQL home at $QLT_HOME"
-          mkdir -p $QLT_HOME
+        make install
+
+        QLT_HOME="$(go env GOPATH)/bin"
+
+        if [ "$ADD_TO_PATH" == "true" ]; then
+          echo -e "\e[0;32m[QLT]\e[0m Adding '$QLT_HOME' to system path"
+          echo "$QLT_HOME" >> $GITHUB_PATH
         fi
 
-        # copy artifact 
-        cp artifacts/qlt-linux-x86_64.zip $QLT_HOME
+        echo -e "\e[0;32m[QLT]\e[0m Setting output parameter qlt-home to $QLT_HOME"
+        echo "qlt-home=$QLT_HOME" >> $GITHUB_OUTPUT
 
-        echo -e "\e[0;32m[QLT]\e[0m Changing directory to $QLT_HOME"
-        pushd $QLT_HOME
-
-        echo -e "\e[0;32m[QLT]\e[0m Downloading QLT version $QLT_VERSION"
-       
-        echo -e "\e[0;32m[QLT]\e[0m Unpacking QLT"
-        unzip $RELEASE_PATTERN
-        
-        if [ "$ADD_TO_PATH" == "true" ]
-        then
-          echo -e "\e[0;32m[QLT]\e[0m Adding QLT '$(pwd)/qlt' to system path"
-          echo "$(pwd)" >> $GITHUB_PATH
-        fi
-
-        echo -e "\e[0;32m[QLT]\e[0m Setting output parameter qlt-home to $(pwd)"
-        echo "qlt-home=$(pwd)" >> $GITHUB_OUTPUT
-
-        popd
         echo -e "\e[0;32m[QLT]\e[0m Done."

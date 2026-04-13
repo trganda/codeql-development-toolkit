@@ -29,9 +29,6 @@ jobs:
     - name: Install QLT
       id: install-qlt
       uses: ./.github/actions/install-qlt
-      with:
-        qlt-version: 'latest'
-        add-to-path: true
 
     - name: Validate QLT Installation
       shell: bash

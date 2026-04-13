@@ -16,7 +16,7 @@ build:
 
 ## install: install the binary to $GOPATH/bin (or ~/go/bin)
 install:
-	go install $(LDFLAGS) .
+	CGO_ENABLED=0 go build $(LDFLAGS) -o $(shell go env GOPATH)/bin/$(BINARY) .
 
 ## test: run all Go tests
 test:

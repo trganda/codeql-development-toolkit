@@ -1,10 +1,16 @@
 name: Fetch and Install QLT
 description: |
-  Fetches and installs QLT.
+  Fetches and installs QLT via go install.
 inputs:
   qlt-version:
     description: |
-      The version of QLT to be downloaded.
+      The version of QLT to be installed (e.g. v0.1.0). Use 'latest' for the latest version.
+    required: false
+    default: 'latest'
+
+  go-version:
+    description: |
+      The Go version to use for building QLT.
     required: false
     default: 'latest'
 
@@ -22,61 +28,39 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ inputs.go-version }}
+
     - name: Install QLT
       id: install-qlt
       env:
-        RUNNER_OS: ${{ runner.os }}
-        RUNNER_TEMP: ${{ runner.temp }}
         ADD_TO_PATH: ${{ inputs.add-to-path }}
         QLT_VERSION: ${{ inputs.qlt-version }}
-        QLT_HOME: ${{ inputs.qlt-home }}
         GITHUB_TOKEN: ${{ github.token }}
-
       shell: bash
       run: |
-        echo -e "\e[0;32m[QLT]\e[0m Determining QLT release for $RUNNER_OS"
-        case $RUNNER_OS in
-          "Linux")
-            RELEASE_PATTERN="qlt-linux-x86_64.zip"
-            ;;
-          *)
-            echo "::error::Unsupported runner operating system $RUNNER_OS"
-            exit 1
-            ;;
-        esac
-        echo -e "\e[0;32m[QLT]\e[0m Selected $RELEASE_PATTERN"
+        echo -e "\e[0;32m[QLT]\e[0m Installing QLT version $QLT_VERSION via go install"
 
-        if [ "$QLT_HOME" == "" ]
-        then
-          echo -e "\e[0;32m[QLT]\e[0m Creating temporary QLT home"
-          QLT_HOME=$(mktemp -d -p $RUNNER_TEMP qlt-home-XXXXXXXXXX)
+        QLT_HOME="$(go env GOPATH)/bin"
+        mkdir -p "$QLT_HOME"
+
+        WORK_DIR=$(mktemp -d)
+        if [ "$QLT_VERSION" == "latest" ]; then
+          GOBIN="$WORK_DIR" go install github.com/trganda/codeql-development-toolkit@latest
         else
-          echo -e "\e[0;32m[QLT]\e[0m Creating CodeQL home at $QLT_HOME"
-          mkdir -p $QLT_HOME
+          GOBIN="$WORK_DIR" go install "github.com/trganda/codeql-development-toolkit@$QLT_VERSION"
+        fi
+        mv "$WORK_DIR/codeql-development-toolkit" "$QLT_HOME/qlt"
+        rm -rf "$WORK_DIR"
+
+        if [ "$ADD_TO_PATH" == "true" ]; then
+          echo -e "\e[0;32m[QLT]\e[0m Adding '$QLT_HOME' to system path"
+          echo "$QLT_HOME" >> $GITHUB_PATH
         fi
 
-        echo -e "\e[0;32m[QLT]\e[0m Changing directory to $QLT_HOME"
-        pushd $QLT_HOME
+        echo -e "\e[0;32m[QLT]\e[0m Setting output parameter qlt-home to $QLT_HOME"
+        echo "qlt-home=$QLT_HOME" >> $GITHUB_OUTPUT
 
-        echo -e "\e[0;32m[QLT]\e[0m Downloading QLT version $QLT_VERSION"
-        if [ "$QLT_VERSION" == "latest" ]
-        then
-          # download the actual bundle
-          gh release download -R advanced-security/codeql-development-toolkit --pattern "$RELEASE_PATTERN"
-        else
-          gh release download "$QLT_VERSION" -R advanced-security/codeql-development-toolkit --pattern "$RELEASE_PATTERN"
-        fi
-        echo -e "\e[0;32m[QLT]\e[0m Unpacking QLT"
-        unzip $RELEASE_PATTERN
-
-        if [ "$ADD_TO_PATH" == "true" ]
-        then
-          echo -e "\e[0;32m[QLT]\e[0m Adding QLT '$(pwd)/qlt' to system path"
-          echo "$(pwd)" >> $GITHUB_PATH
-        fi
-
-        echo -e "\e[0;32m[QLT]\e[0m Setting output parameter qlt-home to $(pwd)"
-        echo "qlt-home=$(pwd)" >> $GITHUB_OUTPUT
-
-        popd
         echo -e "\e[0;32m[QLT]\e[0m Done."
