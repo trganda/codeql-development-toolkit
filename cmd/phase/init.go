@@ -11,9 +11,9 @@ import (
 
 func newInitCmd(base *string) *cobra.Command {
 	var (
-		scope             string
-		overwriteExisting bool
-		codeqlVersion     string
+		scope         string
+		overwrite     bool
+		codeqlVersion string
 	)
 	cmd := &cobra.Command{
 		Use:   "init",
@@ -26,7 +26,7 @@ provided scope and CodeQL CLI version.
 Corresponds to: qlt query init`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing phase init", "base", *base, "scope", scope)
-			if _, err := query.InitWorkspace(*base, scope, codeqlVersion, overwriteExisting); err != nil {
+			if _, err := query.InitWorkspace(*base, scope, codeqlVersion, overwrite); err != nil {
 				return err
 			}
 			return nil
@@ -34,7 +34,7 @@ Corresponds to: qlt query init`,
 	}
 
 	cmd.Flags().StringVar(&scope, "scope", "", "Default CodeQL pack scope (GitHub username or org, e.g. trganda)")
-	cmd.Flags().BoolVar(&overwriteExisting, "overwrite-existing", false, "Overwrite existing files")
+	cmd.Flags().BoolVar(&overwrite, "overwrite", false, "Overwrite existing files")
 	cmd.Flags().StringVar(&codeqlVersion, "codeql-version", codeql.LatestCLIVersion(), "CodeQL CLI version to use (e.g. 2.25.1), auto detect latest version default;")
 	return cmd
 }
