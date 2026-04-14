@@ -70,7 +70,7 @@ func NewCustomBundle(opts *CreateOptions) (*CustomBundle, error) {
 // Library packs are skipped with a warning (future work).
 func (ctx *CustomBundle) Create() error {
 	slog.Info("Extracting base bundle", "archive", ctx.opts.BundlePath)
-	if err := archive.ExtractTarGz(ctx.opts.BundlePath, ctx.tmpDir); err != nil {
+	if err := archive.ExtractZip(ctx.opts.BundlePath, ctx.tmpDir); err != nil {
 		return fmt.Errorf("extracting bundle: %w", err)
 	}
 

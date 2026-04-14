@@ -32,18 +32,36 @@ var downloadClient = &http.Client{Timeout: 30 * time.Minute}
 func Install(base, platform string) error {
 	cfg := config.MustLoadFromFile(base)
 
-	if cfg != nil && cfg.EnableCustomCodeQLBundles {
-		bundleName := cfg.CodeQLCLIBundle
-		if bundleName == "" {
-			return fmt.Errorf("EnableCustomCodeQLBundles is true but CodeQLCLIBundle is not set in qlt.conf.json\n" +
-				"hint: run `qlt codeql set version` first")
-		}
-		slog.Info("Installing CodeQL bundle (EnableCustomCodeQLBundles=true)", "bundle", bundleName)
-		return installBundle(base, bundleName, platform)
+	slog.Info("Installing CodeQL CLI", "version", cfg.CodeQLCLI)
+	return installCLI(cfg.CodeQLCLI, platform)
+}
+
+func Download(version, platform string) (p string, err error) {
+	asset, err := platformAsset(platform)
+	if err != nil {
+		return "", err
 	}
 
-	slog.Info("Installing CodeQL CLI", "version", cfg.CodeQLCLI)
-	return installCLI(base, cfg.CodeQLCLI, platform)
+	installDir, err := paths.CLIInstallDir(version)
+	if err != nil {
+		return "", fmt.Errorf("resolve install directory: %w", err)
+	}
+
+	tag := paths.VersionTag(version)
+	assetURL := fmt.Sprintf("%s/%s/%s", cliDownloadBase, tag, asset)
+	zipPath := filepath.Join(installDir, asset)
+
+	// Skip downlaod when the cached zip already matches.
+	if _, statErr := os.Stat(zipPath); statErr == nil {
+		return zipPath, nil
+	}
+
+	slog.Info("Downloading CodeQL CLI", "version", version)
+	if err := downloadFile(assetURL, zipPath); err != nil {
+		return "", fmt.Errorf("download: %w", err)
+	}
+
+	return zipPath, nil
 }
 
 // bundlePlatformAsset returns the release asset filename for the CodeQL bundle.
@@ -235,6 +253,9 @@ func parseChecksum(content []byte, assetName string) (string, error) {
 // or the override value when platform is non-empty (e.g. "linux64", "osx-arm64").
 func platformAsset(platform string) (string, error) {
 	if platform != "" {
+		if platform == "all" {
+			return "codeql.zip", nil
+		}
 		return "codeql-" + platform + ".zip", nil
 	}
 	switch runtime.GOOS {
@@ -299,69 +320,31 @@ func downloadFile(url, dst string) error {
 // installCLI downloads and unpacks the CodeQL CLI to
 // $HOME/.qlt/packages/<md5(version)>. Skips the download if a local zip with a
 // matching checksum already exists.
-func installCLI(base, version, platform string) error {
-	asset, err := platformAsset(platform)
+func installCLI(version, platform string) error {
+
+	zipPath, err := Download(version, platform)
 	if err != nil {
 		return err
 	}
 
 	installDir, err := paths.CLIInstallDir(version)
 	if err != nil {
-		return fmt.Errorf("resolve install directory: %w", err)
+		return fmt.Errorf("resolve install dir: %w", err)
 	}
-
-	tag := paths.VersionTag(version)
-	assetURL := fmt.Sprintf("%s/%s/%s", cliDownloadBase, tag, asset)
-	zipPath := filepath.Join(installDir, asset)
 	codeqlDir := filepath.Join(installDir, "codeql")
-
-	remoteDigest, err := fetchRemoteChecksum(version, asset, installDir)
-	if err != nil {
-		return fmt.Errorf("resolve remote checksum: %w", err)
+	// Skip extracting when the target directory already exists.
+	if _, statErr := os.Stat(codeqlDir); statErr == nil {
+		slog.Info("CodeQL CLI %s already installed at %s", version, codeqlDir)
+		return nil
 	}
 
-	// Skip download when the cached zip already matches.
-	if _, statErr := os.Stat(zipPath); statErr == nil {
-		localDigest, err := localFileSHA256(zipPath)
-		if err == nil && localDigest == remoteDigest {
-			slog.Info("CodeQL CLI already up-to-date, skipping download", "version", version, "asset", asset)
-			if _, statErr := os.Stat(codeqlDir); statErr == nil {
-				fmt.Printf("CodeQL CLI %s already installed at %s\n", version, codeqlDir)
-				return nil
-			}
-			slog.Info("Extracting existing archive", "zip", zipPath, "dest", installDir)
-			if err := archive.ExtractZip(zipPath, installDir); err != nil {
-				return fmt.Errorf("extract: %w", err)
-			}
-			fmt.Printf("CodeQL CLI %s installed at %s\n", version, codeqlDir)
-			return nil
-		}
-	}
-
-	fmt.Printf("Downloading CodeQL CLI %s (%s)...\n", version, asset)
-	slog.Debug("Downloading", "url", assetURL, "dest", zipPath)
-	if err := downloadFile(assetURL, zipPath); err != nil {
-		return fmt.Errorf("download: %w", err)
-	}
-
-	localDigest, err := localFileSHA256(zipPath)
-	if err != nil {
-		return fmt.Errorf("compute checksum: %w", err)
-	}
-	if localDigest != remoteDigest {
-		_ = os.Remove(zipPath)
-		return fmt.Errorf("checksum mismatch: expected %s, got %s", remoteDigest, localDigest)
-	}
-	slog.Debug("Checksum verified", "digest", localDigest)
-
-	fmt.Printf("Extracting to %s...\n", installDir)
+	slog.Info("Extracting existing archive", "zip", zipPath, "dest", installDir)
 	if err := os.RemoveAll(codeqlDir); err != nil {
 		return fmt.Errorf("remove stale install: %w", err)
 	}
 	if err := archive.ExtractZip(zipPath, installDir); err != nil {
 		return fmt.Errorf("extract: %w", err)
 	}
-
-	fmt.Printf("CodeQL CLI %s installed at %s\n", version, codeqlDir)
+	slog.Info("CodeQL CLI %s installed at %s", version, codeqlDir)
 	return nil
 }

@@ -25,11 +25,7 @@ func newGetVersionCmd(base *string) *cobra.Command {
 			slog.Debug("Executing codeql get version command", "base", *base)
 			cfg := config.MustLoadFromFile(*base)
 
-			slog.Debug("Loaded config", "cli", cfg.CodeQLCLI, "bundle", cfg.CodeQLCLIBundle)
-			slog.Info("---------current settings---------")
 			slog.Info("CodeQL CLI Version", "version", cfg.CodeQLCLI)
-			slog.Info("CodeQL CLI Bundle Version", "version", cfg.CodeQLCLIBundle)
-			slog.Info("----------------------------------")
 			return nil
 		},
 	}

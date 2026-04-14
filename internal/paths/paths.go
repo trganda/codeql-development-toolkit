@@ -57,6 +57,15 @@ func CLIInstallDir(version string) (string, error) {
 	return filepath.Join(home, DefaultPackagesDir, versionHash(version)), nil
 }
 
+func CLIArchivePath(version string) (string, error) {
+	dir, err := CLIInstallDir(version)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(dir, "codeql.zip"), nil
+}
+
 // codeQLBinary returns the absolute path to the codeql executable for the
 // given installed CLI version.
 func codeQLBinary(version string) (string, error) {
@@ -78,19 +87,6 @@ func BundleInstallDir(bundleName string) (string, error) {
 		return "", err
 	}
 	return filepath.Join(home, DefaultBundleDir, versionHash(bundleName)), nil
-}
-
-// bundleCodeQLBinary returns the codeql binary path inside an installed bundle.
-func bundleCodeQLBinary(bundleName string) (string, error) {
-	dir, err := BundleInstallDir(bundleName)
-	if err != nil {
-		return "", err
-	}
-	bin := "codeql"
-	if runtime.GOOS == "windows" {
-		bin = "codeql.exe"
-	}
-	return filepath.Join(dir, "codeql", bin), nil
 }
 
 // BundleArchivePath returns the expected path for a named bundle archive:
@@ -115,13 +111,7 @@ func CustomBundlePath(base, bundleName string) (string, error) {
 // Falls back to codeql found on PATH.
 func ResolveCodeQLBinary(base string) (string, error) {
 	if cfg, _ := config.LoadFromFile(base); cfg != nil {
-		if cfg.EnableCustomCodeQLBundles && cfg.CodeQLCLIBundle != "" {
-			if bin, err := bundleCodeQLBinary(cfg.CodeQLCLIBundle); err == nil {
-				if _, err := os.Stat(bin); err == nil {
-					return bin, nil
-				}
-			}
-		} else if cfg.CodeQLCLI != "" {
+		if cfg.CodeQLCLI != "" {
 			if bin, err := codeQLBinary(cfg.CodeQLCLI); err == nil {
 				if _, err := os.Stat(bin); err == nil {
 					return bin, nil

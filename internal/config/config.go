@@ -26,7 +26,6 @@ type QueryEntry struct {
 // QLTConfig holds the QLT configuration loaded from qlt.conf.json.
 type QLTConfig struct {
 	CodeQLCLI                 string                    `json:"codeQLCLI"`
-	CodeQLCLIBundle           string                    `json:"codeQLCLIBundle"`
 	CodeQLConfiguration       string                    `json:"codeQLConfiguration,omitempty"`
 	EnableCustomCodeQLBundles bool                      `json:"enableCustomCodeQLBundles,omitempty"`
 	Scope                     string                    `json:"scope,omitempty"`

@@ -47,9 +47,6 @@ func InitWorkspace(base, scope, codeqlVersion, bundleVersion string, useBundle, 
 	if cfg.CodeQLCLI == "" || overwriteExisting {
 		cfg.CodeQLCLI = codeqlVersion
 	}
-	if cfg.CodeQLCLIBundle == "" || overwriteExisting {
-		cfg.CodeQLCLIBundle = bundleVersion
-	}
 	if err := cfg.SaveToFile(base); err != nil {
 		return nil, fmt.Errorf("save config: %w", err)
 	}

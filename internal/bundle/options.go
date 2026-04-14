@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/config"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
@@ -50,16 +51,23 @@ func NewCreateOptions(base, bundlePath string, noPrecompile, minimal bool, platf
 	}
 
 	if bundlePath == "" {
-		if cfg.CodeQLCLIBundle == "" {
-			return nil, fmt.Errorf("CodeQLCLIBundle is not set in qlt.conf.json; run 'qlt codeql set version' or provide --bundle")
+		if cfg.CodeQLCLI == "" {
+			return nil, fmt.Errorf("bundle path not provided and CodeQLCLI version not set in qlt.conf.json; set CodeQLCLI or provide --bundle")
 		}
-		bundlePath, err = paths.BundleArchivePath(cfg.CodeQLCLIBundle)
+		bundlePath, err = paths.CLIArchivePath(cfg.CodeQLCLI)
 		if err != nil {
 			return nil, fmt.Errorf("resolving bundle path: %w", err)
 		}
+
+		// Download the base CodeQL CLI bundle if not already present.
+		if _, err := os.Stat(bundlePath); err != nil {
+			if _, err := codeql.Download(cfg.CodeQLCLI, "all"); err != nil {
+				return nil, fmt.Errorf("download CodeQL CLI: %w", err)
+			}
+		}
 	}
 
-	output, err = paths.CustomBundlePath(base, cfg.CodeQLCLIBundle)
+	output, err = paths.CustomBundlePath(base, cfg.CodeQLCLI)
 	if err != nil {
 		return nil, fmt.Errorf("resolving custom bundle output path: %w", err)
 	}

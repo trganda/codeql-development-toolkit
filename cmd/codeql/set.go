@@ -21,7 +21,6 @@ func newSetCmd(base *string) *cobra.Command {
 
 func newSetVersionCmd(base *string) *cobra.Command {
 	cliVersion := release.LatestCLIVersion()
-	bundleVersion := release.LatestBundleVersion()
 
 	cmd := &cobra.Command{
 		Use:   "version",
@@ -37,8 +36,7 @@ following fallback values are used:
 			slog.Debug("Executing codeql set version command", "base", *base)
 
 			cfg := &config.QLTConfig{
-				CodeQLCLI:       cliVersion,
-				CodeQLCLIBundle: bundleVersion,
+				CodeQLCLI: cliVersion,
 			}
 			if err := cfg.SaveToFile(*base); err != nil {
 				return fmt.Errorf("save config: %w", err)
@@ -47,6 +45,5 @@ following fallback values are used:
 		},
 	}
 	cmd.Flags().StringVar(&cliVersion, "cli-version", cliVersion, "CodeQL CLI version (e.g. 2.25.1); auto-resolved if omitted")
-	cmd.Flags().StringVar(&bundleVersion, "bundle-version", bundleVersion, "CodeQL bundle version (e.g. codeql-bundle-v2.25.1); auto-resolved if omitted")
 	return cmd
 }
