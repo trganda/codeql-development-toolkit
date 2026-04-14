@@ -25,12 +25,11 @@ type QueryEntry struct {
 
 // QLTConfig holds the QLT configuration loaded from qlt.conf.json.
 type QLTConfig struct {
-	CodeQLCLI                 string                    `json:"codeQLCLI"`
-	CodeQLConfiguration       string                    `json:"codeQLConfiguration,omitempty"`
-	EnableCustomCodeQLBundles bool                      `json:"enableCustomCodeQLBundles,omitempty"`
-	Scope                     string                    `json:"scope,omitempty"`
-	CodeQLPackConfiguration   []CodeQLPackConfiguration `json:"codeQLPackConfiguration,omitempty"`
-	base                      string
+	CodeQLCLI               string                    `json:"codeQLCLI"`
+	CodeQLConfiguration     string                    `json:"codeQLConfiguration,omitempty"`
+	Scope                   string                    `json:"scope,omitempty"`
+	CodeQLPackConfiguration []CodeQLPackConfiguration `json:"codeQLPackConfiguration,omitempty"`
+	base                    string
 }
 
 // UpsertPackConfig adds or updates the CodeQLPackConfiguration entry for the given name.

@@ -30,7 +30,7 @@ For now, use: qlt validation run check-queries --language <lang>`,
 			if err := utils.CheckWorkspace(*base); err != nil {
 				return err
 			}
-			if err := query.RunPackInstall(*base, lang, ""); err != nil {
+			if err := query.RunPackInstall(*base, lang); err != nil {
 				return err
 			}
 			if err := query.RunCompile(*base, lang, "", 0); err != nil {

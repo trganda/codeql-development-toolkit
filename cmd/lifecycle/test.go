@@ -25,7 +25,7 @@ Requires workspace initialization (run 'qlt lifecycle init' first).`,
 			if err := utils.CheckWorkspace(*base); err != nil {
 				return err
 			}
-			if err := query.RunPackInstall(*base, lang, ""); err != nil {
+			if err := query.RunPackInstall(*base, lang); err != nil {
 				return err
 			}
 			if err := query.RunCompile(*base, lang, "", 0); err != nil {

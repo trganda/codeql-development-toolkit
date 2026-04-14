@@ -10,7 +10,7 @@ import (
 )
 
 func newCompileCmd(base *string) *cobra.Command {
-	var lang, packName string
+	var lang string
 	var threads int
 	cmd := &cobra.Command{
 		Use:   "compile",
@@ -20,18 +20,17 @@ func newCompileCmd(base *string) *cobra.Command {
 Runs the full chain: install → compile.
 Requires workspace initialization (run 'qlt lifecycle init' first).`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing lifecycle compile", "base", *base, "language", lang, "pack", packName, "threads", threads)
+			slog.Debug("Executing lifecycle compile", "base", *base, "language", lang, "threads", threads)
 			if err := utils.CheckWorkspace(*base); err != nil {
 				return err
 			}
-			if err := query.RunPackInstall(*base, lang, packName); err != nil {
+			if err := query.RunPackInstall(*base, lang); err != nil {
 				return err
 			}
-			return query.RunCompile(*base, lang, packName, threads)
+			return query.RunCompile(*base, lang, "", threads)
 		},
 	}
 	cmd.Flags().StringVar(&lang, "language", "", "Filter by language (e.g. go, java)")
-	cmd.Flags().StringVar(&packName, "pack", "", "Filter by pack name (exact match on the pack segment)")
 	cmd.Flags().IntVar(&threads, "threads", 0, "Number of threads (0 = use all available cores)")
 	return cmd
 }

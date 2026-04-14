@@ -16,7 +16,7 @@ import (
 )
 
 func newPublishCmd(base *string) *cobra.Command {
-	var lang, packName string
+	var lang string
 	cmd := &cobra.Command{
 		Use:   "publish",
 		Short: "Publish CodeQL packs to the GitHub Package Registry",
@@ -25,17 +25,17 @@ func newPublishCmd(base *string) *cobra.Command {
 Runs the full chain: install → compile → test → verify → publish.
 Requires workspace initialization (run 'qlt lifecycle init' first).
 
-Scans for packs under <base> (optionally filtered by --language and --pack)
-and publishes each using 'codeql pack publish'.`,
+Scans for packs under <base> (optionally filtered by --language) and
+publishes each using 'codeql pack publish'.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing lifecycle publish", "base", *base, "language", lang, "pack", packName)
+			slog.Debug("Executing lifecycle publish", "base", *base, "language", lang)
 			if err := utils.CheckWorkspace(*base); err != nil {
 				return err
 			}
-			if err := query.RunPackInstall(*base, lang, packName); err != nil {
+			if err := query.RunPackInstall(*base, lang); err != nil {
 				return err
 			}
-			if err := query.RunCompile(*base, lang, packName, 0); err != nil {
+			if err := query.RunCompile(*base, lang, "", 0); err != nil {
 				return err
 			}
 			if err := qlttest.RunUnitTests(*base, lang, "", 4); err != nil {
@@ -43,15 +43,14 @@ and publishes each using 'codeql pack publish'.`,
 			}
 			fmt.Println("verify: not yet fully implemented.")
 			fmt.Println("Run 'qlt validation run check-queries --language <lang>' for available checks.")
-			return runLifecyclePublish(*base, lang, packName)
+			return runLifecyclePublish(*base, lang)
 		},
 	}
 	cmd.Flags().StringVar(&lang, "language", "", "Filter by language (e.g. go, java)")
-	cmd.Flags().StringVar(&packName, "pack", "", "Filter by pack name (exact match on the pack segment)")
 	return cmd
 }
 
-func runLifecyclePublish(base, lang, packName string) error {
+func runLifecyclePublish(base, lang string) error {
 
 	codeql, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
