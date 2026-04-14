@@ -1,4 +1,4 @@
-package lifecycle
+package phase
 
 import (
 	"fmt"
@@ -10,48 +10,30 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/executil"
 	"github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
-	"github.com/trganda/codeql-development-toolkit/internal/query"
-	qlttest "github.com/trganda/codeql-development-toolkit/internal/test"
-	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
-func newPublishCmd(base *string) *cobra.Command {
-	var lang string
-	cmd := &cobra.Command{
+func newPublishCmd(base *string, common *commonFlags) *cobra.Command {
+	return &cobra.Command{
 		Use:   "publish",
 		Short: "Publish CodeQL packs to the GitHub Package Registry",
-		Long: `Publish lifecycle phase: publish CodeQL packs to the GitHub Package Registry.
+		Long: `Publish phase: publish CodeQL packs to the GitHub Package Registry.
 
 Runs the full chain: install → compile → test → verify → publish.
-Requires workspace initialization (run 'qlt lifecycle init' first).
+Requires workspace initialization (run 'qlt phase init' first).
 
 Scans for packs under <base> (optionally filtered by --language) and
 publishes each using 'codeql pack publish'.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing lifecycle publish", "base", *base, "language", lang)
-			if err := utils.CheckWorkspace(*base); err != nil {
+			slog.Debug("Executing phase publish", "base", *base, "language", common.language)
+			if err := runVerifyChain(*base, common); err != nil {
 				return err
 			}
-			if err := query.RunPackInstall(*base, lang); err != nil {
-				return err
-			}
-			if err := query.RunCompile(*base, lang, "", 0); err != nil {
-				return err
-			}
-			if err := qlttest.RunUnitTests(*base, lang, "", 4); err != nil {
-				return err
-			}
-			fmt.Println("verify: not yet fully implemented.")
-			fmt.Println("Run 'qlt validation run check-queries --language <lang>' for available checks.")
-			return runLifecyclePublish(*base, lang)
+			return runPublish(*base, common.language)
 		},
 	}
-	cmd.Flags().StringVar(&lang, "language", "", "Filter by language (e.g. go, java)")
-	return cmd
 }
 
-func runLifecyclePublish(base, lang string) error {
-
+func runPublish(base, lang string) error {
 	codeql, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err

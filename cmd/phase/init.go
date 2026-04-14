@@ -1,4 +1,4 @@
-package lifecycle
+package phase
 
 import (
 	"log/slog"
@@ -18,14 +18,14 @@ func newInitCmd(base *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Initialize the CodeQL development workspace",
-		Long: `Initialize lifecycle phase: set up the CodeQL development environment.
+		Long: `Initialize phase: set up the CodeQL development environment.
 
 Writes codeql-workspace.yml under <base> and updates qlt.conf.json with the
 provided scope and CodeQL CLI version.
 
 Corresponds to: qlt query init`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing lifecycle init", "base", *base, "scope", scope)
+			slog.Debug("Executing phase init", "base", *base, "scope", scope)
 			if _, err := query.InitWorkspace(*base, scope, codeqlVersion, overwriteExisting); err != nil {
 				return err
 			}

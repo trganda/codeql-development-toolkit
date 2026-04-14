@@ -1,20 +1,15 @@
-package lifecycle
+package phase
 
 import (
-	"fmt"
 	"log/slog"
 
 	"github.com/spf13/cobra"
 
 	"github.com/trganda/codeql-development-toolkit/internal/bundle"
-	"github.com/trganda/codeql-development-toolkit/internal/query"
-	qlttest "github.com/trganda/codeql-development-toolkit/internal/test"
-	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
-func newPackageCmd(base *string) *cobra.Command {
+func newPackageCmd(base *string, common *commonFlags) *cobra.Command {
 	var (
-		lang         string
 		bundlePath   string
 		output       string
 		platforms    []string
@@ -23,33 +18,21 @@ func newPackageCmd(base *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "package",
 		Short: "Create a custom CodeQL bundle",
-		Long: `Package lifecycle phase: create a custom CodeQL bundle.
+		Long: `Package phase: create a custom CodeQL bundle.
 
 Runs the full chain: install → compile → test → verify → package.
-Requires workspace initialization (run 'qlt lifecycle init' first).
+Requires workspace initialization (run 'qlt phase init' first).
 
 Reads packs from qlt.conf.json where Bundle=true and builds a custom bundle
 using the base bundle archive downloaded by 'qlt codeql install'.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing lifecycle package", "base", *base, "language", lang)
-			if err := utils.CheckWorkspace(*base); err != nil {
+			slog.Debug("Executing phase package", "base", *base, "language", common.language)
+			if err := runVerifyChain(*base, common); err != nil {
 				return err
 			}
-			if err := query.RunPackInstall(*base, lang); err != nil {
-				return err
-			}
-			if err := query.RunCompile(*base, lang, "", 0); err != nil {
-				return err
-			}
-			if err := qlttest.RunUnitTests(*base, lang, "", 4); err != nil {
-				return err
-			}
-			fmt.Println("verify: not yet fully implemented.")
-			fmt.Println("Run 'qlt validation run check-queries --language <lang>' for available checks.")
-			return RunLifecyclePackage(*base, bundlePath, output, platforms, noPrecompile)
+			return runPackage(*base, bundlePath, output, platforms, noPrecompile)
 		},
 	}
-	cmd.Flags().StringVar(&lang, "language", "", "Filter by language for install/compile/test steps (e.g. go, java)")
 	cmd.Flags().StringVar(&bundlePath, "bundle", "", "Override base bundle archive path (.tar.gz)")
 	cmd.Flags().StringVar(&output, "output", "", "Override output path (.tar.gz)")
 	cmd.Flags().StringArrayVar(&platforms, "platform", nil, "Target platform: linux64, osx64, win64 (repeatable)")
@@ -57,9 +40,8 @@ using the base bundle archive downloaded by 'qlt codeql install'.`,
 	return cmd
 }
 
-// RunLifecyclePackage runs the package phase: it loads config, resolves paths,
-// and delegates to bundle.Create.
-func RunLifecyclePackage(base, bundlePath, output string, platforms []string, noPrecompile bool) error {
+// runPackage loads config, resolves paths, and delegates to bundle.Create.
+func runPackage(base, bundlePath, output string, platforms []string, noPrecompile bool) error {
 	opts, err := bundle.NewCreateOptions(base, bundlePath, noPrecompile, false, platforms)
 	if err != nil || opts.Validate() != nil {
 		return err

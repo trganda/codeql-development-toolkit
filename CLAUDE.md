@@ -32,9 +32,10 @@ go test ./cmd/query/...
 cmd/
   root.go          — global flags: --base, --automation-type, --development, --verbose
   version.go       — Version var injected via -ldflags at build time
-  lifecycle/       — lifecycle init / install / compile / test / verify / package / publish
+  phase/           — phase init / install / compile / test / verify / package / publish
                      high-level lifecycle phases; each phase runs the full chain from install
-                     up to and including the requested phase (Maven-style)
+                     up to and including the requested phase (Maven-style).
+                     --language, --num-threads, --codeql-args are persistent flags on the parent.
   query/           — query generate new-query / run
                      --use-bundle is a persistent flag scoped to this subcommand only
   codeql/          — codeql set version / get version  (auto-resolves from GitHub API)
@@ -73,9 +74,9 @@ The rule of thumb: if a function doesn't reference `*cobra.Command` or flag vari
 - `internal/language` — helpers mapping language names to directories (`c`/`cpp` → `"cpp"`), CodeQL import names, and source file extensions.
 - `internal/paths` — content-addressed path layout under `$HOME/.qlt/`. All versioned directories use an MD5 hash of the version string. Key functions: `CLIInstallDir`, `BundleInstallDir`, `CustomBundlePath`, `BundleArchivePath`, `ResolveCodeQLBinary`.
 - `internal/codeql` — CLI/bundle download, checksum verification, platform detection, and extraction. `Install(base, version, platform)` is the single entry point used by `cmd/codeql install`.
-- `internal/query` — CodeQL query execution (`RunQuery`), compilation (`RunCompile`), pack dependency installation (`RunPackInstall`), and workspace initialisation (`InitWorkspace`). Used by both `cmd/query` and `cmd/lifecycle`.
-- `internal/test` — `RunUnitTests(base, lang, codeqlArgs, numThreads)` resolves and runs all `.qlref` test files for a language. Used by both `cmd/test run` and `cmd/lifecycle test`.
-- `internal/pack` — `FindQlpacks(base, lang, pack)` runs `codeql pack ls` and returns `[]Entry`; used by `cmd/pack list`, `cmd/pack publish`, and `cmd/lifecycle publish`.
+- `internal/query` — CodeQL query execution (`RunQuery`), compilation (`RunCompile`), pack dependency installation (`RunPackInstall`), and workspace initialisation (`InitWorkspace`). Used by both `cmd/query` and `cmd/phase`.
+- `internal/test` — `RunUnitTests(base, lang, codeqlArgs, numThreads)` resolves and runs all `.qlref` test files for a language. Used by both `cmd/test run` and `cmd/phase test`.
+- `internal/pack` — `FindQlpacks(base, lang, pack)` runs `codeql pack ls` and returns `[]Entry`; used by `cmd/pack list`, `cmd/pack publish`, and `cmd/phase publish`.
 - `internal/matrix` — `Build(osVersions, cliVersion)` constructs and marshals a GitHub Actions CI matrix JSON.
 
 ## Logger
@@ -132,21 +133,23 @@ $HOME/.qlt/
 
 ## Lifecycle
 
-`qlt lifecycle` provides a Maven-inspired, phase-oriented workflow on top of the granular commands. Each phase delegates entirely to an `internal/` package — no business logic lives in `cmd/lifecycle/`.
+`qlt phase` provides a Maven-inspired, phase-oriented workflow on top of the granular commands. Each phase delegates entirely to an `internal/` package — no business logic lives in `cmd/phase/`.
 
 | Phase | Command | Delegates to | Status |
 |---|---|---|---|
-| initialize | `qlt lifecycle init` | `internal/query.InitWorkspace` | implemented |
-| install | `qlt lifecycle install` | `internal/query.RunPackInstall` | implemented |
-| compile | `qlt lifecycle compile` | `internal/query.RunCompile` | implemented |
-| test | `qlt lifecycle test` | `internal/test.RunUnitTests` | implemented |
-| verify | `qlt lifecycle verify` | — | placeholder |
-| package | `qlt lifecycle package` | `internal/bundle.Create` | implemented |
-| publish | `qlt lifecycle publish` | `internal/pack.FindQlpacks` + codeql publish | implemented |
+| initialize | `qlt phase init` | `internal/query.InitWorkspace` | implemented |
+| install | `qlt phase install` | `internal/query.RunPackInstall` | implemented |
+| compile | `qlt phase compile` | `internal/query.RunCompile` | implemented |
+| test | `qlt phase test` | `internal/test.RunUnitTests` | implemented |
+| verify | `qlt phase verify` | — | placeholder |
+| package | `qlt phase package` | `internal/bundle.Create` | implemented |
+| publish | `qlt phase publish` | `internal/pack.FindQlpacks` + codeql publish | implemented |
 
-**Phase chaining:** Every phase except `init` runs the full chain from `install` up to and including the requested phase. For example, `qlt lifecycle test` runs install → compile → test automatically. `init` is never auto-run — it must be invoked explicitly.
+**Phase chaining:** Every phase except `init` runs the full chain from `install` up to and including the requested phase. For example, `qlt phase test` runs install → compile → test automatically. `init` is never auto-run — it must be invoked explicitly.
 
-**Workspace guard:** All phases except `init` check that `codeql-workspace.yml` exists under `--base`. If not, they error with guidance to run `lifecycle init` first.
+**Workspace guard:** The parent `phase` command has a `PersistentPreRunE` that runs `utils.CheckWorkspace` for every subcommand except `init`. If `codeql-workspace.yml` is missing, non-init phases fail with guidance to run `phase init` first.
+
+**Common flags:** `--language`, `--num-threads` (default 0 = all cores), and `--codeql-args` are persistent flags on the parent `phase` command and inherited by every subcommand. Phase-specific flags (e.g. `--scope`, `--bundle`, `--platform`) stay on the individual subcommands.
 
 **Two supported flows (parallel alternatives):**
 1. `init → ... → verify → publish`

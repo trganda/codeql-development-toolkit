@@ -31,7 +31,7 @@ const DefaultPackagesDir = ".qlt/packages"
 const DefaultBundleDir = ".qlt/bundle"
 
 // DefaultCustomBundleDir is the directory (relative to --base) where qlt
-// stores custom CodeQL bundles created by `qlt lifecycle package`. The layout is:
+// stores custom CodeQL bundles created by `qlt phase package`. The layout is:
 //
 //	<base>/target/custom-bundle/<md5(bundleName)>/codeql-bundle.tar.gz
 const DefaultCustomBundleDir = "target/custom-bundle"
@@ -100,7 +100,7 @@ func BundleArchivePath(bundleName string) (string, error) {
 }
 
 // CustomBundlePath returns the output path for a custom bundle created by
-// `qlt lifecycle package`: <base>/target/custom-bundle/<md5(bundleName)>/codeql-bundle.tar.gz.
+// `qlt phase package`: <base>/target/custom-bundle/<md5(bundleName)>/codeql-bundle.tar.gz.
 func CustomBundlePath(base, bundleName string) (string, error) {
 	return filepath.Join(base, DefaultCustomBundleDir, versionHash(bundleName)), nil
 }

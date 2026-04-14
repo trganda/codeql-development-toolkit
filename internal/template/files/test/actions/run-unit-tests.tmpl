@@ -58,7 +58,7 @@ jobs:
       - name: Install QL Packs
         shell: bash
         run: |
-          qlt lifecycle install
+          qlt phase install
 
       - name: Run test suites
         id: run-test-suites
@@ -68,7 +68,7 @@ jobs:
           RUNNER_TMP: ${{ runner.temp }}
         shell: bash
         run: >
-          qlt lifecycle test
+          qlt phase test
           --codeql-args "[[ .CodeqlArgs ]]"
           --num-threads [[ .NumThreads ]]
           --language [[ .Language ]]
