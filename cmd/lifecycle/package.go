@@ -3,14 +3,11 @@ package lifecycle
 import (
 	"fmt"
 	"log/slog"
-	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
 	"github.com/trganda/codeql-development-toolkit/internal/bundle"
 	"github.com/trganda/codeql-development-toolkit/internal/config"
-	"github.com/trganda/codeql-development-toolkit/internal/paths"
 	"github.com/trganda/codeql-development-toolkit/internal/query"
 	qlttest "github.com/trganda/codeql-development-toolkit/internal/test"
 	"github.com/trganda/codeql-development-toolkit/internal/utils"
@@ -50,7 +47,7 @@ using the base bundle archive downloaded by 'qlt codeql install'.`,
 			}
 			fmt.Println("verify: not yet fully implemented.")
 			fmt.Println("Run 'qlt validation run check-queries --language <lang>' for available checks.")
-			return runLifecyclePackage(*base, bundlePath, output, platforms, noPrecompile)
+			return RunLifecyclePackage(*base, bundlePath, output, platforms, noPrecompile)
 		},
 	}
 	cmd.Flags().StringVar(&lang, "language", "", "Filter by language for install/compile/test steps (e.g. go, java)")
@@ -61,62 +58,27 @@ using the base bundle archive downloaded by 'qlt codeql install'.`,
 	return cmd
 }
 
-func runLifecyclePackage(base, bundlePath, output string, platforms []string, noPrecompile bool) error {
+// RunLifecyclePackage runs the package phase: it loads config, resolves paths,
+// and delegates to bundle.Create.
+func RunLifecyclePackage(base, bundlePath, output string, platforms []string, noPrecompile bool) error {
 	cfg, err := config.MustLoadFromFile(base)
 	if err != nil {
 		return err
 	}
-
-	// Collect packs configured for bundling.
-	var packs []string
-	for _, p := range cfg.CodeQLPackConfiguration {
-		if p.Bundle {
-			packs = append(packs, p.Name)
-		}
+	packs, err := bundle.CollectConfiguredPacks(cfg)
+	if err != nil {
+		return err
 	}
-	if len(packs) == 0 {
-		return fmt.Errorf("no packs configured for bundling in qlt.conf.json; set Bundle=true on at least one CodeQLPackConfiguration entry")
+	bundlePath, err = bundle.ResolveBundleArchive(cfg, bundlePath)
+	if err != nil {
+		return err
 	}
-
-	// Resolve the base bundle archive.
-	if bundlePath == "" {
-		if cfg.CodeQLCLIBundle == "" {
-			return fmt.Errorf("CodeQLCLIBundle is not set in qlt.conf.json; run 'qlt codeql set version' or provide --bundle")
-		}
-		bundlePath, err = paths.BundleArchivePath(cfg.CodeQLCLIBundle)
-		if err != nil {
-			return fmt.Errorf("resolving bundle path: %w", err)
-		}
+	output, err = bundle.ResolveOutputPath(base, cfg, output)
+	if err != nil {
+		return err
 	}
-
-	if _, err := os.Stat(bundlePath); err != nil {
-		return fmt.Errorf("bundle archive not found at %s: %w", bundlePath, err)
-	}
-
-	// Resolve default output path.
-	if output == "" {
-		if cfg.CodeQLCLIBundle == "" {
-			return fmt.Errorf("CodeQLCLIBundle is not set in qlt.conf.json; provide --output or run 'qlt codeql set version'")
-		}
-		output, err = paths.CustomBundlePath(cfg.CodeQLCLIBundle)
-		if err != nil {
-			return fmt.Errorf("resolving custom bundle output path: %w", err)
-		}
-		slog.Info("Using default custom bundle output path", "path", output)
-	}
-
-	// Ensure output directory exists.
-	if err := os.MkdirAll(filepath.Dir(output), 0755); err != nil {
-		return fmt.Errorf("create output directory: %w", err)
-	}
-
-	// Validate platforms.
-	for _, p := range platforms {
-		switch p {
-		case "linux64", "osx64", "win64":
-		default:
-			return fmt.Errorf("unknown platform %q; must be one of: linux64, osx64, win64", p)
-		}
+	if err := bundle.ValidatePlatforms(platforms); err != nil {
+		return err
 	}
 
 	slog.Info("Creating custom CodeQL bundle",

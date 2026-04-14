@@ -1,5 +1,10 @@
 package bundle
 
+// Scaffolding for customization and library pack handling. The simplified
+// Create flow (see create.go) only processes query-kind packs; ResolveDeps
+// and BuildProcessingOrder are retained here so the customization and library
+// stubs in process_stubs.go can adopt them when implemented.
+
 import "fmt"
 
 // versionMatches returns true if candidate satisfies the version spec.
