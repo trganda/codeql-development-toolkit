@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/query"
-	"github.com/trganda/codeql-development-toolkit/internal/release"
 )
 
 func newInitCmd(base *string) *cobra.Command {
@@ -35,6 +35,6 @@ Corresponds to: qlt query init`,
 
 	cmd.Flags().StringVar(&scope, "scope", "", "Default CodeQL pack scope (GitHub username or org, e.g. trganda)")
 	cmd.Flags().BoolVar(&overwriteExisting, "overwrite-existing", false, "Overwrite existing files")
-	cmd.Flags().StringVar(&codeqlVersion, "codeql-version", release.LatestCLIVersion(), "CodeQL CLI version to use (e.g. 2.25.1), auto detect latest version default;")
+	cmd.Flags().StringVar(&codeqlVersion, "codeql-version", codeql.LatestCLIVersion(), "CodeQL CLI version to use (e.g. 2.25.1), auto detect latest version default;")
 	return cmd
 }

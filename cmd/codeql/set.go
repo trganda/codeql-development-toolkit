@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/config"
-	"github.com/trganda/codeql-development-toolkit/internal/release"
 )
 
 func newSetCmd(base *string) *cobra.Command {
@@ -20,7 +20,7 @@ func newSetCmd(base *string) *cobra.Command {
 }
 
 func newSetVersionCmd(base *string) *cobra.Command {
-	cliVersion := release.LatestCLIVersion()
+	cliVersion := codeql.LatestCLIVersion()
 
 	cmd := &cobra.Command{
 		Use:   "version",
@@ -30,8 +30,8 @@ func newSetVersionCmd(base *string) *cobra.Command {
 If --cli-version or --bundle-version are omitted the latest release is
 fetched from GitHub's API automatically. If that request fails the
 following fallback values are used:
-  CLI:    ` + release.FallbackCLIVersion + `
-  Bundle: ` + release.FallbackBundleVersion,
+  CLI:    ` + codeql.FallbackCLIVersion + `
+  Bundle: ` + codeql.FallbackBundleVersion,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing codeql set version command", "base", *base)
 

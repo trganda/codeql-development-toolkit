@@ -1,6 +1,6 @@
-// Package release resolves the latest CodeQL release versions from GitHub's
+// Resolves the latest CodeQL release versions from GitHub's
 // redirect headers, avoiding the rate-limited JSON API.
-package release
+package codeql
 
 import (
 	"fmt"
