@@ -15,6 +15,7 @@ func NewCommand(base, automationType *string) *cobra.Command {
 	cmd.AddCommand(newListCmd(base))
 	cmd.AddCommand(newSetCmd(base))
 	cmd.AddCommand(newRunCmd(base))
+	cmd.AddCommand(newGenerateCmd(base))
 	return cmd
 }
 

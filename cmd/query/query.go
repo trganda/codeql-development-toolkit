@@ -10,14 +10,11 @@ import (
 
 // NewCommand returns the `query` cobra command.
 func NewCommand(base, automationType *string) *cobra.Command {
-	var useBundle bool
 	cmd := &cobra.Command{
 		Use:   "query",
 		Short: "Query feature commands",
 	}
-	cmd.PersistentFlags().BoolVar(&useBundle, "use-bundle", false, "Use a custom CodeQL bundle")
 
-	cmd.AddCommand(newGenerateCmd(base, &useBundle))
 	cmd.AddCommand(newRunCmd(base))
 	return cmd
 }

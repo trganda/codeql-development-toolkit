@@ -9,8 +9,8 @@ import (
 
 	"github.com/trganda/codeql-development-toolkit/cmd/bundle"
 	"github.com/trganda/codeql-development-toolkit/cmd/codeql"
-	"github.com/trganda/codeql-development-toolkit/cmd/phase"
 	"github.com/trganda/codeql-development-toolkit/cmd/pack"
+	"github.com/trganda/codeql-development-toolkit/cmd/phase"
 	"github.com/trganda/codeql-development-toolkit/cmd/query"
 	"github.com/trganda/codeql-development-toolkit/cmd/test"
 	"github.com/trganda/codeql-development-toolkit/cmd/validation"

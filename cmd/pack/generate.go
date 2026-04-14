@@ -1,4 +1,4 @@
-package query
+package pack
 
 import (
 	"fmt"
@@ -14,27 +14,30 @@ import (
 	tmpl "github.com/trganda/codeql-development-toolkit/internal/template"
 )
 
-// newGenerateCmd returns `query generate`.
-func newGenerateCmd(base *string, useBundle *bool) *cobra.Command {
+// newGenerateCmd returns `pack generate`.
+func newGenerateCmd(base *string) *cobra.Command {
+	var bundle bool
 	gen := &cobra.Command{
 		Use:   "generate",
 		Short: "Generate CodeQL query scaffolding",
 	}
-	gen.AddCommand(newNewQueryCmd(base, useBundle))
+	gen.AddCommand(newNewQueryCmd(base, bundle))
+
+	gen.Flags().BoolVar(&bundle, "bundle", false, "Add to a custom CodeQL bundle")
 	return gen
 }
 
-// newNewQueryCmd returns `query generate new-query`.
-func newNewQueryCmd(base *string, useBundle *bool) *cobra.Command {
+// newNewQueryCmd returns `pack generate new-query`.
+func newNewQueryCmd(base *string, useBundle bool) *cobra.Command {
 	var (
-		queryName         string
-		lang              string
-		pack              string
-		scope             string
-		queryKind         string
-		createQueryPack   bool
-		createTests       bool
-		overwriteExisting bool
+		queryName       string
+		lang            string
+		pack            string
+		scope           string
+		queryKind       string
+		createQueryPack bool
+		createTests     bool
+		overwrite       bool
 	)
 
 	cmd := &cobra.Command{
@@ -42,19 +45,19 @@ func newNewQueryCmd(base *string, useBundle *bool) *cobra.Command {
 		Short: "Create a new CodeQL query with scaffolding",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing query generate new-query command",
-				"name", queryName, "language", lang, "pack", pack, "kind", queryKind, "use-bundle", *useBundle)
-			return runNewQuery(*base, queryName, lang, pack, scope, queryKind, createQueryPack, createTests, overwriteExisting, *useBundle)
+				"name", queryName, "language", lang, "pack", pack, "kind", queryKind, "use-bundle", useBundle)
+			return runNewQuery(*base, queryName, lang, pack, scope, queryKind, createQueryPack, createTests, overwrite, useBundle)
 		},
 	}
 
 	cmd.Flags().StringVar(&queryName, "query-name", "", "Name of the query")
 	cmd.Flags().StringVar(&lang, "language", "", "Language (c|cpp|csharp|go|java|javascript|python|ruby)")
 	cmd.Flags().StringVar(&pack, "pack", "", "CodeQL pack name")
-	cmd.Flags().StringVar(&scope, "scope", "", "CodeQL pack scope (optional)")
+	cmd.Flags().StringVar(&scope, "scope", "", "CodeQL pack scope (optional), use globally configured scope in qlt.conf.json if not provided")
 	cmd.Flags().StringVar(&queryKind, "query-kind", "problem", "Query kind (problem|path-problem)")
 	cmd.Flags().BoolVar(&createQueryPack, "create-query-pack", true, "Create query pack definition")
 	cmd.Flags().BoolVar(&createTests, "create-tests", true, "Create test scaffolding")
-	cmd.Flags().BoolVar(&overwriteExisting, "overwrite-existing", false, "Overwrite existing files")
+	cmd.Flags().BoolVar(&overwrite, "overwrite", false, "Overwrite existing files")
 	cmd.MarkFlagRequired("query-name")
 	cmd.MarkFlagRequired("language")
 	cmd.MarkFlagRequired("pack")
