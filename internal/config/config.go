@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -74,12 +73,17 @@ func LoadFromFile(base string) (*QLTConfig, error) {
 }
 
 // MustLoadFromFile loads the config or exits with an error.
-func MustLoadFromFile(base string) (*QLTConfig, error) {
+func MustLoadFromFile(base string) *QLTConfig {
 	path := ConfigFilePath(base)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return nil, fmt.Errorf("cannot read values from missing file %s", path)
+		panic(err)
 	}
-	return LoadFromFile(base)
+
+	c, err := LoadFromFile(base)
+	if err != nil {
+		panic(err)
+	}
+	return c
 }
 
 // SaveToFile writes the config to qlt.conf.json in the base directory,

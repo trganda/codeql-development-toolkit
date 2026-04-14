@@ -33,10 +33,7 @@ Examples:
 			name := args[0]
 			slog.Debug("Executing pack set command", "base", *base, "pack", name)
 
-			cfg, err := config.MustLoadFromFile(*base)
-			if err != nil {
-				return err
-			}
+			cfg := config.MustLoadFromFile(*base)
 
 			entry, idx := findPack(cfg, name)
 			if entry == nil {

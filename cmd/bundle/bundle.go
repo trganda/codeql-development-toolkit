@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/trganda/codeql-development-toolkit/internal/bundle"
-	"github.com/trganda/codeql-development-toolkit/internal/config"
 )
 
 // NewCommand returns the `bundle` cobra command.
@@ -49,42 +48,24 @@ func newCreateCmd(base *string) *cobra.Command {
 }
 
 func runBundleCreate(base, bundlePath, output string, platforms []string, noPrecompile, minimal bool) error {
-	cfg, err := config.MustLoadFromFile(base)
-	if err != nil {
+	opts, err := bundle.NewCreateOptions(base, bundlePath, noPrecompile, minimal, platforms)
+	if err != nil || opts.Validate() != nil {
 		return err
 	}
-	packs, err := bundle.CollectConfiguredPacks(cfg)
+
+	bundleCtx, err := bundle.NewCustomBundle(opts)
 	if err != nil {
-		return err
-	}
-	bundlePath, err = bundle.ResolveBundleArchive(cfg, bundlePath)
-	if err != nil {
-		return err
-	}
-	output, err = bundle.ResolveOutputPath(base, cfg, output)
-	if err != nil {
-		return err
-	}
-	if err := bundle.ValidatePlatforms(platforms); err != nil {
 		return err
 	}
 
 	slog.Info("Creating custom CodeQL bundle",
 		"base-bundle", bundlePath,
 		"output", output,
-		"packs", packs,
+		"packs", opts.Packs,
 		"platforms", platforms,
 	)
 
-	return bundle.Create(bundle.CreateOptions{
-		BundlePath:   bundlePath,
-		WorkspaceDir: base,
-		Packs:        packs,
-		OutputPath:   output,
-		Platforms:    platforms,
-		NoPrecompile: noPrecompile,
-		Minimal:      minimal,
-	})
+	return bundleCtx.Create()
 }
 
 func newRunCmd(base *string) *cobra.Command {

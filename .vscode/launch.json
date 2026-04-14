@@ -11,7 +11,7 @@
                 "bundle",
                 "create",
                 "--base",
-                "${workspaceFolder}/temp",
+                "${workspaceFolder}/dist/temp",
             ]
         }
     ]

@@ -16,10 +16,7 @@ import (
 // RunUnitTests resolves and runs all CodeQL unit tests for the given language
 // under base, reporting a summary via slog.
 func RunUnitTests(base, lang, codeqlArgs string, numThreads int) error {
-	cfg, err := config.MustLoadFromFile(base)
-	if err != nil {
-		return err
-	}
+	cfg := config.MustLoadFromFile(base)
 
 	slog.Info("Executing unit tests",
 		"language", lang,

@@ -23,10 +23,8 @@ func newGetVersionCmd(base *string) *cobra.Command {
 		Short: "Get the current CodeQL CLI and bundle version",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing codeql get version command", "base", *base)
-			cfg, err := config.MustLoadFromFile(*base)
-			if err != nil {
-				return err
-			}
+			cfg := config.MustLoadFromFile(*base)
+
 			slog.Debug("Loaded config", "cli", cfg.CodeQLCLI, "bundle", cfg.CodeQLCLIBundle)
 			slog.Info("---------current settings---------")
 			slog.Info("CodeQL CLI Version", "version", cfg.CodeQLCLI)

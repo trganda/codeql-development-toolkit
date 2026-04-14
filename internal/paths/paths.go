@@ -106,7 +106,7 @@ func BundleArchivePath(bundleName string) (string, error) {
 // CustomBundlePath returns the output path for a custom bundle created by
 // `qlt lifecycle package`: <base>/target/custom-bundle/<md5(bundleName)>/codeql-bundle.tar.gz.
 func CustomBundlePath(base, bundleName string) (string, error) {
-	return filepath.Join(base, DefaultCustomBundleDir, versionHash(bundleName), "codeql-bundle.tar.gz"), nil
+	return filepath.Join(base, DefaultCustomBundleDir, versionHash(bundleName)), nil
 }
 
 // ResolveCodeQLBinary returns the path to the codeql binary. When

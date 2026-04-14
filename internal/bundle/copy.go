@@ -1,34 +1,10 @@
 package bundle
 
 import (
-	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"path/filepath"
 )
-
-// copyPackTo copies a pack's on-disk directory under destRoot/<scope>/<name>/<version>
-// and returns a new Pack pointing at the copy.
-func copyPackTo(p *Pack, destRoot string) (*Pack, error) {
-	scope := p.Config.Scope()
-	name := p.Config.PackName()
-	version := p.Config.Version
-	if version == "" {
-		version = "0.0.0"
-	}
-	destDir := filepath.Join(destRoot, scope, name, version)
-	slog.Debug("Copying pack", "from", p.Dir(), "to", destDir)
-	if err := copyDir(p.Dir(), destDir); err != nil {
-		return nil, fmt.Errorf("copying pack %s: %w", p.Config.Name, err)
-	}
-	return &Pack{
-		YmlPath: filepath.Join(destDir, filepath.Base(p.YmlPath)),
-		Config:  p.Config,
-		Kind:    p.Kind,
-		Deps:    p.Deps,
-	}, nil
-}
 
 // copyDir recursively copies src to dst, preserving symlinks.
 func copyDir(src, dst string) error {
