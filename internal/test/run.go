@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/trganda/codeql-development-toolkit/internal/betterjson"
 	"github.com/trganda/codeql-development-toolkit/internal/config"
 	"github.com/trganda/codeql-development-toolkit/internal/executil"
 	"github.com/trganda/codeql-development-toolkit/internal/language"
@@ -46,7 +45,7 @@ func RunUnitTests(base, lang, codeqlArgs string, numThreads int) error {
 
 	slog.Info("Resolved test files", "count", len(resolvedTests))
 
-	overall := betterjson.Summary{}
+	overall := Summary{}
 
 	for _, testFile := range resolvedTests {
 		slog.Debug("Running test file", "file", testFile)
@@ -67,12 +66,12 @@ func RunUnitTests(base, lang, codeqlArgs string, numThreads int) error {
 		if res == nil || len(res.Stdout) == 0 {
 			continue
 		}
-		events, parseErr := betterjson.Parse(res.Stdout)
+		events, parseErr := Parse(res.Stdout)
 		if parseErr != nil {
 			slog.Warn("Could not parse betterjson output, dumping raw stdout", "error", parseErr, "output", res.StdoutString())
 			continue
 		}
-		summary, testErr := betterjson.LogEvents(events)
+		summary, testErr := LogEvents(events)
 		overall.Total += summary.Total
 		overall.Passed += summary.Passed
 		overall.Failed += summary.Failed

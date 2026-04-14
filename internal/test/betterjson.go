@@ -1,5 +1,5 @@
-// Package betterjson parses and interprets the CodeQL betterjson test output format.
-package betterjson
+// Parses and interprets the CodeQL betterjson test output format.
+package test
 
 import (
 	"encoding/json"
