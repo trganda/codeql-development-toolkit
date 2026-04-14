@@ -3,6 +3,7 @@ package lifecycle
 import (
 	"fmt"
 	"log/slog"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -51,33 +52,36 @@ and publishes each using 'codeql pack publish'.`,
 }
 
 func runLifecyclePublish(base, lang, packName string) error {
-	entries, err := pack.FindQlpacks(base, lang, packName)
-	if err != nil {
-		return err
-	}
-	if len(entries) == 0 {
-		return fmt.Errorf("no CodeQL packs found to publish")
-	}
 
 	codeql, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err
 	}
-	runner := executil.NewRunner(codeql)
 
-	for _, e := range entries {
-		slog.Info("Publishing pack", "name", e.Name, "version", e.Version, "dir", e.Dir)
-		res, err := runner.Run("pack", "publish", e.Dir)
+	targetDir := base
+	if lang != "" {
+		targetDir = filepath.Join(targetDir, lang)
+	}
+
+	packs, err := pack.ListPacks(codeql, targetDir)
+	if err != nil {
+		return fmt.Errorf("list packs: %w", err)
+	}
+
+	runner := executil.NewRunner(codeql)
+	for _, p := range packs {
+		slog.Info("Publishing pack", "name", p.Config.FullName(), "version", p.Config.Version, "dir", p.Dir())
+		res, err := runner.Run("pack", "publish", p.Dir())
 		if err != nil {
 			if res != nil && len(res.Stderr) > 0 {
-				slog.Debug("codeql pack publish stderr", "pack", e.Name, "output", res.StderrString())
+				slog.Debug("codeql pack publish stderr", "pack", p.Config.FullName(), "output", res.StderrString())
 			}
-			return fmt.Errorf("publish %s: %w", e.Name, err)
+			return fmt.Errorf("publish %s: %w", p.Config.FullName(), err)
 		}
 		if len(res.Stdout) > 0 {
-			slog.Debug("codeql pack publish stdout", "pack", e.Name, "output", res.StdoutString())
+			slog.Debug("codeql pack publish stdout", "pack", p.Config.FullName(), "output", res.StdoutString())
 		}
-		fmt.Printf("Published %s@%s\n", e.Name, e.Version)
+		slog.Info("Published", "name", p.Config.FullName(), "version", p.Config.Version)
 	}
 	return nil
 }

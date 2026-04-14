@@ -16,10 +16,10 @@ func newInstallCmd(base *string) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing codeql install command",
 				"base", *base, "version", version, "platform", platform)
-			return codeql.Install(*base, version, nil)
+			return codeql.Install(*base, platform)
 		},
 	}
-	cmd.Flags().StringVar(&version, "version", "", "CodeQL CLI version to install (e.g. 2.25.1); reads qlt.conf.json when omitted")
+
 	cmd.Flags().StringVar(&platform, "platform", "", "Platform override (e.g. linux64, osx64, win64, all); auto-detected when empty. Use 'all' to download the multi-arch bundle.")
 	return cmd
 }

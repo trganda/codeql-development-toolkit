@@ -5,7 +5,11 @@ package bundle
 // and BuildProcessingOrder are retained here so the customization and library
 // stubs in process_stubs.go can adopt them when implemented.
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/trganda/codeql-development-toolkit/internal/pack"
+)
 
 // versionMatches returns true if candidate satisfies the version spec.
 // Handles "*", exact versions, and range specs (^, >=) by accepting any candidate
@@ -26,8 +30,8 @@ func versionMatches(spec, candidate string) bool {
 
 // ResolveDeps populates the Deps field on each workspace pack by looking up
 // dependencies in the combined allPacks slice (workspace + bundle packs).
-func ResolveDeps(workspacePacks, allPacks []*Pack) error {
-	byName := make(map[string]*Pack, len(allPacks))
+func ResolveDeps(workspacePacks, allPacks []*pack.Pack) error {
+	byName := make(map[string]*pack.Pack, len(allPacks))
 	for _, p := range allPacks {
 		byName[p.Config.Name] = p
 	}

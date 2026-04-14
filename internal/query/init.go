@@ -58,6 +58,8 @@ func InitWorkspace(base, scope, codeqlVersion, bundleVersion string, useBundle, 
 	}
 	if scope != "" {
 		slog.Info("Saved scope to config", "scope", scope)
+	} else {
+		slog.Warn("Scope was not specificed")
 	}
 
 	return cfg, nil

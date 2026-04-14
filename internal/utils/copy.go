@@ -1,4 +1,4 @@
-package bundle
+package utils
 
 import (
 	"io"
@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 )
 
-// copyDir recursively copies src to dst, preserving symlinks.
-func copyDir(src, dst string) error {
+// CopyDir recursively copies src to dst, preserving symlinks.
+func CopyDir(src, dst string) error {
 	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -35,11 +35,11 @@ func copyDir(src, dst string) error {
 		if info.IsDir() {
 			return os.MkdirAll(target, info.Mode())
 		}
-		return copyFile(path, target, info.Mode())
+		return CopyFile(path, target, info.Mode())
 	})
 }
 
-func copyFile(src, dst string, mode os.FileMode) error {
+func CopyFile(src, dst string, mode os.FileMode) error {
 	in, err := os.Open(src)
 	if err != nil {
 		return err

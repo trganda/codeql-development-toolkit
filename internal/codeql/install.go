@@ -29,14 +29,8 @@ var downloadClient = &http.Client{Timeout: 30 * time.Minute}
 // When EnableCustomCodeQLBundles is true in config, the bundle is installed;
 // otherwise the standalone CLI is used. version overrides the config value for
 // CLI installs.
-func Install(base, platform string, cfg *config.QLTConfig) error {
-	if cfg == nil {
-		var err error
-		cfg, err = config.LoadFromFile(base)
-		if err != nil {
-			return fmt.Errorf("load config: %w", err)
-		}
-	}
+func Install(base, platform string) error {
+	cfg := config.MustLoadFromFile(base)
 
 	if cfg != nil && cfg.EnableCustomCodeQLBundles {
 		bundleName := cfg.CodeQLCLIBundle
@@ -48,16 +42,8 @@ func Install(base, platform string, cfg *config.QLTConfig) error {
 		return installBundle(base, bundleName, platform)
 	}
 
-	var version string
-	if cfg != nil && cfg.CodeQLCLI != "" {
-		version = cfg.CodeQLCLI
-	} else {
-		return fmt.Errorf("no version specified and qlt.conf.json is missing or has no CodeQLCLI field\n" +
-			"hint: run `qlt codeql set version` first, or pass --version")
-	}
-
-	slog.Info("Installing CodeQL CLI", "version", version)
-	return installCLI(base, version, platform)
+	slog.Info("Installing CodeQL CLI", "version", cfg.CodeQLCLI)
+	return installCLI(base, cfg.CodeQLCLI, platform)
 }
 
 // bundlePlatformAsset returns the release asset filename for the CodeQL bundle.
@@ -149,7 +135,6 @@ func installBundle(base, bundleName, platform string) error {
 	}
 
 	fmt.Printf("CodeQL bundle %s installed at %s\n", bundleName, codeqlDir)
-	saveBundleInstallDigest(base, bundleName, remoteDigest)
 	return nil
 }
 
@@ -182,20 +167,6 @@ func fetchBundleRemoteChecksum(bundleName, assetName, destDir string) (string, e
 	slog.Debug("Saved bundle checksum file", "path", checksumPath)
 
 	return parseChecksum(body, assetName)
-}
-
-// saveBundleInstallDigest persists the installed bundle name and its digest to
-// <base>/qlt.conf.json.
-func saveBundleInstallDigest(base, bundleName, digest string) {
-	cfg, err := config.LoadFromFile(base)
-	if err != nil || cfg == nil {
-		cfg = &config.QLTConfig{}
-	}
-	cfg.CodeQLCLIBundle = bundleName
-	cfg.CodeQLCLIDigest = digest
-	if err := cfg.SaveToFile(base); err != nil {
-		slog.Info("Warning: could not save bundle install digest to config", "error", err)
-	}
 }
 
 // fetchRemoteChecksum downloads the .checksum.txt file published alongside each
@@ -392,20 +363,5 @@ func installCLI(base, version, platform string) error {
 	}
 
 	fmt.Printf("CodeQL CLI %s installed at %s\n", version, codeqlDir)
-	saveInstallDigest(base, version, remoteDigest)
 	return nil
-}
-
-// saveInstallDigest persists the installed version and its digest to
-// <base>/qlt.conf.json so subsequent runs can verify without re-fetching.
-func saveInstallDigest(base, version, digest string) {
-	cfg, err := config.LoadFromFile(base)
-	if err != nil || cfg == nil {
-		cfg = &config.QLTConfig{}
-	}
-	cfg.CodeQLCLI = version
-	cfg.CodeQLCLIDigest = digest
-	if err := cfg.SaveToFile(base); err != nil {
-		slog.Info("Warning: could not save install digest to config", "error", err)
-	}
 }

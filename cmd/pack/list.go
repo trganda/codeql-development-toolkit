@@ -8,46 +8,60 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/trganda/codeql-development-toolkit/internal/pack"
+	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
 
 func newListCmd(base *string) *cobra.Command {
-	var lang, packName string
+	var lang string
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List CodeQL packs under the base directory",
 		Long: `List all CodeQL packs found under <base> using 'codeql pack ls'.
 
-Use --language and --pack to narrow the search to a specific language directory
+Use --language to narrow the search to a specific language directory
 or pack name.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing pack list command", "base", *base, "language", lang, "pack", packName)
-			return runPackList(*base, lang, packName)
+			slog.Debug("Executing pack list command", "base", *base, "language", lang)
+			return runPackList(*base, lang)
 		},
 	}
 	cmd.Flags().StringVar(&lang, "language", "", "Filter by language (e.g. go, java)")
-	cmd.Flags().StringVar(&packName, "pack", "", "Filter by pack name (exact match on the pack segment)")
 	return cmd
 }
 
-func runPackList(base, lang, packName string) error {
-	entries, err := pack.FindQlpacks(base, lang, packName)
+func runPackList(base, lang string) error {
+	var (
+		codeql string
+		err    error
+		packs  []*pack.Pack
+	)
+
+	targetDir := base
+	if lang != "" {
+		targetDir = filepath.Join(targetDir, lang)
+	}
+
+	codeql, err = paths.ResolveCodeQLBinary(base)
 	if err != nil {
-		return err
+		return fmt.Errorf("resolve CodeQL binary: %w", err)
 	}
-	if len(entries) == 0 {
-		fmt.Println("No CodeQL packs found.")
-		return nil
+	slog.Debug("Resolved CodeQL binary", "path", codeql)
+
+	packs, err = pack.ListPacks(codeql, targetDir)
+	if err != nil {
+		return fmt.Errorf("list packs: %w", err)
 	}
+
 	absBase, err := filepath.Abs(base)
 	if err != nil {
 		return fmt.Errorf("resolve base path: %w", err)
 	}
-	for _, e := range entries {
-		rel, err := filepath.Rel(absBase, e.Dir)
+	for _, p := range packs {
+		rel, err := filepath.Rel(absBase, p.Dir())
 		if err != nil {
-			rel = e.Dir
+			rel = p.Dir()
 		}
-		fmt.Printf("%-40s  %s  (%s)\n", e.Name, e.Version, rel)
+		fmt.Printf("%-40s  %s  (%s)\n", p.Config.FullName(), p.Config.Version, rel)
 	}
 	return nil
 }

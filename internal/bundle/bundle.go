@@ -10,6 +10,7 @@ import (
 
 	"github.com/trganda/codeql-development-toolkit/internal/archive"
 	"github.com/trganda/codeql-development-toolkit/internal/executil"
+	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
 type CustomBundle struct {
@@ -103,7 +104,7 @@ func (ctx *CustomBundle) Create() error {
 	depsDir := filepath.Join(ctx.commonCachesDir, "packages")
 	if _, err := os.Stat(depsDir); err == nil {
 		slog.Info("Copying resolved dependencies into bundle", "from", depsDir, "to", ctx.tmpQlPacksDir)
-		if err := copyDir(depsDir, ctx.tmpQlPacksDir); err != nil {
+		if err := utils.CopyDir(depsDir, ctx.tmpQlPacksDir); err != nil {
 			return fmt.Errorf("copying resolved dependencies: %w", err)
 		}
 	} else {

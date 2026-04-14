@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"log/slog"
 	"os"
 	"path/filepath"
 )
@@ -25,7 +26,6 @@ type QueryEntry struct {
 // QLTConfig holds the QLT configuration loaded from qlt.conf.json.
 type QLTConfig struct {
 	CodeQLCLI                 string                    `json:"codeQLCLI"`
-	CodeQLCLIDigest           string                    `json:"codeQLCLIDigest,omitempty"`
 	CodeQLCLIBundle           string                    `json:"codeQLCLIBundle"`
 	CodeQLConfiguration       string                    `json:"codeQLConfiguration,omitempty"`
 	EnableCustomCodeQLBundles bool                      `json:"enableCustomCodeQLBundles,omitempty"`
@@ -96,5 +96,12 @@ func (c *QLTConfig) SaveToFile(base string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(ConfigFilePath(base), data, 0644)
+
+	dir := ConfigFilePath(base)
+	if err := os.WriteFile(dir, data, 0644); err != nil {
+		return err
+	}
+
+	slog.Info("Saved qlt.conf.json", "path", dir)
+	return nil
 }
