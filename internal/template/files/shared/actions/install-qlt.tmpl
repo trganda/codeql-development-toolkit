@@ -14,12 +14,6 @@ inputs:
     required: false
     default: 'latest'
 
-  add-to-path:
-    description: |
-      Add QLT to the system path
-    required: false
-    default: 'true'
-
 outputs:
   qlt-home:
     description: 'The directory containing the QLT installation'
@@ -36,9 +30,7 @@ runs:
     - name: Install QLT
       id: install-qlt
       env:
-        ADD_TO_PATH: ${{ inputs.add-to-path }}
         QLT_VERSION: ${{ inputs.qlt-version }}
-        GITHUB_TOKEN: ${{ github.token }}
       shell: bash
       run: |
         echo -e "\e[0;32m[QLT]\e[0m Installing QLT version $QLT_VERSION via go install"
@@ -55,10 +47,8 @@ runs:
         mv "$WORK_DIR/codeql-development-toolkit" "$QLT_HOME/qlt"
         rm -rf "$WORK_DIR"
 
-        if [ "$ADD_TO_PATH" == "true" ]; then
-          echo -e "\e[0;32m[QLT]\e[0m Adding '$QLT_HOME' to system path"
-          echo "$QLT_HOME" >> $GITHUB_PATH
-        fi
+        echo -e "\e[0;32m[QLT]\e[0m Adding '$QLT_HOME' to system path"
+        echo "$QLT_HOME" >> $GITHUB_PATH
 
         echo -e "\e[0;32m[QLT]\e[0m Setting output parameter qlt-home to $QLT_HOME"
         echo "qlt-home=$QLT_HOME" >> $GITHUB_OUTPUT
