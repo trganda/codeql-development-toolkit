@@ -16,7 +16,7 @@ func NewCommand(base string) *cobra.Command {
 	cmd.AddCommand(newSetCmd(base))
 	cmd.AddCommand(newRunCmd(base))
 	cmd.AddCommand(newGenerateCmd(base))
-	cmd.AddCommand(newValidationCommand(*base))
+	cmd.AddCommand(newValidationCommand(base))
 	return cmd
 }
 
