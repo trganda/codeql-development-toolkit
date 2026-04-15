@@ -15,7 +15,7 @@ type commonFlags struct {
 }
 
 // NewCommand returns the `phase` cobra command.
-func NewCommand(base, automationType *string) *cobra.Command {
+func NewCommand(base string) *cobra.Command {
 	common := &commonFlags{}
 	cmd := &cobra.Command{
 		Use:   "phase",
@@ -42,7 +42,7 @@ Phases can be run individually or in sequence. Common flows:
 			if c.Name() == "init" {
 				return nil
 			}
-			return utils.CheckWorkspace(*base)
+			return utils.CheckWorkspace(base)
 		},
 	}
 

@@ -12,7 +12,7 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
 
-func newPublishCmd(base *string, common *commonFlags) *cobra.Command {
+func newPublishCmd(base string, common *commonFlags) *cobra.Command {
 	return &cobra.Command{
 		Use:   "publish",
 		Short: "Publish CodeQL packs to the GitHub Package Registry",
@@ -24,11 +24,11 @@ Requires workspace initialization (run 'qlt phase init' first).
 Scans for packs under <base> (optionally filtered by --language) and
 publishes each using 'codeql pack publish'.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing phase publish", "base", *base, "language", common.language)
-			if err := runVerifyChain(*base, common); err != nil {
+			slog.Debug("Executing phase publish", "base", base, "language", common.language)
+			if err := runVerifyChain(base, common); err != nil {
 				return err
 			}
-			return runPublish(*base, common.language)
+			return runPublish(base, common.language)
 		},
 	}
 }

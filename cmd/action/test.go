@@ -1,4 +1,4 @@
-package test
+package action
 
 import (
 	"fmt"
@@ -6,41 +6,40 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-
 	"github.com/trganda/codeql-development-toolkit/internal/language"
 	tmpl "github.com/trganda/codeql-development-toolkit/internal/template"
 )
 
-// newInitCmd returns `test init`.
-func newInitCmd(base *string) *cobra.Command {
+func newTestInitCommand(base string) *cobra.Command {
 	var (
-		overwriteExisting bool
-		numThreads        int
-		useRunner         string
-		lang              string
-		branch            string
+		overwrite  bool
+		numThreads int
+		useRunner  string
+		lang       string
+		branch     string
 	)
 
 	cmd := &cobra.Command{
-		Use:   "init",
+		Use:   "init-test",
 		Short: "Initialize test infrastructure (GitHub Actions workflow)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing test init command", "language", lang, "runner", useRunner, "branch", branch)
-			return runTestInit(*base, lang, useRunner, branch, numThreads, overwriteExisting)
+			return runTestInit(base, lang, useRunner, branch, numThreads, overwrite)
 		},
 	}
 
-	cmd.Flags().BoolVar(&overwriteExisting, "overwrite-existing", false, "Overwrite existing files")
+	cmd.Flags().BoolVar(&overwrite, "overwrite", false, "Overwrite existing files")
 	cmd.Flags().IntVar(&numThreads, "num-threads", 4, "Number of threads for test execution")
 	cmd.Flags().StringVar(&useRunner, "use-runner", "ubuntu-latest", "GitHub Actions runner(s) to use")
-	cmd.Flags().StringVar(&lang, "language", "", "Language to generate automation for")
+	cmd.Flags().StringVar(&lang, "language", "", "Language to initialize CodeQL action for")
 	cmd.Flags().StringVar(&branch, "branch", "main", "Branch to trigger automation on")
-	_ = cmd.MarkFlagRequired("language")
+	cmd.MarkFlagRequired("language")
+
 	return cmd
 }
 
-// testInitData holds template variables for the test init workflow.
-type testInitData struct {
+// testInitOptions holds template variables for the test init workflow.
+type testInitOptions struct {
 	Language   string
 	Branch     string
 	NumThreads int
@@ -52,7 +51,7 @@ func runTestInit(base, lang, useRunner, branch string, numThreads int, overwrite
 	slog.Debug("Running test init", "lang", lang, "overwrite", overwrite)
 	langDir := language.ToDirectory(lang)
 
-	data := testInitData{
+	data := testInitOptions{
 		Language:   langDir,
 		Branch:     branch,
 		NumThreads: numThreads,

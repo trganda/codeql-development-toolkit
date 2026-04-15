@@ -15,7 +15,7 @@ import (
 )
 
 // newGenerateCmd returns `pack generate`.
-func newGenerateCmd(base *string) *cobra.Command {
+func newGenerateCmd(base string) *cobra.Command {
 	var bundle bool
 	gen := &cobra.Command{
 		Use:   "generate",
@@ -28,7 +28,7 @@ func newGenerateCmd(base *string) *cobra.Command {
 }
 
 // newNewQueryCmd returns `pack generate new-query`.
-func newNewQueryCmd(base *string, useBundle bool) *cobra.Command {
+func newNewQueryCmd(base string, useBundle bool) *cobra.Command {
 	var (
 		queryName       string
 		lang            string
@@ -46,7 +46,7 @@ func newNewQueryCmd(base *string, useBundle bool) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing query generate new-query command",
 				"name", queryName, "language", lang, "pack", pack, "kind", queryKind, "use-bundle", useBundle)
-			return runNewQuery(*base, queryName, lang, pack, scope, queryKind, createQueryPack, createTests, overwrite, useBundle)
+			return runNewQuery(base, queryName, lang, pack, scope, queryKind, createQueryPack, createTests, overwrite, useBundle)
 		},
 	}
 

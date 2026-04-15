@@ -9,7 +9,7 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/config"
 )
 
-func newSetCmd(base *string) *cobra.Command {
+func newSetCmd(base string) *cobra.Command {
 	var (
 		bundle           bool
 		publish          bool
@@ -31,9 +31,9 @@ Examples:
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
-			slog.Debug("Executing pack set command", "base", *base, "pack", name)
+			slog.Debug("Executing pack set command", "base", base, "pack", name)
 
-			cfg := config.MustLoadFromFile(*base)
+			cfg := config.MustLoadFromFile(base)
 
 			entry, idx := findPack(cfg, name)
 			if entry == nil {
@@ -52,7 +52,7 @@ Examples:
 
 			cfg.CodeQLPackConfiguration[idx] = *entry
 
-			if err := cfg.SaveToFile(*base); err != nil {
+			if err := cfg.SaveToFile(base); err != nil {
 				return fmt.Errorf("saving config: %w", err)
 			}
 

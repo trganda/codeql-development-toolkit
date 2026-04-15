@@ -8,7 +8,7 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/bundle"
 )
 
-func newPackageCmd(base *string, common *commonFlags) *cobra.Command {
+func newPackageCmd(base string, common *commonFlags) *cobra.Command {
 	var (
 		bundlePath   string
 		output       string
@@ -26,11 +26,11 @@ Requires workspace initialization (run 'qlt phase init' first).
 Reads packs from qlt.conf.json where Bundle=true and builds a custom bundle
 using the base bundle archive downloaded by 'qlt codeql install'.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing phase package", "base", *base, "language", common.language)
-			if err := runVerifyChain(*base, common); err != nil {
+			slog.Debug("Executing phase package", "base", base, "language", common.language)
+			if err := runVerifyChain(base, common); err != nil {
 				return err
 			}
-			return runPackage(*base, bundlePath, output, platforms, noPrecompile)
+			return runPackage(base, bundlePath, output, platforms, noPrecompile)
 		},
 	}
 	cmd.Flags().StringVar(&bundlePath, "bundle", "", "Override base bundle archive path (.tar.gz)")

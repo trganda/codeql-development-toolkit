@@ -7,7 +7,7 @@ import (
 )
 
 // NewCommand returns the `pack` cobra command.
-func NewCommand(base, automationType *string) *cobra.Command {
+func NewCommand(base string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "pack",
 		Short: "CodeQL pack management commands",
@@ -19,7 +19,7 @@ func NewCommand(base, automationType *string) *cobra.Command {
 	return cmd
 }
 
-func newRunCmd(base *string) *cobra.Command {
+func newRunCmd(base string) *cobra.Command {
 	run := &cobra.Command{
 		Use:   "run",
 		Short: "Run pack commands",
@@ -28,12 +28,12 @@ func newRunCmd(base *string) *cobra.Command {
 	return run
 }
 
-func newHelloCmd(base *string) *cobra.Command {
+func newHelloCmd(base string) *cobra.Command {
 	return &cobra.Command{
 		Use:   "hello",
 		Short: "Pack hello command (placeholder)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing pack run hello command", "base", *base)
+			slog.Debug("Executing pack run hello command", "base", base)
 			slog.Info("Pack command — coming soon")
 			return nil
 		},
