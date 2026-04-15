@@ -164,10 +164,10 @@ The granular commands (`qlt query`, `qlt test`, `qlt pack`, etc.) are preserved 
 The release pipeline is split into three platform workflows called from `internal-release-build.yml`:
 
 - `internal-build-release-linux64.yml` — `ubuntu-latest`, produces `qlt-linux-x86_64.zip`
-- `internal-build-release-macos64.yml` — `macos-14` (arm64), produces `qlt-macos-arm64.zip`
+- `internal-build-release-macos64.yml` — `macos-26` (arm64), produces `qlt-macos-arm64.zip`
 - `internal-build-release-win64.yml` — `windows-latest`, produces `qlt-windows-x64.zip`
 
-All three use `actions/setup-go@v5` with the version from `go.mod`, inject `inputs.version` via `-ldflags`, and upload to the GitHub release via `gh release upload`.
+All three use `actions/setup-go@v6` with the version from `go.mod`, inject `inputs.version` via `-ldflags`, and upload to the GitHub release via `gh release upload`.
 
 ## Git Conversions
 
