@@ -11,19 +11,6 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/pack"
 )
 
-// ListPackWithProcess runs `codeql pack ls --format=json <dir>` and returns all packs found.
-func ListPackWithProcess(codeqlBin, dir string) ([]PackProcessor, error) {
-	packs, err := pack.ListPacks(codeqlBin, dir)
-	if err != nil {
-		return nil, err
-	}
-	var processors []PackProcessor
-	for _, p := range packs {
-		processors = append(processors, newPackProcessor(p, classify(p)))
-	}
-	return processors, nil
-}
-
 // classify determines the kind of a pack.
 // A pack is a CustomizationPack if it is a library pack AND has a
 // <name_underscored>/Customizations.qll file relative to its directory.
@@ -47,22 +34,20 @@ func classify(p *pack.Pack) pack.PackKind {
 // implementation, selected once at pack-discovery time so the orchestrator
 // loop in CustomBundle.Create can call Process without further dispatch.
 type PackProcessor interface {
-	Process(cb *CustomBundle) error
-	GetPack() *pack.Pack
-	GetKind() pack.PackKind
+	Process(p *pack.Pack) error
 }
 
-// newPackProcessor returns the PackProcessor matching p.Kind. It is the only
-// place in the package that branches on PackKind; once a Pack has been
-// classified, behaviour is dispatched through the interface.
-func newPackProcessor(p *pack.Pack, kind pack.PackKind) PackProcessor {
+// newPackProcessor returns the PackProcessor matching kind, bound to cb.
+// It is the only place in the package that branches on PackKind; once a
+// processor is created, behaviour is dispatched through the interface.
+func newPackProcessor(cb *CustomBundle, kind pack.PackKind) PackProcessor {
 	switch kind {
 	case pack.CustomizationPack:
-		return &customizationPack{pack: p}
+		return &customizationPack{cb: cb}
 	case pack.LibraryPack:
-		return &libraryPack{pack: p}
+		return &libraryPack{cb: cb}
 	default:
-		return &queryPack{pack: p}
+		return &queryPack{cb: cb}
 	}
 }
 
@@ -70,19 +55,18 @@ func newPackProcessor(p *pack.Pack, kind pack.PackKind) PackProcessor {
 // pack: copy → pack install → pack create. Resolved dependencies are folded
 // into the bundle by CustomBundle.Create after every processor has run.
 type queryPack struct {
-	pack *pack.Pack
+	cb *CustomBundle
 }
 
-func (q *queryPack) Process(cb *CustomBundle) error {
-	p := q.pack
+func (q *queryPack) Process(p *pack.Pack) error {
 	slog.Info("Processing query pack", "pack", p.Config.Name)
 
-	packCopy, err := p.CopyTo(filepath.Join(cb.tmpDir, "temp"))
+	packCopy, err := p.CopyTo(filepath.Join(q.cb.tmpDir, "temp"))
 	if err != nil {
 		return err
 	}
 
-	runner := executil.NewRunner(cb.tmpCodeQLBin)
+	runner := executil.NewRunner(q.cb.tmpCodeQLBin)
 
 	// Remove the .cache and .codeql folder from the copied pack if they exist, to ensure a clean install.
 	os.RemoveAll(packCopy.DepsPath())
@@ -92,7 +76,7 @@ func (q *queryPack) Process(cb *CustomBundle) error {
 	if _, err := runner.Run(
 		"pack", "install",
 		"--format=json",
-		fmt.Sprintf("--common-caches=%s", cb.commonCachesDir),
+		fmt.Sprintf("--common-caches=%s", q.cb.commonCachesDir),
 		packCopy.Dir(),
 	); err != nil {
 		return fmt.Errorf("codeql pack install %s: %w", p.Config.Name, err)
@@ -101,8 +85,8 @@ func (q *queryPack) Process(cb *CustomBundle) error {
 	if _, err := runner.Run(
 		"pack", "create",
 		"--format=json",
-		fmt.Sprintf("--output=%s", cb.tmpQlPacksDir),
-		fmt.Sprintf("--common-caches=%s", cb.commonCachesDir),
+		fmt.Sprintf("--output=%s", q.cb.tmpQlPacksDir),
+		fmt.Sprintf("--common-caches=%s", q.cb.commonCachesDir),
 		packCopy.Dir(),
 	); err != nil {
 		return fmt.Errorf("codeql pack create %s: %w", p.Config.Name, err)
@@ -111,70 +95,45 @@ func (q *queryPack) Process(cb *CustomBundle) error {
 	return nil
 }
 
-func (q *queryPack) GetPack() *pack.Pack {
-	return q.pack
-}
-
-func (q *queryPack) GetKind() pack.PackKind {
-	return pack.QueryPack
-}
-
 // customizationPack is a placeholder for customization-kind packs.
 // Injecting Customizations.qll imports into stdlib packs and topologically
 // re-bundling is not yet implemented; the pack is skipped with a warning.
 type customizationPack struct {
-	pack *pack.Pack
+	cb *CustomBundle
 }
 
-func (c *customizationPack) Process(_ *CustomBundle) error {
+func (c *customizationPack) Process(p *pack.Pack) error {
 	slog.Warn("Customization packs are not yet supported in bundle create; skipping",
-		"pack", c.pack.Config.Name)
+		"pack", p.Config.Name)
 	return nil
-}
-
-func (c *customizationPack) GetPack() *pack.Pack {
-	return c.pack
-}
-
-func (c *customizationPack) GetKind() pack.PackKind {
-	return pack.CustomizationPack
 }
 
 // libraryPack is a placeholder for library-kind packs. Library
 // bundling is not yet implemented; the pack is skipped with a warning.
 type libraryPack struct {
-	pack *pack.Pack
+	cb *CustomBundle
 }
 
-func (l *libraryPack) Process(cb *CustomBundle) error {
+func (l *libraryPack) Process(p *pack.Pack) error {
 	slog.Warn("Library packs are not yet supported in bundle create; skipping",
-		"pack", l.pack.Config.Name)
+		"pack", p.Config.Name)
 
-	p := l.pack
-	packCopy, err := p.CopyTo(filepath.Join(cb.tmpDir, "temp"))
+	packCopy, err := p.CopyTo(filepath.Join(l.cb.tmpDir, "temp"))
 	if err != nil {
 		return err
 	}
 
-	runner := executil.NewRunner(cb.tmpCodeQLBin)
+	runner := executil.NewRunner(l.cb.tmpCodeQLBin)
 	if _, err := runner.Run(
 		"pack",
 		"bundle",
 		"--format=json",
-		fmt.Sprintf("--output=%s", cb.tmpQlPacksDir),
-		fmt.Sprintf("--common-caches=%s", cb.commonCachesDir),
+		fmt.Sprintf("--output=%s", l.cb.tmpQlPacksDir),
+		fmt.Sprintf("--common-caches=%s", l.cb.commonCachesDir),
 		packCopy.Dir(),
 	); err != nil {
 		return fmt.Errorf("codeql pack bundle %s: %w", p.Config.Name, err)
 	}
 
 	return nil
-}
-
-func (l *libraryPack) GetPack() *pack.Pack {
-	return l.pack
-}
-
-func (l *libraryPack) GetKind() pack.PackKind {
-	return pack.LibraryPack
 }

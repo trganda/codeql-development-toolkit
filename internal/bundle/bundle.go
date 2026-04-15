@@ -10,6 +10,7 @@ import (
 
 	"github.com/trganda/codeql-development-toolkit/internal/archive"
 	"github.com/trganda/codeql-development-toolkit/internal/executil"
+	"github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
@@ -75,7 +76,7 @@ func (ctx *CustomBundle) Create() error {
 	}
 
 	slog.Info("Listing workspace packs", "dir", ctx.opts.WorkspaceDir)
-	allWorkspacePacks, err := ListPackWithProcess(ctx.tmpCodeQLBin, ctx.opts.WorkspaceDir)
+	allWorkspacePacks, err := pack.ListPacks(ctx.tmpCodeQLBin, ctx.opts.WorkspaceDir)
 	if err != nil {
 		return fmt.Errorf("listing workspace packs: %w", err)
 	}
@@ -85,8 +86,8 @@ func (ctx *CustomBundle) Create() error {
 	}
 
 	for _, p := range selected {
-		if p.GetPack().Config.Scope() == "" {
-			return fmt.Errorf("pack %q has no scope; all bundled packs must be scoped", p.GetPack().Config.FullName())
+		if p.Config.Scope() == "" {
+			return fmt.Errorf("pack %q has no scope; all bundled packs must be scoped", p.Config.FullName())
 		}
 	}
 
@@ -95,8 +96,9 @@ func (ctx *CustomBundle) Create() error {
 	os.Mkdir(ctx.tmpQlPacksDir, 0755)
 
 	for _, p := range selected {
-		if err := p.Process(ctx); err != nil {
-			return fmt.Errorf("processing pack %q: %w", p.GetPack().Config.FullName(), err)
+		processor := newPackProcessor(ctx, classify(p))
+		if err := processor.Process(p); err != nil {
+			return fmt.Errorf("processing pack %q: %w", p.Config.FullName(), err)
 		}
 	}
 
@@ -137,12 +139,12 @@ func (ctx *CustomBundle) Create() error {
 	return nil
 }
 
-func (ctx *CustomBundle) selectPacks(workspacePacks []PackProcessor, names []string) []PackProcessor {
-	byName := make(map[string]PackProcessor, len(workspacePacks))
+func (ctx *CustomBundle) selectPacks(workspacePacks []*pack.Pack, names []string) []*pack.Pack {
+	byName := make(map[string]*pack.Pack, len(workspacePacks))
 	for _, p := range workspacePacks {
-		byName[p.GetPack().Config.Name] = p
+		byName[p.Config.Name] = p
 	}
-	var selected []PackProcessor
+	var selected []*pack.Pack
 	for _, name := range names {
 		p, ok := byName[name]
 		if !ok {
