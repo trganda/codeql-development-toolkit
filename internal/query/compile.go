@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/trganda/codeql-development-toolkit/internal/executil"
+	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/language"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
@@ -14,7 +14,7 @@ import (
 // RunCompile compiles all .ql files under the resolved search root using
 // `codeql query compile`.
 func RunCompile(base, lang, pack string, threads int) error {
-	codeql, err := paths.ResolveCodeQLBinary(base)
+	codeqlBin, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err
 	}
@@ -40,15 +40,7 @@ func RunCompile(base, lang, pack string, threads int) error {
 
 	slog.Info("Compiling query files", "count", len(files), "root", searchRoot)
 
-	args := []string{"query", "compile"}
-	if threads != 0 {
-		args = append(args, fmt.Sprintf("--threads=%d", threads))
-	}
-	args = append(args, "--")
-	args = append(args, files...)
-
-	runner := executil.NewRunner(codeql)
-	res, err := runner.Run(args...)
+	res, err := codeql.NewCLI(codeqlBin).QueryCompile(threads, files)
 	if err != nil {
 		if res != nil && len(res.Stdout) > 0 {
 			slog.Debug("CodeQL compile stdout", "output", res.StdoutString())

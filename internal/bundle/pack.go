@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/trganda/codeql-development-toolkit/internal/executil"
 	"github.com/trganda/codeql-development-toolkit/internal/pack"
 )
 
@@ -66,29 +65,16 @@ func (q *queryPack) Process(p *pack.Pack) error {
 		return err
 	}
 
-	runner := executil.NewRunner(q.cb.tmpCodeQLBin)
-
 	// Remove the .cache and .codeql folder from the copied pack if they exist, to ensure a clean install.
 	os.RemoveAll(packCopy.DepsPath())
 	os.RemoveAll(packCopy.CachePath())
 	slog.Debug("Removed .cache and .codeql directories", "pack", p.Config.Name)
 
-	if _, err := runner.Run(
-		"pack", "install",
-		"--format=json",
-		fmt.Sprintf("--common-caches=%s", q.cb.commonCachesDir),
-		packCopy.Dir(),
-	); err != nil {
+	if _, err := q.cb.tmpCodeQLCLI.PackInstall(packCopy.Dir(), q.cb.commonCachesDir); err != nil {
 		return fmt.Errorf("codeql pack install %s: %w", p.Config.Name, err)
 	}
 
-	if _, err := runner.Run(
-		"pack", "create",
-		"--format=json",
-		fmt.Sprintf("--output=%s", q.cb.tmpQlPacksDir),
-		fmt.Sprintf("--common-caches=%s", q.cb.commonCachesDir),
-		packCopy.Dir(),
-	); err != nil {
+	if _, err := q.cb.tmpCodeQLCLI.PackCreate(packCopy.Dir(), q.cb.tmpQlPacksDir, q.cb.commonCachesDir); err != nil {
 		return fmt.Errorf("codeql pack create %s: %w", p.Config.Name, err)
 	}
 
@@ -123,15 +109,7 @@ func (l *libraryPack) Process(p *pack.Pack) error {
 		return err
 	}
 
-	runner := executil.NewRunner(l.cb.tmpCodeQLBin)
-	if _, err := runner.Run(
-		"pack",
-		"bundle",
-		"--format=json",
-		fmt.Sprintf("--output=%s", l.cb.tmpQlPacksDir),
-		fmt.Sprintf("--common-caches=%s", l.cb.commonCachesDir),
-		packCopy.Dir(),
-	); err != nil {
+	if _, err := l.cb.tmpCodeQLCLI.PackBundle(packCopy.Dir(), l.cb.tmpQlPacksDir, l.cb.commonCachesDir); err != nil {
 		return fmt.Errorf("codeql pack bundle %s: %w", p.Config.Name, err)
 	}
 

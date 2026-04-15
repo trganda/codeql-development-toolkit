@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/trganda/codeql-development-toolkit/internal/executil"
+	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
@@ -34,25 +34,25 @@ publishes each using 'codeql pack publish'.`,
 }
 
 func runPublish(base, lang string) error {
-	codeql, err := paths.ResolveCodeQLBinary(base)
+	codeqlBin, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err
 	}
+	cli := codeql.NewCLI(codeqlBin)
 
 	targetDir := base
 	if lang != "" {
 		targetDir = filepath.Join(targetDir, lang)
 	}
 
-	packs, err := pack.ListPacks(codeql, targetDir)
+	packs, err := pack.ListPacks(cli, targetDir)
 	if err != nil {
 		return fmt.Errorf("list packs: %w", err)
 	}
 
-	runner := executil.NewRunner(codeql)
 	for _, p := range packs {
 		slog.Info("Publishing pack", "name", p.Config.FullName(), "version", p.Config.Version, "dir", p.Dir())
-		res, err := runner.Run("pack", "publish", p.Dir())
+		res, err := cli.PackPublish(p.Dir())
 		if err != nil {
 			if res != nil && len(res.Stderr) > 0 {
 				slog.Debug("codeql pack publish stderr", "pack", p.Config.FullName(), "output", res.StderrString())

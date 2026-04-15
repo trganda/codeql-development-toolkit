@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/trganda/codeql-development-toolkit/internal/executil"
+	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/language"
 	packpkg "github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
@@ -15,11 +15,11 @@ import (
 // RunPackInstall resolves qlpacks under the target path using `codeql pack ls`
 // and runs `codeql pack install` for each resolved qlpack.yml.
 func RunPackInstall(base, lang string) error {
-	codeql, err := paths.ResolveCodeQLBinary(base)
+	codeqlBin, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err
 	}
-	runner := executil.NewRunner(codeql)
+	cli := codeql.NewCLI(codeqlBin)
 
 	targetPath := base
 	if lang != "" {
@@ -30,7 +30,7 @@ func RunPackInstall(base, lang string) error {
 		return fmt.Errorf("target path not found: %s", targetPath)
 	}
 
-	qlpacks, err := packpkg.ListPacks(codeql, targetPath)
+	qlpacks, err := packpkg.ListPacks(cli, targetPath)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func RunPackInstall(base, lang string) error {
 
 	for _, p := range qlpacks {
 		slog.Info("Installing pack dependencies", "qlpack", p.YmlPath)
-		res, err := runner.Run("pack", "install", p.YmlPath)
+		res, err := cli.PackInstall(p.YmlPath, "")
 		if err != nil {
 			if res != nil && len(res.Stdout) > 0 {
 				slog.Debug("CodeQL pack install stdout", "qlpack", p.YmlPath, "output", res.StdoutString())

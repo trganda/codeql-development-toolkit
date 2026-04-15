@@ -9,14 +9,14 @@ import (
 	"runtime"
 
 	"github.com/trganda/codeql-development-toolkit/internal/archive"
-	"github.com/trganda/codeql-development-toolkit/internal/executil"
+	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
 type CustomBundle struct {
 	opts            *CreateOptions
-	tmpCodeQLBin    string
+	tmpCodeQLCLI    *codeql.CLI
 	tmpBundleDir    string
 	tmpQlPacksDir   string
 	tmpDir          string
@@ -48,7 +48,7 @@ func NewCustomBundle(opts *CreateOptions) (*CustomBundle, error) {
 		tmpDir:          tmpDir,
 		tmpBundleDir:    bundleDir,
 		tmpQlPacksDir:   filepath.Join(bundleDir, "qlpacks"),
-		tmpCodeQLBin:    codeqlBin,
+		tmpCodeQLCLI:    codeql.NewCLI(codeqlBin),
 		commonCachesDir: commonCaches,
 	}, nil
 }
@@ -76,7 +76,7 @@ func (ctx *CustomBundle) Create() error {
 	}
 
 	slog.Info("Listing workspace packs", "dir", ctx.opts.WorkspaceDir)
-	allWorkspacePacks, err := pack.ListPacks(ctx.tmpCodeQLBin, ctx.opts.WorkspaceDir)
+	allWorkspacePacks, err := pack.ListPacks(ctx.tmpCodeQLCLI, ctx.opts.WorkspaceDir)
 	if err != nil {
 		return fmt.Errorf("listing workspace packs: %w", err)
 	}
@@ -156,7 +156,7 @@ func (ctx *CustomBundle) selectPacks(workspacePacks []*pack.Pack, names []string
 }
 
 func (ctx *CustomBundle) resolveLanguages() ([]string, error) {
-	res, err := executil.NewRunner(ctx.tmpCodeQLBin).Run("resolve", "languages", "--format=json")
+	res, err := ctx.tmpCodeQLCLI.ResolveLanguages()
 	if err != nil {
 		return nil, err
 	}

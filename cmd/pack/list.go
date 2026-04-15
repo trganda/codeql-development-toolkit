@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
@@ -30,24 +31,18 @@ or pack name.`,
 }
 
 func runPackList(base, lang string) error {
-	var (
-		codeql string
-		err    error
-		packs  []*pack.Pack
-	)
-
 	targetDir := base
 	if lang != "" {
 		targetDir = filepath.Join(targetDir, lang)
 	}
 
-	codeql, err = paths.ResolveCodeQLBinary(base)
+	codeqlBin, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return fmt.Errorf("resolve CodeQL binary: %w", err)
 	}
-	slog.Debug("Resolved CodeQL binary", "path", codeql)
+	slog.Debug("Resolved CodeQL binary", "path", codeqlBin)
 
-	packs, err = pack.ListPacks(codeql, targetDir)
+	packs, err := pack.ListPacks(codeql.NewCLI(codeqlBin), targetDir)
 	if err != nil {
 		return fmt.Errorf("list packs: %w", err)
 	}

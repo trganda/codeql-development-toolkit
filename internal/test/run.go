@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/config"
-	"github.com/trganda/codeql-development-toolkit/internal/executil"
 	"github.com/trganda/codeql-development-toolkit/internal/language"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
@@ -24,16 +24,15 @@ func RunUnitTests(base, lang, codeqlArgs string, numThreads int) error {
 		"codeql-args", codeqlArgs,
 	)
 
-	codeql, err := paths.ResolveCodeQLBinary(base)
+	codeqlBin, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err
 	}
 
-	slog.Debug("Using CodeQL binary", "path", codeql)
+	slog.Debug("Using CodeQL binary", "path", codeqlBin)
 
-	args := []string{"resolve", "tests", "--strict-test-discovery", "--format", "json", fmt.Sprintf("%s/%s", base, language.ToDirectory(lang))}
-	runner := executil.NewRunner(codeql)
-	res, err := runner.Run(args...)
+	cli := codeql.NewCLI(codeqlBin)
+	res, err := cli.ResolveTests(fmt.Sprintf("%s/%s", base, language.ToDirectory(lang)))
 	if err != nil {
 		return fmt.Errorf("failed to resolve tests: %w", err)
 	}
@@ -49,12 +48,7 @@ func RunUnitTests(base, lang, codeqlArgs string, numThreads int) error {
 
 	for _, testFile := range resolvedTests {
 		slog.Debug("Running test file", "file", testFile)
-		testArgs := []string{"test", "run", "--threads", fmt.Sprintf("%d", numThreads), "--format", "betterjson", "--quiet"}
-		if codeqlArgs != "" {
-			testArgs = append(testArgs, codeqlArgs)
-		}
-		testArgs = append(testArgs, testFile)
-		res, err := runner.Run(testArgs...)
+		res, err := cli.TestRun(numThreads, codeqlArgs, testFile)
 		if err != nil {
 			if res != nil && len(res.Stderr) > 0 {
 				slog.Error("Test failed", "file", testFile, "output", strings.TrimSpace(res.StderrString()))

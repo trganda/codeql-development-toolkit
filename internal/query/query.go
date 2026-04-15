@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/trganda/codeql-development-toolkit/internal/executil"
+	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/language"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
@@ -28,22 +28,28 @@ func RunQuery(base, queryName, database, lang, pack, format, output, additionalP
 		slog.Info("Unrecognised language, proceeding anyway", "language", lang)
 	}
 
-	codeql, err := paths.ResolveCodeQLBinary(base)
+	codeqlBin, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err
 	}
-	slog.Debug("Using CodeQL binary", "path", codeql)
+	slog.Debug("Using CodeQL binary", "path", codeqlBin)
 
 	if output == "" {
 		ext := formatExtension(format)
 		output = filepath.Join(filepath.Dir(queryFile), queryName+ext)
 	}
 
-	args := buildAnalyzeArgs(database, queryFile, format, output, additionalPacks, threads)
-	slog.Debug("Running CodeQL", "cmd", codeql, "args", args)
+	opts := codeql.DatabaseAnalyzeOptions{
+		Database:        database,
+		QueryFile:       queryFile,
+		Format:          format,
+		Output:          output,
+		Threads:         threads,
+		AdditionalPacks: additionalPacks,
+	}
+	slog.Debug("Running CodeQL", "cmd", codeqlBin, "opts", opts)
 
-	runner := executil.NewRunner(codeql)
-	res, err := runner.Run(args...)
+	res, err := codeql.NewCLI(codeqlBin).DatabaseAnalyze(opts)
 	if err != nil {
 		if res != nil && len(res.Stdout) > 0 {
 			slog.Debug("Command stdout result", "output", res.StdoutString())
@@ -109,21 +115,6 @@ func findQueryFile(dir, target string, maxDepth int) (string, error) {
 		return "", fmt.Errorf("not found")
 	}
 	return found, nil
-}
-
-func buildAnalyzeArgs(database, queryFile, format, output, additionalPacks string, threads int) []string {
-	args := []string{
-		"database", "analyze",
-		"--format=" + format,
-		"--output=" + output,
-		fmt.Sprintf("--threads=%d", threads),
-		"--rerun",
-	}
-	if additionalPacks != "" {
-		args = append(args, "--additional-packs="+additionalPacks)
-	}
-	args = append(args, database, queryFile)
-	return args
 }
 
 func formatExtension(format string) string {

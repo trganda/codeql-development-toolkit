@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/trganda/codeql-development-toolkit/internal/executil"
+	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/utils"
 	"gopkg.in/yaml.v3"
 )
@@ -165,8 +165,8 @@ func loadConfig(ymlPath string) (QlpackConfig, error) {
 }
 
 // ListPacks runs `codeql pack ls --format=json <dir>` and returns all packs found.
-func ListPacks(codeqlBin, dir string) ([]*Pack, error) {
-	res, err := executil.NewRunner(codeqlBin).Run("pack", "ls", "--format=json", dir)
+func ListPacks(cli *codeql.CLI, dir string) ([]*Pack, error) {
+	res, err := cli.PackLs(dir)
 	if err != nil {
 		return nil, fmt.Errorf("codeql pack ls %s: %w", dir, err)
 	}
