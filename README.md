@@ -12,7 +12,7 @@ QLT makes common CodeQL development workflows easier. Key features:
 - Download and version management of the `codeql` CLI and official bundles.
 - GitHub Actions workflow scaffolding for query testing, validation, and bundle integration tests.
 
-> **Go rewrite.** The upstream .NET toolkit is no longer maintained. This repository is a ground-up rewrite in Go with a `cobra`-based CLI. The command surface has changed — see [Commands](#commands) below.
+> **Go rewrite.** The upstream [.NET toolkit](https://github.com/advanced-security/codeql-development-toolkit) looks like no longer maintained. This repository is a ground-up rewrite in Go with a `cobra`-based CLI. The command surface has changed — see [Commands](#commands) below.
 
 # Installation
 
