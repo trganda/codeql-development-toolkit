@@ -115,7 +115,7 @@ func (c *CLI) ResolveTests(dir string) (*executil.Result, error) {
 
 // TestRun runs `codeql test run --threads N --format betterjson --quiet [extraArgs] <testFile>`.
 func (c *CLI) TestRun(threads int, extraArgs, testFile string) (*executil.Result, error) {
-	args := []string{"test", "run", "--threads", fmt.Sprintf("%d", threads), "--format=betterjson", "--quiet"}
+	args := []string{"test", "run", "--threads", fmt.Sprintf("%d", threads), "--format=json", "--quiet"}
 	if extraArgs != "" {
 		args = append(args, extraArgs)
 	}

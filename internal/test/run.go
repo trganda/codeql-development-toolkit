@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/config"
@@ -13,8 +15,12 @@ import (
 )
 
 // RunUnitTests resolves and runs all CodeQL unit tests for the given language
-// under base, reporting a summary via slog.
-func RunUnitTests(base, lang, codeqlArgs string, numThreads int) error {
+// under base, reporting a summary via slog. A TestReport is written to disk
+// only when reportOutput is non-nil:
+//   - reportOutput == nil         → no report written
+//   - *reportOutput == ""         → <base>/target/test/test-report-<timestamp>.json
+//   - *reportOutput != ""         → the caller-supplied path
+func RunUnitTests(base, lang, codeqlArgs string, reportOutput *string, numThreads int) error {
 	cfg := config.MustLoadFromFile(base)
 
 	slog.Info("Executing unit tests",
@@ -44,41 +50,78 @@ func RunUnitTests(base, lang, codeqlArgs string, numThreads int) error {
 
 	slog.Info("Resolved test files", "count", len(resolvedTests))
 
-	overall := Summary{}
+	start := time.Now().UTC()
+	var results []TestResult
 
 	for _, testFile := range resolvedTests {
 		slog.Debug("Running test file", "file", testFile)
 		res, err := cli.TestRun(numThreads, codeqlArgs, testFile)
 		if err != nil {
-			if res != nil && len(res.Stderr) > 0 {
-				slog.Error("Test failed", "file", testFile, "output", strings.TrimSpace(res.StderrString()))
+			stderr := ""
+			if res != nil {
+				stderr = strings.TrimSpace(res.StderrString())
 			}
-			overall.Total++
-			overall.Failed++
+			if stderr != "" {
+				slog.Error("Test failed", "file", testFile, "output", stderr)
+			}
+			results = append(results, TestResult{
+				Name: filepath.Base(testFile),
+				Path: testFile,
+				Pass: false,
+				Messages: []TestMessage{{
+					Severity: "error",
+					Message:  stderr,
+				}},
+			})
 			continue
 		}
 		if res == nil || len(res.Stdout) == 0 {
 			continue
 		}
-		events, parseErr := Parse(res.Stdout)
+		parsed, parseErr := ParseResults(res.Stdout)
 		if parseErr != nil {
-			slog.Warn("Could not parse betterjson output, dumping raw stdout", "error", parseErr, "output", res.StdoutString())
+			slog.Warn("Could not parse codeql test json, dumping raw stdout", "error", parseErr, "output", res.StdoutString())
 			continue
 		}
-		summary, testErr := LogEvents(events)
-		overall.Total += summary.Total
-		overall.Passed += summary.Passed
-		overall.Failed += summary.Failed
-		if testErr != nil {
-			slog.Warn("Test file had failures", "file", testFile, "error", testErr)
-		}
+		results = append(results, parsed...)
+	}
+
+	passed, failed := LogResults(results)
+	summary := ReportSummary{
+		Total:      len(results),
+		Passed:     passed,
+		Failed:     failed,
+		DurationMs: time.Since(start).Milliseconds(),
 	}
 
 	slog.Info("Completed execution of all unit tests",
-		"total", overall.Total,
-		"passed", overall.Passed,
-		"failed", overall.Failed,
+		"total", summary.Total,
+		"passed", summary.Passed,
+		"failed", summary.Failed,
 	)
+
+	if reportOutput == nil {
+		return nil
+	}
+	outputPath := *reportOutput
+	if outputPath == "" {
+		name := fmt.Sprintf("test-report-%s.json", start.Format("20060102T150405Z"))
+		outputPath = filepath.Join(base, "target", "test", name)
+	}
+
+	report := &TestReport{
+		Metadata: ReportMetadata{
+			Timestamp:  start,
+			Language:   lang,
+			NumThreads: numThreads,
+		},
+		Summary: summary,
+		Results: results,
+	}
+	if err := WriteReport(outputPath, report); err != nil {
+		return fmt.Errorf("writing test report: %w", err)
+	}
+	slog.Info("Wrote test report", "path", outputPath)
 
 	return nil
 }

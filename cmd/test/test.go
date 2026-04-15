@@ -12,6 +12,5 @@ func NewCommand(base, automationType *string) *cobra.Command {
 	}
 	cmd.AddCommand(newInitCmd(base))
 	cmd.AddCommand(newGetMatrixCmd(base))
-	cmd.AddCommand(newValidateUnitTestsCmd())
 	return cmd
 }

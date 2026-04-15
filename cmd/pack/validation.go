@@ -1,4 +1,4 @@
-package validation
+package pack
 
 import (
 	"fmt"
@@ -9,26 +9,17 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/language"
 )
 
-// NewCommand returns the `validation` cobra command.
-func NewCommand(base, automationType *string) *cobra.Command {
+// newValidationCommand returns the `validation` cobra command.
+func newValidationCommand(base string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "validation",
 		Short: "Query validation commands",
 	}
-	cmd.AddCommand(newRunCmd(base))
+	cmd.AddCommand(newCheckQueriesCmd(base))
 	return cmd
 }
 
-func newRunCmd(base *string) *cobra.Command {
-	run := &cobra.Command{
-		Use:   "run",
-		Short: "Run validation commands",
-	}
-	run.AddCommand(newCheckQueriesCmd(base))
-	return run
-}
-
-func newCheckQueriesCmd(base *string) *cobra.Command {
+func newCheckQueriesCmd(base string) *cobra.Command {
 	var (
 		lang        string
 		prettyPrint bool
@@ -37,8 +28,8 @@ func newCheckQueriesCmd(base *string) *cobra.Command {
 		Use:   "check-queries",
 		Short: "Validate CodeQL query metadata",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing validation run check-queries command", "base", *base, "language", lang)
-			return runCheckQueries(*base, lang, prettyPrint)
+			slog.Debug("Executing validation run check-queries command", "base", base, "language", lang)
+			return runCheckQueries(base, lang, prettyPrint)
 		},
 	}
 	cmd.Flags().StringVar(&lang, "language", "", "Language to validate")

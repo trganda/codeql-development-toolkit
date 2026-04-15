@@ -13,7 +13,6 @@ import (
 	"github.com/trganda/codeql-development-toolkit/cmd/phase"
 	"github.com/trganda/codeql-development-toolkit/cmd/query"
 	"github.com/trganda/codeql-development-toolkit/cmd/test"
-	"github.com/trganda/codeql-development-toolkit/cmd/validation"
 	qltlog "github.com/trganda/codeql-development-toolkit/internal/log"
 )
 
@@ -52,7 +51,6 @@ func init() {
 	rootCmd.AddCommand(query.NewCommand(&BasePath, &AutomationType))
 	rootCmd.AddCommand(codeql.NewCommand(&BasePath, &AutomationType))
 	rootCmd.AddCommand(test.NewCommand(&BasePath, &AutomationType))
-	rootCmd.AddCommand(validation.NewCommand(&BasePath, &AutomationType))
 	rootCmd.AddCommand(pack.NewCommand(&BasePath, &AutomationType))
 	rootCmd.AddCommand(bundle.NewCommand(&BasePath, &AutomationType))
 	rootCmd.AddCommand(phase.NewCommand(&BasePath, &AutomationType))
