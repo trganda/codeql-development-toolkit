@@ -24,7 +24,7 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Install QLT
       id: install-qlt
@@ -85,7 +85,7 @@ jobs:
         ls -l ${{ steps.analysis.outputs.sarif-output }}
 
     - name: Upload SARIF Results
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: actual.sarif
         path: |
@@ -93,7 +93,7 @@ jobs:
         if-no-files-found: error
 
     - name: Upload Bundles
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: codeql-bundles
         path: |

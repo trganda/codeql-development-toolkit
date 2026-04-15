@@ -14,7 +14,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Setup Go
       uses: actions/setup-go@v5
@@ -34,7 +34,7 @@ jobs:
         Pop-Location
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: qlt-dist-win64
         path: qlt-windows-x64.zip

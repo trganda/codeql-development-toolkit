@@ -17,7 +17,7 @@ jobs:
       matrix: ${{ steps.export-unit-test-matrix.outputs.matrix }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install QLT
         id: install-qlt
@@ -39,7 +39,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install QLT
         id: install-qlt
@@ -55,17 +55,8 @@ jobs:
         run: |
           qlt codeql install
 
-      - name: Install QL Packs
-        shell: bash
-        run: |
-          qlt phase install
-
       - name: Run test suites
         id: run-test-suites
-        env:
-          RUNNER_OS: ${{ runner.os }}
-          CODEQL_CLI: ${{ matrix.codeql_cli }}
-          RUNNER_TMP: ${{ runner.temp }}
         shell: bash
         run: >
           qlt phase test
@@ -74,7 +65,7 @@ jobs:
           --language [[ .Language ]]
 
       - name: Upload test results
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-${{ runner.os }}-${{ matrix.codeql_cli }}
           path: |
@@ -87,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install QLT
         id: install-qlt
