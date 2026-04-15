@@ -1,0 +1,43 @@
+name: 🍏 Build Release (MacOS x64)
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: |
+          The version to release. (eg: 0.1.2, exclude the 'v'.).
+        required: true
+        type: string
+
+jobs:
+  build-macos-x64:
+    runs-on: macos-13 # x64
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+
+    - name: Build
+      run: make build VERSION=${{ inputs.version }}
+
+    - name: Build Archive
+      run: |
+        ARCHIVE="$(pwd)/qlt-macos-x64.zip"
+        pushd dist
+        zip -r "$ARCHIVE" qlt
+        popd
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: qlt-dist-macos-x64
+        path: qlt-macos-x64.zip
+
+    - name: Upload to GitHub Release
+      run: gh release upload v${{ inputs.version }} ./qlt-macos-x64.zip
+      env:
+        GH_TOKEN: ${{ github.token }}

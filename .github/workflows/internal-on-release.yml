@@ -1,11 +1,11 @@
-name: 🚀 Trigger Release Build on Publish
+name: 🚀 Build and Publish Release
 
 on:
   release:
     types: [published]
 
 jobs:
-  trigger-release-build:
+  extract-version:
     runs-on: ubuntu-latest
     steps:
       - name: Extract version from tag
@@ -18,8 +18,26 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
 
-  release-build:
-    uses: ./.github/workflows/internal-release-build.yml
-    needs: trigger-release-build
+  build-linux64:
+    uses: ./.github/workflows/internal-build-release-linux64.yml
+    needs: extract-version
     with:
-      version: ${{ needs.trigger-release-build.outputs.version }}
+      version: ${{ needs.extract-version.outputs.version }}
+
+  build-macos-arm64:
+    uses: ./.github/workflows/internal-build-release-macos-arm64.yml
+    needs: extract-version
+    with:
+      version: ${{ needs.extract-version.outputs.version }}
+
+  build-macos-x64:
+    uses: ./.github/workflows/internal-build-release-macos-x64.yml
+    needs: extract-version
+    with:
+      version: ${{ needs.extract-version.outputs.version }}
+
+  build-win64:
+    uses: ./.github/workflows/internal-build-release-win64.yml
+    needs: extract-version
+    with:
+      version: ${{ needs.extract-version.outputs.version }}

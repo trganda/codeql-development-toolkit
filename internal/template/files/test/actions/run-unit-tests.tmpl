@@ -1,0 +1,93 @@
+name: ⚙️ CodeQL - Run Unit Tests ([[ .Language ]])
+
+on:
+  push:
+    branches:
+      - '[[ .Branch ]]'
+  pull_request:
+    branches:
+      - '[[ .Branch ]]'
+  workflow_dispatch:
+
+jobs:
+  create-unit-test-matrix:
+    name: Create CodeQL Unit Test Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.export-unit-test-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install QLT
+        id: install-qlt
+        uses: ./.github/actions/install-qlt
+
+      - name: Export unit test matrix
+        id: export-unit-test-matrix
+        run: |
+          qlt test run get-matrix --os-version [[ .UseRunner ]] >> "$GITHUB_OUTPUT"
+
+  run-test-suites:
+    name: Run Unit Tests
+    needs: create-unit-test-matrix
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.create-unit-test-matrix.outputs.matrix) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install QLT
+        id: install-qlt
+        uses: ./.github/actions/install-qlt
+
+      - name: Verify Versions of Tooling
+        shell: bash
+        run: |
+          qlt version
+
+      - name: Install CodeQL CLI
+        shell: bash
+        run: |
+          qlt codeql install
+
+      - name: Run test suites
+        id: run-test-suites
+        shell: bash
+        run: >
+          qlt phase test
+          --codeql-args "[[ .CodeqlArgs ]]"
+          --num-threads [[ .NumThreads ]]
+          --output "${{ runner.temp }}/test_report_${{ runner.os }}_${{ matrix.codeql_cli }}.json"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-${{ runner.os }}-${{ matrix.codeql_cli }}
+          path: |
+            ${{ runner.temp }}/test_report_${{ runner.os }}_${{ matrix.codeql_cli }}.json
+          if-no-files-found: error
+
+  validate-test-results:
+    name: Validate test results
+    needs: [run-test-suites]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install QLT
+        id: install-qlt
+        uses: ./.github/actions/install-qlt
+  
+      - name: Collect test results
+        uses: actions/download-artifact@v7
+
+      - name: Validate test results
+        run: |
+          # qlt test run validate-unit-tests --pretty-print --results-directory . >> $GITHUB_STEP_SUMMARY
+          # qlt test run validate-unit-tests --results-directory .

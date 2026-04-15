@@ -3,75 +3,44 @@ name: 🪟 Build Release (Windows x64)
 on:
   workflow_call:
     inputs:
-        version:
-          description: |
-            The version to release. (eg: 0.1.2, exclude the 'v'.). 
-          required: true
-          type: string 
-          
+      version:
+        description: |
+          The version to release. (eg: 0.1.2, exclude the 'v'.).
+        required: true
+        type: string
+
 jobs:
   build-win64:
-    runs-on: windows-latest 
-    
+    runs-on: windows-latest
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
+    - uses: actions/checkout@v6
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
       with:
-        dotnet-version: 6.0.x
-    - name: Restore dependencies
-      run: dotnet restore
+        go-version-file: go.mod
+
     - name: Build
-      run: dotnet build -c Release --no-restore
+      shell: bash
+      run: make build VERSION=${{ inputs.version }} BINARY=qlt.exe
 
-    - name: Update version file
-      shell: pwsh
-      run: Set-Content -Path "src\CodeQLToolkit.Core\ver.txt" -Value "${{inputs.version}}"
-
-    - name: Build Bundle
+    - name: Build Archive
       shell: pwsh
       run: |
-        echo "Current Directory $(Get-Location)"
-        # build the project
-        dotnet publish .\src\CodeQLToolkit.Core\CodeQLToolkit.Core.csproj /p:PublishProfile=.\src\CodeQLToolkit.Core\Properties\PublishProfiles\Windows-x64.pubxml
-        Copy-Item .\src\CodeQLToolkit.Core\bin\Release\net6.0\publish\windows-x64\CodeQLToolkit.Core.exe .\src\CodeQLToolkit.Core\bin\Release\net6.0\publish\windows-x64\qlt.exe
-        
-
-    - uses: actions/setup-python@v6
-      with:
-        python-version: '3.11'
-
-    - name: Build CodeQL Bundle Tool for Packaging
-      shell: pwsh 
-      run: |
-        # need this for the bundling to work.
-        pip install poetry 
-        pip install -U pyinstaller 
-
-        # run the packaging 
-        .\scripts\build_codeql_bundle_dist.ps1 -Version 0.4.1 -WorkDirectory dist -DestinationDirectory .\src\CodeQLToolkit.Core\bin\Release\net6.0\publish\windows-x64\tools\
-      env:
-        GH_TOKEN: ${{ github.token }}
-
-    - name: Build Bundle Archive
-      shell: pwsh
-      run: |
-        # create bundle 
-        $ARCHIVE="$(Get-Location)/qlt-windows-x64.zip"        
-        Push-Location .\src\CodeQLToolkit.Core\bin\Release\net6.0\publish\windows-x64
-        Compress-Archive -Path "*" -DestinationPath $ARCHIVE 
+        $ARCHIVE = "$(Get-Location)/qlt-windows-x64.zip"
+        Push-Location dist
+        Compress-Archive -Path qlt.exe -DestinationPath $ARCHIVE
         Pop-Location
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: qlt-dist-win64
-        path: qlt*.zip
+        path: qlt-windows-x64.zip
 
-    - name: Upload Build Artifacts
+    - name: Upload to GitHub Release
       shell: pwsh
-      run: |
-        Write-Host (Get-Location)
-        gh release upload v${{inputs.version}} ./qlt-windows-x64.zip
+      run: gh release upload v${{ inputs.version }} ./qlt-windows-x64.zip
       env:
         GH_TOKEN: ${{ github.token }}

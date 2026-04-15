@@ -1,0 +1,75 @@
+name: ⚙️ CodeQL - Validate Queries ([[ .Language ]])
+
+on:
+  push:
+    branches:
+      - '[[ .Branch ]]'
+  pull_request:
+    branches:
+      - '[[ .Branch ]]'
+  workflow_dispatch:
+
+jobs:
+  create-matrix:
+    name: Create CodeQL Test Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.export-test-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Install QLT
+        id: install-qlt
+        uses: ./.github/actions/install-qlt
+        with:
+          qlt-version: 'latest'
+          add-to-path: true
+
+      - name: Export unit test matrix
+        id: export-unit-test-matrix
+        run: |
+          qlt test run get-matrix --os-version [[ .UseRunner ]]
+  validate-queries:
+    name: Validate Queries
+    needs: create-matrix
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.create-matrix.outputs.matrix) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install QLT
+        id: install-qlt
+        uses: ./.github/actions/install-qlt
+        with:
+          qlt-version: 'latest'
+          add-to-path: true
+
+      - name: Install CodeQL
+        id: install-codeql
+        shell: bash
+        run: |
+          echo "Installing CodeQL"
+          qlt codeql install
+
+      - name: Verify Versions of Tooling
+        shell: bash
+        run: |
+          echo -e "Checking QLT Version:"
+          qlt version
+
+      - name: Install QL Packs
+        shell: bash
+        run: |
+          qlt query install
+
+      - name: Run validation tests
+        shell: bash
+        run: >
+          qlt validation run check-queries --pretty-print --language [[ .Language ]] >> $GITHUB_STEP_SUMMARY
+
+          qlt validation run check-queries --language [[ .Language ]]

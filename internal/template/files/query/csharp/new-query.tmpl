@@ -1,0 +1,15 @@
+/**
+ * @id [[ .Language ]]/[[ .QueryPackName ]]/[[ toLower .QueryName ]]
+ * @name [[ .QueryName ]]
+ * @description [[ .Description ]]
+ * @kind problem
+ * @precision medium
+ * @problem.severity error
+ * @tags [[ .QueryPackName ]]
+ */
+
+import [[ .QlLanguageImport ]]
+
+from File f
+where f.getBaseName() = "[[ .QueryName ]].cs"
+select f, "Replace this with your query."

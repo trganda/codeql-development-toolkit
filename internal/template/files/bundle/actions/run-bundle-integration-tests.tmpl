@@ -1,0 +1,98 @@
+name: ⚙️ Integration Test Bundle ([[ .Language ]])
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+jobs:
+  integration-test:
+    name: Run Bundle Integration Test
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'cpp' ]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Install QLT
+      id: install-qlt
+      uses: ./.github/actions/install-qlt
+
+    - name: Validate QLT Installation
+      shell: bash
+      run: |
+        echo -e "Checking QLT Version:"
+        echo "QLT Home: ${{ steps.install-qlt.outputs.qlt-home }}"
+        qlt version
+
+    - name: Create Bundle (compiled)
+      shell: bash
+      run: |
+        qlt phase package
+
+    - name: Validate Bundle Existence
+      id: bundle
+      shell: bash
+      run: |
+        echo "Checking Bundle Existence"
+        ls -l target/custom-bundle/*/codeql-bundle*.tar.gz
+        BUNDLE_PATH=$(ls target/custom-bundle/*/codeql-bundle*.tar.gz | head -n1)
+        echo "bundle-path=$BUNDLE_PATH" >> "$GITHUB_OUTPUT"
+
+    - name: Upload Bundles
+      uses: actions/upload-artifact@v7
+      with:
+        name: codeql-bundles
+        path: target/custom-bundle/**/codeql-bundle*.tar.gz
+        if-no-files-found: error
+        compression-level: 0
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v4
+      with:
+        languages: ${{ matrix.language }}
+        tools: ${{ steps.bundle.outputs.bundle-path }}
+
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v4
+      with:
+        working-directory: integration-tests/${{ matrix.language }}/src/
+
+    - name: Perform CodeQL Analysis
+      id: analysis
+      uses: github/codeql-action/analyze@v4
+
+    - name: Validate SARIF Location
+      shell: bash
+      run: |
+        echo "Checking SARIF file location at: ${{ steps.analysis.outputs.sarif-output }}"
+        ls -l ${{ steps.analysis.outputs.sarif-output }}
+
+    - name: Upload SARIF Results
+      uses: actions/upload-artifact@v7
+      with:
+        name: actual.sarif
+        path: |
+          ${{ steps.analysis.outputs.sarif-output }}/*.sarif
+        if-no-files-found: error
+
+    - name: Validate SARIF Existence
+      shell: bash
+      run: |
+        ls -l ${{ steps.analysis.outputs.sarif-output }}/*.sarif
+    - name: Validate SARIF Results
+      shell: bash
+      run: |
+        qlt bundle run validate-integration-tests --expected integration-tests/${{ matrix.language }}/expected.sarif --actual ${{ steps.analysis.outputs.sarif-output }}/${{ matrix.language }}.sarif
