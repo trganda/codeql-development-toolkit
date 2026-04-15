@@ -75,7 +75,7 @@ func (ctx *CustomBundle) Create() error {
 	}
 
 	slog.Info("Listing workspace packs", "dir", ctx.opts.WorkspaceDir)
-	allWorkspacePacks, err := ListPacks(ctx.tmpCodeQLBin, ctx.opts.WorkspaceDir)
+	allWorkspacePacks, err := ListPackWithProcess(ctx.tmpCodeQLBin, ctx.opts.WorkspaceDir)
 	if err != nil {
 		return fmt.Errorf("listing workspace packs: %w", err)
 	}

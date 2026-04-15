@@ -11,8 +11,8 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/pack"
 )
 
-// ListPacks runs `codeql pack ls --format=json <dir>` and returns all packs found.
-func ListPacks(codeqlBin, dir string) ([]PackProcessor, error) {
+// ListPackWithProcess runs `codeql pack ls --format=json <dir>` and returns all packs found.
+func ListPackWithProcess(codeqlBin, dir string) ([]PackProcessor, error) {
 	packs, err := pack.ListPacks(codeqlBin, dir)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,6 @@ func newPackProcessor(p *pack.Pack, kind pack.PackKind) PackProcessor {
 // into the bundle by CustomBundle.Create after every processor has run.
 type queryPack struct {
 	pack *pack.Pack
-	kind pack.PackKind
 }
 
 func (q *queryPack) Process(cb *CustomBundle) error {
@@ -110,7 +109,7 @@ func (q *queryPack) GetPack() *pack.Pack {
 }
 
 func (q *queryPack) GetKind() pack.PackKind {
-	return q.kind
+	return pack.QueryPack
 }
 
 // customizationPack is a placeholder for customization-kind packs.
@@ -118,7 +117,6 @@ func (q *queryPack) GetKind() pack.PackKind {
 // re-bundling is not yet implemented; the pack is skipped with a warning.
 type customizationPack struct {
 	pack *pack.Pack
-	kind pack.PackKind
 }
 
 func (c *customizationPack) Process(_ *CustomBundle) error {
@@ -132,19 +130,37 @@ func (c *customizationPack) GetPack() *pack.Pack {
 }
 
 func (c *customizationPack) GetKind() pack.PackKind {
-	return c.kind
+	return pack.CustomizationPack
 }
 
 // libraryPack is a placeholder for library-kind packs. Library
 // bundling is not yet implemented; the pack is skipped with a warning.
 type libraryPack struct {
 	pack *pack.Pack
-	kind pack.PackKind
 }
 
-func (l *libraryPack) Process(_ *CustomBundle) error {
+func (l *libraryPack) Process(cb *CustomBundle) error {
 	slog.Warn("Library packs are not yet supported in bundle create; skipping",
 		"pack", l.pack.Config.Name)
+
+	p := l.pack
+	packCopy, err := p.CopyTo(filepath.Join(cb.tmpDir, "temp"))
+	if err != nil {
+		return err
+	}
+
+	runner := executil.NewRunner(cb.tmpCodeQLBin)
+	if _, err := runner.Run(
+		"pack",
+		"bundle",
+		"--format=json",
+		fmt.Sprintf("--output=%s", cb.tmpQlPacksDir),
+		fmt.Sprintf("--common-caches=%s", cb.commonCachesDir),
+		packCopy.Dir(),
+	); err != nil {
+		return fmt.Errorf("codeql pack bundle %s: %w", p.Config.Name, err)
+	}
+
 	return nil
 }
 
@@ -153,5 +169,5 @@ func (l *libraryPack) GetPack() *pack.Pack {
 }
 
 func (l *libraryPack) GetKind() pack.PackKind {
-	return l.kind
+	return pack.LibraryPack
 }

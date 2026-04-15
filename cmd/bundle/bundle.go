@@ -39,7 +39,7 @@ func newCreateCmd(base *string) *cobra.Command {
 	}
 
 	createCmd.Flags().StringVar(&lang, "language", "", "Filter by language (reserved; currently unused by bundle create)")
-	createCmd.Flags().StringVar(&bundlePath, "bundle", "", "Override base bundle archive path (.tar.gz)")
+	createCmd.Flags().StringVar(&bundlePath, "bundle", "", "Override base CodeQL CLI Binary archive path (.zip)")
 	createCmd.Flags().StringVar(&output, "output", "", "Override output path (.tar.gz)")
 	createCmd.Flags().StringArrayVar(&platforms, "platform", nil, "Target platform: linux64, osx64, win64 (repeatable)")
 	createCmd.Flags().BoolVar(&noPrecompile, "no-precompile", false, "Skip pre-compilation when bundling packs")
