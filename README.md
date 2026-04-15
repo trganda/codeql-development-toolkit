@@ -25,16 +25,7 @@ QLT makes common CodeQL development workflows easier. Key features:
 **With `go install`.** Requires Go 1.22+.
 
 ```bash
-go install github.com/trganda/codeql-development-toolkit@latest 
-```
-
-The binary lands in `$(go env GOPATH)/bin/codeql-development-toolkit`; rename it to `qlt` if you prefer the short name.
-
-```bash
-mv "$(go env GOPATH)/bin/codeql-development-toolkit" "$(go env GOPATH)/bin/qlt"
-
-# On Windows, use PowerShell:
-Move-Item "$(go env GOPATH)\bin\codeql-development-toolkit.exe" "$(go env GOPATH)\bin\qlt.exe"
+go install github.com/trganda/codeql-development-toolkit/cmd/qlt@latest
 ```
 
 **From source.**

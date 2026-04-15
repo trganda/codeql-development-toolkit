@@ -12,11 +12,11 @@ all: build
 ## build: compile the binary into dist/
 build:
 	mkdir -p $(BUILD_DIR)
-	CGO_ENABLED=0 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY) .
+	CGO_ENABLED=0 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY) ./cmd/qlt
 
 ## install: install the binary to $GOPATH/bin (or ~/go/bin)
 install:
-	CGO_ENABLED=0 go build $(LDFLAGS) -o $(shell go env GOPATH)/bin/$(BINARY) .
+	CGO_ENABLED=0 go build $(LDFLAGS) -o $(shell go env GOPATH)/bin/$(BINARY) ./cmd/qlt
 
 ## test: run all Go tests
 test:
