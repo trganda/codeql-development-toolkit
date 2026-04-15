@@ -9,7 +9,7 @@ import (
 )
 
 // NewCommand returns the `query` cobra command.
-func NewCommand(base, automationType *string) *cobra.Command {
+func NewCommand(base string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "query",
 		Short: "Query feature commands",
@@ -20,7 +20,7 @@ func NewCommand(base, automationType *string) *cobra.Command {
 }
 
 // newRunCmd returns `query run`.
-func newRunCmd(base *string) *cobra.Command {
+func newRunCmd(base string) *cobra.Command {
 	var (
 		queryName       string
 		database        string
@@ -48,7 +48,7 @@ The CodeQL binary is resolved in order:
 			slog.Debug("Executing query run",
 				"query", queryName, "database", database, "language", lang,
 				"pack", pack, "format", format, "output", output, "threads", threads)
-			return query.RunQuery(*base, queryName, database, lang, pack, format, output, additionalPacks, threads)
+			return query.RunQuery(base, queryName, database, lang, pack, format, output, additionalPacks, threads)
 		},
 	}
 	run.Flags().StringVar(&queryName, "query", "", "Query name to run, e.g. MyQuery (required)")

@@ -12,7 +12,7 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
 
-func newListCmd(base *string) *cobra.Command {
+func newListCmd(base string) *cobra.Command {
 	var lang string
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -22,8 +22,8 @@ func newListCmd(base *string) *cobra.Command {
 Use --language to narrow the search to a specific language directory
 or pack name.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing pack list command", "base", *base, "language", lang)
-			return runPackList(*base, lang)
+			slog.Debug("Executing pack list command", "base", base, "language", lang)
+			return runPackList(base, lang)
 		},
 	}
 	cmd.Flags().StringVar(&lang, "language", "", "Filter by language (e.g. go, java)")

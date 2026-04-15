@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/trganda/codeql-development-toolkit/cmd/action"
 	"github.com/trganda/codeql-development-toolkit/cmd/bundle"
 	"github.com/trganda/codeql-development-toolkit/cmd/codeql"
 	"github.com/trganda/codeql-development-toolkit/cmd/pack"
@@ -18,9 +19,8 @@ import (
 
 // Global flags shared by all commands.
 var (
-	BasePath       string
-	AutomationType string
-	Verbose        bool
+	BasePath string
+	Verbose  bool
 )
 
 var rootCmd = &cobra.Command{
@@ -29,7 +29,7 @@ var rootCmd = &cobra.Command{
 	Long:  "QLT helps you develop, test, and validate CodeQL queries.",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		qltlog.Init(Verbose)
-		slog.Debug("QLT startup", "verbose", Verbose, "base", BasePath, "automation-type", AutomationType)
+		slog.Debug("QLT startup", "verbose", Verbose, "base", BasePath)
 		return nil
 	},
 }
@@ -44,14 +44,14 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&BasePath, "base", ".", "Base repository path")
-	rootCmd.PersistentFlags().StringVar(&AutomationType, "automation-type", "actions", "Automation type (e.g. actions)")
 	rootCmd.PersistentFlags().BoolVar(&Verbose, "verbose", false, "Enable verbose logging")
 
 	rootCmd.AddCommand(versionCmd())
-	rootCmd.AddCommand(query.NewCommand(&BasePath, &AutomationType))
-	rootCmd.AddCommand(codeql.NewCommand(&BasePath, &AutomationType))
-	rootCmd.AddCommand(test.NewCommand(&BasePath, &AutomationType))
-	rootCmd.AddCommand(pack.NewCommand(&BasePath, &AutomationType))
-	rootCmd.AddCommand(bundle.NewCommand(&BasePath, &AutomationType))
-	rootCmd.AddCommand(phase.NewCommand(&BasePath, &AutomationType))
+	rootCmd.AddCommand(action.NewActionCommand(BasePath))
+	rootCmd.AddCommand(query.NewCommand(BasePath))
+	rootCmd.AddCommand(codeql.NewCommand(BasePath))
+	rootCmd.AddCommand(test.NewCommand(BasePath))
+	rootCmd.AddCommand(pack.NewCommand(BasePath))
+	rootCmd.AddCommand(bundle.NewCommand(BasePath))
+	rootCmd.AddCommand(phase.NewCommand(BasePath))
 }
