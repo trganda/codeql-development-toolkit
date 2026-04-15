@@ -82,6 +82,11 @@ func (q *queryPack) Process(cb *CustomBundle) error {
 
 	runner := executil.NewRunner(cb.tmpCodeQLBin)
 
+	// Remove the .cache and .codeql folder from the copied pack if they exist, to ensure a clean install.
+	os.RemoveAll(packCopy.DepsPath())
+	os.RemoveAll(packCopy.CachePath())
+	slog.Debug("Removed .cache and .codeql directories", "pack", p.Config.Name)
+
 	if _, err := runner.Run(
 		"pack", "install",
 		"--format=json",
