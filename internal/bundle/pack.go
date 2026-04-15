@@ -19,7 +19,7 @@ func ListPackWithProcess(codeqlBin, dir string) ([]PackProcessor, error) {
 	}
 	var processors []PackProcessor
 	for _, p := range packs {
-		processors = append(processors, newPackProcessor(p, classify(p.YmlPath, p.Config)))
+		processors = append(processors, newPackProcessor(p, classify(p)))
 	}
 	return processors, nil
 }
@@ -28,16 +28,18 @@ func ListPackWithProcess(codeqlBin, dir string) ([]PackProcessor, error) {
 // A pack is a CustomizationPack if it is a library pack AND has a
 // <name_underscored>/Customizations.qll file relative to its directory.
 // e.g. "foo/cpp-customizations" → check for "foo/cpp_customizations/Customizations.qll"
-func classify(ymlPath string, cfg pack.QlpackConfig) pack.PackKind {
-	if !cfg.Library {
-		return pack.QueryPack
+func classify(p *pack.Pack) pack.PackKind {
+	kind := pack.QueryPack
+	if p.Config.Library {
+		normalized := strings.ReplaceAll(p.Config.Name, "-", "_")
+		customPath := filepath.Join(p.Dir(), normalized, "Customizations.qll")
+		if _, err := os.Stat(customPath); err == nil {
+			kind = pack.CustomizationPack
+		} else {
+			kind = pack.LibraryPack
+		}
 	}
-	normalized := strings.ReplaceAll(cfg.Name, "-", "_")
-	customPath := filepath.Join(filepath.Dir(ymlPath), normalized, "Customizations.qll")
-	if _, err := os.Stat(customPath); err == nil {
-		return pack.CustomizationPack
-	}
-	return pack.LibraryPack
+	return kind
 }
 
 // PackProcessor encapsulates the build-time handling of a single workspace
