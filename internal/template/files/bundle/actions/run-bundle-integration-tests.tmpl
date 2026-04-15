@@ -43,19 +43,19 @@ jobs:
         qlt phase package
 
     - name: Validate Bundle Existence
+      id: bundle
       shell: bash
       run: |
         echo "Checking Bundle Existence"
-        ls -l target/bundles/
+        ls -l target/custom-bundle/*/codeql-bundle*.tar.gz
+        BUNDLE_PATH=$(ls target/custom-bundle/*/codeql-bundle*.tar.gz | head -n1)
+        echo "bundle-path=$BUNDLE_PATH" >> "$GITHUB_OUTPUT"
 
     - name: Upload Bundles
       uses: actions/upload-artifact@v7
       with:
         name: codeql-bundles
-        path: |
-          ${{ env.QLT_CODEQL_BUNDLE_PATH_LINUX64 }}
-          ${{ env.QLT_CODEQL_BUNDLE_PATH_WIN64 }}
-          ${{ env.QLT_CODEQL_BUNDLE_PATH_OSX64 }}
+        path: target/custom-bundle/**/codeql-bundle*.tar.gz
         if-no-files-found: error
         compression-level: 0
 
@@ -63,7 +63,7 @@ jobs:
       uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
-        tools: ${{ env.QLT_CODEQL_BUNDLE_PATH }}
+        tools: ${{ steps.bundle.outputs.bundle-path }}
 
     - name: Autobuild
       uses: github/codeql-action/autobuild@v4
