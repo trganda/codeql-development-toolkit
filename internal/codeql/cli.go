@@ -67,7 +67,7 @@ func (c *CLI) PackPublish(dir string) (*executil.Result, error) {
 }
 
 // QueryCompile runs `codeql query compile [--threads=N] -- <files>`.
-func (c *CLI) QueryCompile(threads int, files []string) (*executil.Result, error) {
+func (c *CLI) QueryCompile(threads int, files ...string) (*executil.Result, error) {
 	args := []string{"query", "compile", "--format=json"}
 	if threads != 0 {
 		args = append(args, fmt.Sprintf("--threads=%d", threads))
