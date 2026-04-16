@@ -2,11 +2,16 @@ package query
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/language"
@@ -62,23 +67,49 @@ func RunCompile(base, lang, pack string, threads int) error {
 		return fmt.Errorf("no .ql files found under %s", searchRoot)
 	}
 
-	slog.Info("Compiling query files", "count", len(files), "root", searchRoot)
-	for _, f := range files {
-		slog.Debug("Scheduled for compile", "file", f)
-		res, err := codeql.NewCLI(codeqlBin).QueryCompile(threads, f)
-		if err != nil {
-			if res != nil && len(res.Stdout) > 0 {
-				slog.Debug("CodeQL compile stdout", "output", res.StdoutString())
-			}
-			return fmt.Errorf("run codeql query compile: %w", err)
-		}
-
-		if len(res.Stdout) > 0 {
-			logCompileResults(res.Stdout)
-		}
+	maxWorkers := threads
+	if maxWorkers <= 0 {
+		maxWorkers = runtime.NumCPU()
 	}
 
-	return nil
+	slog.Info("Compiling query files", "count", len(files), "root", searchRoot, "workers", maxWorkers)
+	for _, f := range files {
+		slog.Debug("Scheduled for compile", "file", f)
+	}
+
+	var (
+		mu   sync.Mutex
+		errs []error
+	)
+
+	g := new(errgroup.Group)
+	g.SetLimit(maxWorkers)
+
+	cli := codeql.NewCLI(codeqlBin)
+	for _, f := range files {
+		f := f
+		g.Go(func() error {
+			res, err := cli.QueryCompile(1, f)
+			if err != nil {
+				if res != nil && len(res.Stdout) > 0 {
+					slog.Debug("CodeQL compile stdout", "output", res.StdoutString())
+				}
+				mu.Lock()
+				errs = append(errs, fmt.Errorf("compile %s: %w", f, err))
+				mu.Unlock()
+				return nil // let other goroutines continue
+			}
+			if len(res.Stdout) > 0 {
+				mu.Lock()
+				logCompileResults(res.Stdout)
+				mu.Unlock()
+			}
+			return nil
+		})
+	}
+
+	g.Wait()
+	return errors.Join(errs...)
 }
 
 // findQueryFiles walks dir recursively and collects all .ql file paths.
