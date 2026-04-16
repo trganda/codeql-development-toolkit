@@ -8,7 +8,7 @@ import (
 )
 
 // newValidationCommand returns the `validation` cobra command.
-func newValidationCommand(base string) *cobra.Command {
+func newValidationCommand(base *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "validate",
 		Short: "Query validation commands",
@@ -17,7 +17,7 @@ func newValidationCommand(base string) *cobra.Command {
 	return cmd
 }
 
-func newCheckQueriesCmd(base string) *cobra.Command {
+func newCheckQueriesCmd(base *string) *cobra.Command {
 	var (
 		lang        string
 		prettyPrint bool
@@ -26,8 +26,8 @@ func newCheckQueriesCmd(base string) *cobra.Command {
 		Use:   "queries",
 		Short: "Validate CodeQL query metadata",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing validation run check-queries command", "base", base)
-			return runCheckQueries(base, lang, prettyPrint)
+			slog.Debug("Executing validation run check-queries command", "base", *base)
+			return runCheckQueries(*base, lang, prettyPrint)
 		},
 	}
 

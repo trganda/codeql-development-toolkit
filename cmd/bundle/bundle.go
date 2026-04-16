@@ -9,7 +9,7 @@ import (
 )
 
 // NewCommand returns the `bundle` cobra command.
-func NewCommand(base string) *cobra.Command {
+func NewCommand(base *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bundle",
 		Short: "Custom CodeQL bundle management commands",
@@ -20,7 +20,7 @@ func NewCommand(base string) *cobra.Command {
 	return cmd
 }
 
-func newCreateCmd(base string) *cobra.Command {
+func newCreateCmd(base *string) *cobra.Command {
 	var (
 		lang         string
 		bundlePath   string
@@ -33,8 +33,8 @@ func newCreateCmd(base string) *cobra.Command {
 		Use:   "create",
 		Short: "Create a new custom CodeQL bundle",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing bundle create command", "base", base)
-			return runBundleCreate(base, bundlePath, output, platforms, noPrecompile, minimal)
+			slog.Debug("Executing bundle create command", "base", *base)
+			return runBundleCreate(*base, bundlePath, output, platforms, noPrecompile, minimal)
 		},
 	}
 
@@ -68,7 +68,7 @@ func runBundleCreate(base, bundlePath, output string, platforms []string, noPrec
 	return bundleCtx.Create()
 }
 
-func newRunCmd(base string) *cobra.Command {
+func newRunCmd(base *string) *cobra.Command {
 	run := &cobra.Command{
 		Use:   "run",
 		Short: "Run bundle commands",
@@ -77,7 +77,7 @@ func newRunCmd(base string) *cobra.Command {
 	return run
 }
 
-func newValidateIntegrationTestsCmd(base string) *cobra.Command {
+func newValidateIntegrationTestsCmd(base *string) *cobra.Command {
 	var expected, actual string
 	cmd := &cobra.Command{
 		Use:   "validate-integration-tests",

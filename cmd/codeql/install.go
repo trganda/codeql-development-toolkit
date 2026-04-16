@@ -8,15 +8,15 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 )
 
-func newInstallCmd(base string) *cobra.Command {
+func newInstallCmd(base *string) *cobra.Command {
 	var version, platform string
 	cmd := &cobra.Command{
 		Use:   "install",
 		Short: "Download and install the CodeQL CLI binary",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing codeql install command",
-				"base", base, "version", version, "platform", platform)
-			return codeql.Install(base, platform)
+				"base", *base, "version", version, "platform", platform)
+			return codeql.Install(*base, platform)
 		},
 	}
 

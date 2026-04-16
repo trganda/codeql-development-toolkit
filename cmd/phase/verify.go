@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newVerifyCmd(base string, common *commonFlags) *cobra.Command {
+func newVerifyCmd(base *string, common *commonFlags) *cobra.Command {
 	return &cobra.Command{
 		Use:   "verify",
 		Short: "Verify CodeQL query quality (placeholder)",
@@ -20,8 +20,8 @@ metadata and run integration checks.
 
 For now, use: qlt validation run check-queries --language <lang>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing phase verify", "base", base, "language", common.language)
-			return runVerifyChain(base, common)
+			slog.Debug("Executing phase verify", "base", *base, "language", common.language)
+			return runVerifyChain(*base, common)
 		},
 	}
 }

@@ -12,7 +12,7 @@ import (
 )
 
 // newGenerateCmd returns `pack generate`.
-func newGenerateCmd(base string) *cobra.Command {
+func newGenerateCmd(base *string) *cobra.Command {
 	var bundle bool
 	gen := &cobra.Command{
 		Use:   "generate",
@@ -25,7 +25,7 @@ func newGenerateCmd(base string) *cobra.Command {
 }
 
 // newNewQueryCmd returns `pack generate new-query`.
-func newNewQueryCmd(base string, useBundle *bool) *cobra.Command {
+func newNewQueryCmd(base *string, useBundle *bool) *cobra.Command {
 	var (
 		queryName       string
 		lang            string
@@ -44,13 +44,13 @@ func newNewQueryCmd(base string, useBundle *bool) *cobra.Command {
 			slog.Debug("Executing pack generate new-query command",
 				"name", queryName, "language", lang, "pack", packName, "kind", queryKind, "use-bundle", *useBundle)
 
-			codeqlBin, err := paths.ResolveCodeQLBinary(base)
+			codeqlBin, err := paths.ResolveCodeQLBinary(*base)
 			if err != nil {
 				return fmt.Errorf("resolve CodeQL binary: %w", err)
 			}
 
 			return pack.GenerateNewQuery(codeql.NewCLI(codeqlBin), pack.GenerateArgs{
-				Base:            base,
+				Base:            *base,
 				QueryName:       queryName,
 				Lang:            lang,
 				Pack:            packName,

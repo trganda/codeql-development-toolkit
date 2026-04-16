@@ -9,7 +9,7 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/query"
 )
 
-func newInitCmd(base string) *cobra.Command {
+func newInitCmd(base *string) *cobra.Command {
 	var (
 		scope         string
 		overwrite     bool
@@ -25,8 +25,8 @@ provided scope and CodeQL CLI version.
 
 Corresponds to: qlt query init`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing phase init", "base", base, "scope", scope)
-			if _, err := query.InitWorkspace(base, scope, codeqlVersion, overwrite); err != nil {
+			slog.Debug("Executing phase init", "base", *base, "scope", scope)
+			if _, err := query.InitWorkspace(*base, scope, codeqlVersion, overwrite); err != nil {
 				return err
 			}
 			return nil

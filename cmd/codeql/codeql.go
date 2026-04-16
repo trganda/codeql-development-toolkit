@@ -5,7 +5,7 @@ import (
 )
 
 // NewCommand returns the `codeql` cobra command.
-func NewCommand(base string) *cobra.Command {
+func NewCommand(base *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "codeql",
 		Short: "CodeQL version management commands",

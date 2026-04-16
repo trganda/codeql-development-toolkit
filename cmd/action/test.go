@@ -10,7 +10,7 @@ import (
 	tmpl "github.com/trganda/codeql-development-toolkit/internal/template"
 )
 
-func newTestInitCommand(base string) *cobra.Command {
+func newTestInitCommand(base *string) *cobra.Command {
 	var (
 		overwrite  bool
 		numThreads int
@@ -24,7 +24,7 @@ func newTestInitCommand(base string) *cobra.Command {
 		Short: "Initialize test infrastructure (GitHub Actions workflow)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing test init command", "language", lang, "runner", useRunner, "branch", branch)
-			return runTestInit(base, lang, useRunner, branch, numThreads, overwrite)
+			return runTestInit(*base, lang, useRunner, branch, numThreads, overwrite)
 		},
 	}
 

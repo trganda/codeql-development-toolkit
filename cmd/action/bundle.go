@@ -9,7 +9,7 @@ import (
 	tmpl "github.com/trganda/codeql-development-toolkit/internal/template"
 )
 
-func newInitBundleTestCmd(base string) *cobra.Command {
+func newInitBundleTestCmd(base *string) *cobra.Command {
 	var (
 		lang              string
 		overwriteExisting bool
@@ -18,8 +18,8 @@ func newInitBundleTestCmd(base string) *cobra.Command {
 		Use:   "init-bundle-test",
 		Short: "Initialize bundle support",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing bundle init command", "base", base, "language", lang)
-			return runBundleInit(base, lang, overwriteExisting)
+			slog.Debug("Executing bundle init command", "base", *base, "language", lang)
+			return runBundleInit(*base, lang, overwriteExisting)
 		},
 	}
 	cmd.Flags().StringVar(&lang, "language", "", "Language for bundle")

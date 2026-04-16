@@ -5,7 +5,7 @@ import (
 )
 
 // NewCommand returns the `test` cobra command.
-func NewCommand(base string) *cobra.Command {
+func NewCommand(base *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "test",
 		Short: "Unit testing commands",

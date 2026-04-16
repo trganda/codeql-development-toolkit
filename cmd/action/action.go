@@ -2,7 +2,7 @@ package action
 
 import "github.com/spf13/cobra"
 
-func NewActionCommand(base string) *cobra.Command {
+func NewActionCommand(base *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "action",
 		Short: "Custom CodeQL action management commands",
@@ -11,7 +11,7 @@ func NewActionCommand(base string) *cobra.Command {
 	return cmd
 }
 
-func newInitCommand(base string) *cobra.Command {
+func newInitCommand(base *string) *cobra.Command {
 	initCmd := &cobra.Command{
 		Use:   "init",
 		Short: "Initialize GitHub Actions workflow for CodeQL",

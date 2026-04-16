@@ -10,7 +10,7 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/config"
 )
 
-func newSetCmd(base string) *cobra.Command {
+func newSetCmd(base *string) *cobra.Command {
 	set := &cobra.Command{
 		Use:   "set",
 		Short: "Set CodeQL configuration values",
@@ -19,7 +19,7 @@ func newSetCmd(base string) *cobra.Command {
 	return set
 }
 
-func newSetVersionCmd(base string) *cobra.Command {
+func newSetVersionCmd(base *string) *cobra.Command {
 	cliVersion := codeql.LatestCLIVersion()
 
 	cmd := &cobra.Command{
@@ -33,12 +33,12 @@ following fallback values are used:
   CLI:    ` + codeql.FallbackCLIVersion + `
   Bundle: ` + codeql.FallbackBundleVersion,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing codeql set version command", "base", base)
+			slog.Debug("Executing codeql set version command", "base", *base)
 
 			cfg := &config.QLTConfig{
 				CodeQLCLI: cliVersion,
 			}
-			if err := cfg.SaveToFile(base); err != nil {
+			if err := cfg.SaveToFile(*base); err != nil {
 				return fmt.Errorf("save config: %w", err)
 			}
 			return nil

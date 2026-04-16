@@ -47,11 +47,11 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&Verbose, "verbose", false, "Enable verbose logging")
 
 	rootCmd.AddCommand(versionCmd())
-	rootCmd.AddCommand(action.NewActionCommand(BasePath))
-	rootCmd.AddCommand(query.NewCommand(BasePath))
-	rootCmd.AddCommand(codeql.NewCommand(BasePath))
-	rootCmd.AddCommand(test.NewCommand(BasePath))
-	rootCmd.AddCommand(pack.NewCommand(BasePath))
-	rootCmd.AddCommand(bundle.NewCommand(BasePath))
-	rootCmd.AddCommand(phase.NewCommand(BasePath))
+	rootCmd.AddCommand(action.NewActionCommand(&BasePath))
+	rootCmd.AddCommand(query.NewCommand(&BasePath))
+	rootCmd.AddCommand(codeql.NewCommand(&BasePath))
+	rootCmd.AddCommand(test.NewCommand(&BasePath))
+	rootCmd.AddCommand(pack.NewCommand(&BasePath))
+	rootCmd.AddCommand(bundle.NewCommand(&BasePath))
+	rootCmd.AddCommand(phase.NewCommand(&BasePath))
 }

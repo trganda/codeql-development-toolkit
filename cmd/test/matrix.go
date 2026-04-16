@@ -11,14 +11,14 @@ import (
 )
 
 // newGetMatrixCmd returns `test run get-matrix`.
-func newGetMatrixCmd(base string) *cobra.Command {
+func newGetMatrixCmd(base *string) *cobra.Command {
 	var osVersion string
 	cmd := &cobra.Command{
 		Use:   "get-matrix",
 		Short: "Get a CI/CD matrix based on the current configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing test run get-matrix command", "base", base, "os-version", osVersion)
-			return runGetMatrix(base, osVersion)
+			slog.Debug("Executing test run get-matrix command", "base", *base, "os-version", osVersion)
+			return runGetMatrix(*base, osVersion)
 		},
 	}
 	cmd.Flags().StringVar(&osVersion, "os-version", "ubuntu-latest", "Operating system(s) to use (comma-separated)")
