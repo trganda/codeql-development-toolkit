@@ -29,16 +29,24 @@ func (c *CLI) PackLs(dir string) (*executil.Result, error) {
 	return c.runner.Run("pack", "ls", "--format=json", dir)
 }
 
-// PackInstall runs `codeql pack install [--format=json --common-caches=<caches>] <target>`.
-// When commonCaches is "" the plain form is emitted; otherwise the cached form
-// used by bundle assembly is emitted.
+// PackInstall runs `codeql pack install --format=json [--common-caches=<caches>] <target>`.
 func (c *CLI) PackInstall(target, commonCaches string) (*executil.Result, error) {
-	args := []string{"pack", "install"}
+	args := []string{"pack", "install", "--format=json"}
 	if commonCaches != "" {
-		args = append(args, "--format=json", "--common-caches="+commonCaches)
+		args = append(args, "--common-caches="+commonCaches)
 	}
 	args = append(args, target)
 	return c.runner.Run(args...)
+}
+
+// PackResolveDependencies runs `codeql pack resolve-dependencies --format=json <dir>`.
+func (c *CLI) PackResolveDependencies(dir string) (*executil.Result, error) {
+	return c.runner.Run("pack", "resolve-dependencies", "--format=json", dir)
+}
+
+// ResolvePacks runs `codeql resolve packs --format=json`.
+func (c *CLI) ResolvePacks() (*executil.Result, error) {
+	return c.runner.Run("resolve", "packs", "--format=json")
 }
 
 // PackCreate runs `codeql pack create --format=json --output=<output> [--common-caches=<caches>] <dir>`.
