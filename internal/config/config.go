@@ -74,12 +74,14 @@ func LoadFromFile(base string) (*QLTConfig, error) {
 func MustLoadFromFile(base string) *QLTConfig {
 	path := ConfigFilePath(base)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		panic(err)
+		slog.Error("qlt.conf.json not found on workspace, run qlt phase init to create it first.", "path", path)
+		os.Exit(1)
 	}
 
 	c, err := LoadFromFile(base)
 	if err != nil {
-		panic(err)
+		slog.Error("Failed to load qlt.conf.json", "path", path, "error", err)
+		os.Exit(1)
 	}
 	return c
 }

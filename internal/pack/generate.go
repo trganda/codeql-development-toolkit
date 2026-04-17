@@ -52,13 +52,7 @@ func GenerateNewQuery(cli *codeql.CLI, args GenerateArgs) error {
 	langExt := language.ToExtension(args.Lang)
 
 	// Load config once — used for scope fallback and pack recording.
-	cfg, err := config.LoadFromFile(args.Base)
-	if err != nil {
-		return fmt.Errorf("load config: %w", err)
-	}
-	if cfg == nil {
-		cfg = &config.QLTConfig{}
-	}
+	cfg := config.MustLoadFromFile(args.Base)
 
 	// Fall back to the scope stored in config when --scope is not provided.
 	if args.Scope == "" && cfg.Scope != "" {
@@ -72,7 +66,7 @@ func GenerateNewQuery(cli *codeql.CLI, args GenerateArgs) error {
 
 	// Check whether a pack with the same full name already exists.
 	if !args.Overwrite {
-		targetDir := filepath.Join(args.Base, langDir)
+		targetDir := filepath.Join(args.Base)
 		existing, err := ListPacks(cli, targetDir)
 		if err != nil {
 			return fmt.Errorf("check existing packs: %w", err)
