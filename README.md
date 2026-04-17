@@ -94,6 +94,8 @@ Two supported flows:
 1. `init → install → compile → test → verify → publish`
 2. `init → … → verify → package → publish` (when shipping a custom bundle)
 
+> **Note:** install was indenpendent phase. If you need to install the dpendencies of qlpack, you should run `qlt phase install` directly.
+
 # Quickstart
 
 Set up and exercise a CodeQL query repository in four steps.
