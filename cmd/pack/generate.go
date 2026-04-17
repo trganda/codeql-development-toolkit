@@ -35,6 +35,7 @@ func newNewQueryCmd(base *string, useBundle *bool) *cobra.Command {
 		createQueryPack bool
 		createTests     bool
 		overwrite       bool
+		library         bool
 	)
 
 	cmd := &cobra.Command{
@@ -60,6 +61,7 @@ func newNewQueryCmd(base *string, useBundle *bool) *cobra.Command {
 				CreateTests:     createTests,
 				Overwrite:       overwrite,
 				UseBundle:       *useBundle,
+				Library:         library,
 			})
 		},
 	}
@@ -72,6 +74,7 @@ func newNewQueryCmd(base *string, useBundle *bool) *cobra.Command {
 	cmd.Flags().BoolVar(&createQueryPack, "create-query-pack", true, "Create query pack definition")
 	cmd.Flags().BoolVar(&createTests, "create-tests", true, "Create test scaffolding")
 	cmd.Flags().BoolVar(&overwrite, "overwrite", false, "Overwrite existing pack related files")
+	cmd.Flags().BoolVar(&library, "library", false, "Mark the generated qlpack as a library pack (sets library: true)")
 	cmd.MarkFlagRequired("query-name")
 	cmd.MarkFlagRequired("language")
 	cmd.MarkFlagRequired("pack")

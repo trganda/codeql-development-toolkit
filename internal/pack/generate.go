@@ -25,6 +25,7 @@ type GenerateArgs struct {
 	CreateTests     bool
 	Overwrite       bool
 	UseBundle       bool
+	Library         bool
 }
 
 // queryData holds template variables for query scaffolding.
@@ -39,6 +40,7 @@ type queryData struct {
 	QueryPackDependency string
 	QueryKind           string
 	TestFilePrefix      string
+	Library             bool
 }
 
 // GenerateNewQuery creates a new CodeQL query with scaffolding.
@@ -105,6 +107,7 @@ func GenerateNewQuery(cli *codeql.CLI, args GenerateArgs) error {
 		QueryPackDependency: packFullName,
 		QueryKind:           args.QueryKind,
 		TestFilePrefix:      args.QueryName,
+		Library:             args.Library,
 	}
 
 	slog.Debug("Creating new query", "language", args.Lang, "dir", langDir, "pack", args.Pack, "kind", args.QueryKind)
