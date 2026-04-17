@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -29,6 +30,11 @@ var rootCmd = &cobra.Command{
 	Long:  "QLT helps you develop, test, and validate CodeQL queries.",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		qltlog.Init(Verbose)
+		abs, err := filepath.Abs(BasePath)
+		if err != nil {
+			return fmt.Errorf("resolve base path: %w", err)
+		}
+		BasePath = abs
 		slog.Debug("QLT startup", "verbose", Verbose, "base", BasePath)
 		return nil
 	},
