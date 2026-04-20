@@ -57,7 +57,7 @@ func newGenerateCmd(base *string) *cobra.Command {
 	cmd.Flags().StringVar(&lang, "language", "", "Language (c|cpp|csharp|go|java|javascript|python|ruby)")
 	cmd.Flags().StringVar(&packName, "pack", "", "CodeQL pack name")
 	cmd.Flags().StringVar(&scope, "scope", "", "CodeQL pack scope (optional), use globally configured scope in qlt.conf.json if not provided")
-	cmd.Flags().StringVar(&queryKind, "query-kind", "problem", "Query kind (problem|path-problem)")
+	cmd.Flags().StringVar(&queryKind, "query-kind", "problem", "Query kind of the first query in the new pack (problem|path-problem)")
 	cmd.Flags().BoolVar(&createTests, "create-tests", true, "Create test scaffolding")
 	cmd.Flags().BoolVar(&overwrite, "overwrite", false, "Overwrite existing pack related files")
 	cmd.Flags().BoolVar(&library, "library", false, "Mark the generated qlpack as a library pack (sets library: true)")
