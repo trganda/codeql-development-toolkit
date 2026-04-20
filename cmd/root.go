@@ -29,6 +29,9 @@ var rootCmd = &cobra.Command{
 	Short: "CodeQL Development Lifecycle Toolkit",
 	Long:  "QLT helps you develop, test, and validate CodeQL queries.",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		// Suppress usage for logic errors from RunE. Flag/argument validation
+		// errors happen before this hook runs, so they still show usage.
+		cmd.SilenceUsage = true
 		qltlog.Init(Verbose)
 		abs, err := filepath.Abs(BasePath)
 		if err != nil {

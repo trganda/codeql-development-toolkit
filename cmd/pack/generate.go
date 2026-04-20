@@ -27,8 +27,8 @@ func newGenerateCmd(base *string) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "new-query",
-		Short: "Create a new CodeQL query with scaffolding",
+		Use:   "generate",
+		Short: "Create a new CodeQL pack with scaffolding",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing pack generate new-query command",
 				"name", queryName, "language", lang, "pack", packName, "kind", queryKind, "use-bundle", bundle)
