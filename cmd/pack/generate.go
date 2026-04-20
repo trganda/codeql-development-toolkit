@@ -38,7 +38,7 @@ func newGenerateCmd(base *string) *cobra.Command {
 				return fmt.Errorf("resolve CodeQL binary: %w", err)
 			}
 
-			return pack.GenerateNewQuery(codeql.NewCLI(codeqlBin), pack.GenerateArgs{
+			return pack.GenerateNewPack(codeql.NewCLI(codeqlBin), pack.GenerateArgs{
 				Base:        *base,
 				QueryName:   queryName,
 				Lang:        lang,

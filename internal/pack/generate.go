@@ -43,10 +43,10 @@ type queryData struct {
 	Library             bool
 }
 
-// GenerateNewQuery creates a new CodeQL query with scaffolding.
+// GenerateNewPack creates a new CodeQL query with scaffolding.
 // It checks whether a pack with the same full name already exists via ListPacks
 // unless args.Overwrite is true; in that case it returns an error.
-func GenerateNewQuery(cli *codeql.CLI, args GenerateArgs) error {
+func GenerateNewPack(cli *codeql.CLI, args GenerateArgs) error {
 	langDir := language.ToDirectory(args.Lang)
 	langImport := language.ToImport(args.Lang)
 	langExt := language.ToExtension(args.Lang)
