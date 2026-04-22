@@ -10,16 +10,16 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/config"
 	"github.com/trganda/codeql-development-toolkit/internal/language"
+
 	tmpl "github.com/trganda/codeql-development-toolkit/internal/template"
 )
 
-// GenerateArgs holds all arguments for the pack generate new-query command.
-type GenerateArgs struct {
+// GeneratePackOptions holds all arguments for the pack generate new-query command.
+type GeneratePackOptions struct {
 	Base            string
 	QueryName       string
 	Lang            string
 	Pack            string
-	Scope           string
 	QueryKind       string
 	CreateQueryPack bool
 	CreateTests     bool
@@ -46,91 +46,87 @@ type queryData struct {
 // GenerateNewPack creates a new CodeQL query with scaffolding.
 // It checks whether a pack with the same full name already exists via ListPacks
 // unless args.Overwrite is true; in that case it returns an error.
-func GenerateNewPack(cli *codeql.CLI, args GenerateArgs) error {
-	langDir := language.ToDirectory(args.Lang)
-	langImport := language.ToImport(args.Lang)
-	langExt := language.ToExtension(args.Lang)
+func GenerateNewPack(cli *codeql.CLI, opts GeneratePackOptions) error {
+	langDir := language.ToDirectory(opts.Lang)
+	langImport := language.ToImport(opts.Lang)
+	langExt := language.ToExtension(opts.Lang)
 
 	// Load config once — used for scope fallback and pack recording.
-	cfg := config.MustLoadFromFile(args.Base)
+	cfg := config.MustLoadFromFile(opts.Base)
 
-	// Fall back to the scope stored in config when --scope is not provided.
-	if args.Scope == "" && cfg.Scope != "" {
-		args.Scope = cfg.Scope
-	}
-
-	packFullName := args.Pack
-	if args.Scope != "" {
-		packFullName = args.Scope + "/" + args.Pack
+	packFullName := opts.Pack
+	packName := GetPackName(opts.Pack)
+	packScope := GetPackScope(opts.Pack)
+	if packScope == "" {
+		slog.Warn("No scope specificed for pack. If the pack will be shared publicly, consider adding a scope to the pack name (e.g. my-github-username/my-pack).")
 	}
 
 	// Check whether a pack with the same full name already exists.
-	if !args.Overwrite {
-		targetDir := filepath.Join(args.Base)
+	if !opts.Overwrite {
+		targetDir := filepath.Join(opts.Base)
 		existing, err := ListPacks(cli, targetDir)
 		if err != nil {
 			return fmt.Errorf("check existing packs: %w", err)
 		}
 		for _, p := range existing {
 			if p.Config.FullName() == packFullName {
-				return fmt.Errorf("pack %q already exists at %s; use --overwrite to replace it", packFullName, p.Dir())
+				return fmt.Errorf("pack %q already exists at %s; use --overwrite if you want to replace it", packFullName, p.Dir())
 			}
 		}
 	}
 
 	// Query file goes in <base>/<langDir>/<pack>/src/<queryName>/<queryName>.ql
-	queryDir := filepath.Join(args.Base, langDir, args.Pack, "src", args.QueryName)
+	queryDir := filepath.Join(opts.Base, langDir, packName, "src", opts.QueryName)
 	if err := os.MkdirAll(queryDir, 0755); err != nil {
 		return fmt.Errorf("create query directory: %w", err)
 	}
 
 	// Determine template name based on kind.
 	tmplName := "new-query"
-	if strings.ToLower(args.QueryKind) == "path-problem" {
+	if strings.ToLower(opts.QueryKind) == "path-problem" {
 		tmplName = "new-dataflow-query"
 	}
 
 	data := queryData{
 		Language:            langDir,
-		QueryPackName:       args.Pack,
-		QueryName:           args.QueryName,
+		QueryPackName:       packName,
+		QueryName:           opts.QueryName,
 		Description:         "Replace this text with a description of your query.",
 		QlLanguageImport:    langImport,
 		QueryPackFullName:   packFullName,
 		QlLanguage:          langDir,
 		QueryPackDependency: packFullName,
-		QueryKind:           args.QueryKind,
-		TestFilePrefix:      args.QueryName,
-		Library:             args.Library,
+		QueryKind:           opts.QueryKind,
+		TestFilePrefix:      opts.QueryName,
+		Library:             opts.Library,
 	}
 
-	slog.Debug("Creating new query", "language", args.Lang, "dir", langDir, "pack", args.Pack, "kind", args.QueryKind)
+	slog.Debug("Creating new query", "language", opts.Lang, "dir", langDir, "pack", opts.Pack, "kind", opts.QueryKind)
 
 	// Write query file.
 	queryTmpl, err := tmpl.Get(fmt.Sprintf("query/%s/%s.tmpl", langDir, tmplName))
 	if err != nil {
 		return fmt.Errorf("load query template: %w", err)
 	}
-	queryFilePath := filepath.Join(queryDir, args.QueryName+".ql")
-	if err := tmpl.WriteFile(queryTmpl, queryFilePath, data, args.Overwrite); err != nil {
+	queryFilePath := filepath.Join(queryDir, opts.QueryName+".ql")
+	if err := tmpl.WriteFile(queryTmpl, queryFilePath, data, opts.Overwrite); err != nil {
 		return fmt.Errorf("write query file: %w", err)
 	}
 
 	// Write query pack definition.
-	if args.CreateQueryPack {
-		qlpackTmpl, err := tmpl.Get(fmt.Sprintf("query/%s/qlpack-query.tmpl", langDir))
-		if err != nil {
-			return fmt.Errorf("load qlpack-query template: %w", err)
-		}
-		qlpackPath := filepath.Join(args.Base, langDir, args.Pack, "src", "qlpack.yml")
-		if err := tmpl.WriteFile(qlpackTmpl, qlpackPath, data, args.Overwrite); err != nil {
-			return fmt.Errorf("write qlpack-query: %w", err)
-		}
+
+	qlpackTmpl, err := tmpl.Get(fmt.Sprintf("query/%s/qlpack-query.tmpl", langDir))
+	if err != nil {
+		return fmt.Errorf("load qlpack-query template: %w", err)
+	}
+	qlpackPath := filepath.Join(opts.Base, langDir, opts.Pack, "src", "qlpack.yml")
+	if err := tmpl.WriteFile(qlpackTmpl, qlpackPath, data, opts.Overwrite); err != nil {
+		return fmt.Errorf("write qlpack-query: %w", err)
 	}
 
 	// Write test scaffolding.
-	if args.CreateTests {
-		testDir := filepath.Join(args.Base, langDir, args.Pack, "test", args.QueryName)
+	if opts.CreateTests {
+		testDir := filepath.Join(opts.Base, langDir, opts.Pack, "test", opts.QueryName)
 		if err := os.MkdirAll(testDir, 0755); err != nil {
 			return fmt.Errorf("create test directory: %w", err)
 		}
@@ -139,8 +135,8 @@ func GenerateNewPack(cli *codeql.CLI, args GenerateArgs) error {
 		if err != nil {
 			return fmt.Errorf("load test template: %w", err)
 		}
-		testFilePath := filepath.Join(testDir, args.QueryName+"."+langExt)
-		if err := tmpl.WriteFile(testTmpl, testFilePath, data, args.Overwrite); err != nil {
+		testFilePath := filepath.Join(testDir, opts.QueryName+"."+langExt)
+		if err := tmpl.WriteFile(testTmpl, testFilePath, data, opts.Overwrite); err != nil {
 			return fmt.Errorf("write test file: %w", err)
 		}
 
@@ -148,8 +144,8 @@ func GenerateNewPack(cli *codeql.CLI, args GenerateArgs) error {
 		if err != nil {
 			return fmt.Errorf("load expected template: %w", err)
 		}
-		expectedPath := filepath.Join(testDir, args.QueryName+".expected")
-		if err := tmpl.WriteFile(expectedTmpl, expectedPath, data, args.Overwrite); err != nil {
+		expectedPath := filepath.Join(testDir, opts.QueryName+".expected")
+		if err := tmpl.WriteFile(expectedTmpl, expectedPath, data, opts.Overwrite); err != nil {
 			return fmt.Errorf("write expected file: %w", err)
 		}
 
@@ -157,44 +153,42 @@ func GenerateNewPack(cli *codeql.CLI, args GenerateArgs) error {
 		if err != nil {
 			return fmt.Errorf("load testref template: %w", err)
 		}
-		qlrefPath := filepath.Join(testDir, args.QueryName+".qlref")
-		if err := tmpl.WriteFile(testrefTmpl, qlrefPath, data, args.Overwrite); err != nil {
+		qlrefPath := filepath.Join(testDir, opts.QueryName+".qlref")
+		if err := tmpl.WriteFile(testrefTmpl, qlrefPath, data, opts.Overwrite); err != nil {
 			return fmt.Errorf("write qlref file: %w", err)
 		}
 
-		testPackName := args.Pack + "-tests"
+		testPackName := opts.Pack + "-tests"
 		testPackFullName := testPackName
-		if args.Scope != "" {
-			testPackFullName = args.Scope + "/" + testPackName
-		}
+
 		testData := queryData{
 			Language:            langDir,
 			QueryPackName:       testPackName,
-			QueryName:           args.QueryName,
+			QueryName:           opts.QueryName,
 			QlLanguage:          langDir,
 			QueryPackFullName:   testPackFullName,
 			QueryPackDependency: packFullName,
-			QueryKind:           args.QueryKind,
-			TestFilePrefix:      args.QueryName,
+			QueryKind:           opts.QueryKind,
+			TestFilePrefix:      opts.QueryName,
 		}
 		testPackTmpl, err := tmpl.Get(fmt.Sprintf("query/%s/qlpack-test.tmpl", langDir))
 		if err != nil {
 			return fmt.Errorf("load qlpack-test template: %w", err)
 		}
-		testPackPath := filepath.Join(args.Base, langDir, args.Pack, "test", "qlpack.yml")
-		if err := tmpl.WriteFile(testPackTmpl, testPackPath, testData, args.Overwrite); err != nil {
+		testPackPath := filepath.Join(opts.Base, langDir, opts.Pack, "test", "qlpack.yml")
+		if err := tmpl.WriteFile(testPackTmpl, testPackPath, testData, opts.Overwrite); err != nil {
 			return fmt.Errorf("write qlpack-test: %w", err)
 		}
 	}
 
-	slog.Info("Created new query", "name", args.QueryName, "language", args.Lang, "pack", args.Pack)
+	slog.Info("Created new query", "name", opts.QueryName, "language", opts.Lang, "pack", opts.Pack)
 
 	// Always record the pack in config; Bundle=true only when --use-bundle was set.
-	cfg.UpsertPackConfig(packFullName, args.UseBundle)
-	if err := cfg.SaveToFile(args.Base); err != nil {
+	cfg.UpsertPackConfig(packFullName, opts.UseBundle)
+	if err := cfg.SaveToFile(opts.Base); err != nil {
 		return fmt.Errorf("save config: %w", err)
 	}
-	slog.Info("Recorded pack in config", "name", packFullName, "bundle", args.UseBundle)
+	slog.Info("Recorded pack in config", "name", packFullName, "bundle", opts.UseBundle)
 
 	return nil
 }

@@ -18,7 +18,6 @@ func newGenerateCmd(base *string) *cobra.Command {
 		queryName   string
 		lang        string
 		packName    string
-		scope       string
 		queryKind   string
 		createTests bool
 		overwrite   bool
@@ -38,12 +37,11 @@ func newGenerateCmd(base *string) *cobra.Command {
 				return fmt.Errorf("resolve CodeQL binary: %w", err)
 			}
 
-			return pack.GenerateNewPack(codeql.NewCLI(codeqlBin), pack.GenerateArgs{
+			return pack.GenerateNewPack(codeql.NewCLI(codeqlBin), pack.GeneratePackOptions{
 				Base:        *base,
 				QueryName:   queryName,
 				Lang:        lang,
 				Pack:        packName,
-				Scope:       scope,
 				QueryKind:   queryKind,
 				CreateTests: createTests,
 				Overwrite:   overwrite,
@@ -55,8 +53,7 @@ func newGenerateCmd(base *string) *cobra.Command {
 
 	cmd.Flags().StringVar(&queryName, "query-name", "MyNewQuery", "Name of the first query in the new pack (e.g. MyNewQuery)")
 	cmd.Flags().StringVar(&lang, "language", "", "Language (c|cpp|csharp|go|java|javascript|python|ruby)")
-	cmd.Flags().StringVar(&packName, "pack", "", "CodeQL pack name")
-	cmd.Flags().StringVar(&scope, "scope", "", "CodeQL pack scope (optional), use globally configured scope in qlt.conf.json if not provided")
+	cmd.Flags().StringVar(&packName, "pack", "", "CodeQL pack name (e.g. trganda/new-pack)")
 	cmd.Flags().StringVar(&queryKind, "query-kind", "problem", "Query kind of the first query in the new pack (problem|path-problem)")
 	cmd.Flags().BoolVar(&createTests, "create-tests", true, "Create test scaffolding")
 	cmd.Flags().BoolVar(&overwrite, "overwrite", false, "Overwrite existing pack related files")

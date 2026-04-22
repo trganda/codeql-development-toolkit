@@ -12,8 +12,8 @@ import (
 
 // InitWorkspace initializes a CodeQL query workspace under base.
 // It writes codeql-workspace.yml and optionally updates qlt.conf.json
-// when useBundle or scope is set.
-func InitWorkspace(base, scope, codeqlVersion string, overwriteExisting bool) (*config.QLTConfig, error) {
+// when useBundle is set.
+func InitWorkspace(base, codeqlVersion string, overwriteExisting bool) (*config.QLTConfig, error) {
 	if err := os.MkdirAll(base, 0755); err != nil {
 		return nil, fmt.Errorf("create base directory: %w", err)
 	}
@@ -44,12 +44,6 @@ func InitWorkspace(base, scope, codeqlVersion string, overwriteExisting bool) (*
 	}
 
 	cfg.CodeQLCLI = codeqlVersion
-	if scope != "" {
-		cfg.Scope = scope
-		slog.Info("Saved scope to config", "scope", scope)
-	} else {
-		slog.Warn("Scope was not specified")
-	}
 
 	if err := cfg.SaveToFile(base); err != nil {
 		return nil, fmt.Errorf("save config: %w", err)
