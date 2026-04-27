@@ -38,19 +38,13 @@ runs:
         QLT_HOME="$(go env GOPATH)/bin"
         mkdir -p "$QLT_HOME"
 
-        WORK_DIR=$(mktemp -d)
         if [ "$QLT_VERSION" == "latest" ]; then
-          GOBIN="$WORK_DIR" go install github.com/trganda/codeql-development-toolkit@latest
+          GOBIN="$QLT_HOME" go install github.com/trganda/codeql-development-toolkit/cmd/qlt@latest
         else
-          GOBIN="$WORK_DIR" go install "github.com/trganda/codeql-development-toolkit@$QLT_VERSION"
+          GOBIN="$QLT_HOME" go install "github.com/trganda/codeql-development-toolkit/cmd/qlt@$QLT_VERSION"
         fi
-        mv "$WORK_DIR/codeql-development-toolkit" "$QLT_HOME/qlt"
-        rm -rf "$WORK_DIR"
 
         echo -e "\e[0;32m[QLT]\e[0m Adding '$QLT_HOME' to system path"
         echo "$QLT_HOME" >> $GITHUB_PATH
-
-        echo -e "\e[0;32m[QLT]\e[0m Setting output parameter qlt-home to $QLT_HOME"
-        echo "qlt-home=$QLT_HOME" >> $GITHUB_OUTPUT
 
         echo -e "\e[0;32m[QLT]\e[0m Done."

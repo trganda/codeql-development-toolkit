@@ -26,7 +26,7 @@ jobs:
       - name: Export unit test matrix
         id: export-unit-test-matrix
         run: |
-          qlt test run get-matrix --os-version [[ .UseRunner ]] >> "$GITHUB_OUTPUT"
+          qlt test get-matrix --os-version [[ .UseRunner ]] >> "$GITHUB_OUTPUT"
 
   run-test-suites:
     name: Run Unit Tests
@@ -54,6 +54,11 @@ jobs:
         shell: bash
         run: |
           qlt codeql install
+
+      - name: Install CodeQL Packs Dependencies
+        shell: bash
+        run: |
+          qlt phase install
 
       - name: Run test suites
         id: run-test-suites

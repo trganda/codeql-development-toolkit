@@ -56,7 +56,6 @@ func runTestInit(base, lang, useRunner, branch string, numThreads int, overwrite
 		Branch:     branch,
 		NumThreads: numThreads,
 		UseRunner:  useRunner,
-		CodeqlArgs: "--threads=0",
 	}
 
 	// Write install-qlt action
