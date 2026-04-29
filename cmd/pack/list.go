@@ -14,23 +14,25 @@ import (
 
 func newListCmd(base *string) *cobra.Command {
 	var lang string
+	var all bool
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List CodeQL packs under the base directory",
 		Long: `List all CodeQL packs found under <base> using 'codeql pack ls'.
 
 Use --language to narrow the search to a specific language directory
-or pack name.`,
+or pack name. By default, test packs are excluded; use --all to include them.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing pack list command", "base", *base, "language", lang)
-			return runPackList(*base, lang)
+			slog.Debug("Executing pack list command", "base", *base, "language", lang, "all", all)
+			return runPackList(*base, lang, all)
 		},
 	}
 	cmd.Flags().StringVar(&lang, "language", "", "Filter by language (e.g. go, java)")
+	cmd.Flags().BoolVar(&all, "all", false, "Include test packs in the listing")
 	return cmd
 }
 
-func runPackList(base, lang string) error {
+func runPackList(base, lang string, all bool) error {
 	targetDir := base
 	if lang != "" {
 		targetDir = filepath.Join(targetDir, lang)
@@ -52,6 +54,9 @@ func runPackList(base, lang string) error {
 		return fmt.Errorf("resolve base path: %w", err)
 	}
 	for _, p := range packs {
+		if !all && p.IsTestPack() {
+			continue
+		}
 		rel, err := filepath.Rel(absBase, p.Dir())
 		if err != nil {
 			rel = p.Dir()
