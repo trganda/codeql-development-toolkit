@@ -42,8 +42,13 @@ cmd/
                      codeql install downloads CLI or bundle based on EnableCustomCodeQLBundles
   test/            — test init / get-matrix / validate
   validation/      — validation run check-queries
+  action/          — action init test / action init bundle-test
+                     generates GitHub Actions workflows for unit tests and bundle integration tests.
+                     test: --language <lang|all>, --branch, --num-threads, --use-runner, --overwrite
+                     bundle-test: --language <lang> (repeatable for multi-language), --branch, --overwrite
   bundle/          — bundle init (generates GitHub Actions workflows)
-  pack/            — pack list
+  pack/            — pack list [--all] [--language]
+                     pack resolve [--language] — auto-discovers non-test packs and registers them in qlt.conf.json
 ```
 
 **Shared `--base` flag** points to the target CodeQL repository being managed (not this repo itself). All file writes go relative to `--base`.
@@ -66,8 +71,8 @@ The rule of thumb: if a function doesn't reference `*cobra.Command` or flag vari
 
 **`internal/` packages:**
 
-- `internal/config` — reads/writes `qlt.conf.json` (`QLTConfig` struct). Key fields: `CodeQLCLI`, `CodeQLCLIBundle`, `EnableCustomCodeQLBundles`, `CodeQLPackConfiguration`. `LoadFromFile` returns nil if missing; `MustLoadFromFile` errors. `UpsertPackConfig(name, bundle)` upserts an entry in `CodeQLPackConfiguration`.
-- `internal/template` — `Render` and `WriteFile` backed by `text/template` with `[[ ]]` delimiters (avoids conflict with GitHub Actions `${{ }}` syntax). All template files are embedded via `//go:embed` in `internal/template/embed.go`.
+- `internal/config` — reads/writes `qlt.conf.json` (`QLTConfig` struct). Fields: `CodeQLCLIVersion` (json:`"version"`), `CodeQLPackConfiguration` (json:`"packs"`) — a slice of `{Name, Bundle, Publish, ReferencesBundle}`. `LoadFromFile` returns nil if missing; `MustLoadFromFile` exits on error. `UpsertPackConfig(name, bundle)` adds or updates an entry (skips duplicates by name).
+- `internal/template` — `Render` and `WriteFile` backed by `text/template` with `[[ ]]` delimiters (avoids conflict with GitHub Actions `${{ }}` syntax). All template files are embedded via `//go:embed` in `internal/template/embed.go`. Available template functions: `toLower`, `join` (wraps `strings.Join`).
 - `internal/release` — resolves latest CodeQL versions from the GitHub API (`github/codeql-cli-binaries` and `github/codeql-action`). 5s timeout, falls back to hardcoded constants (`FallbackCLIVersion`, `FallbackBundleVersion`).
 - `internal/log` — wraps `log/slog`. `Init(verbose bool)` is called from `PersistentPreRunE`. Without `--verbose`: compact format (no timestamps), Info level. With `--verbose`: full text handler, Debug level. Convention: `slog.Debug` for traces, `slog.Info` for lifecycle events, `fmt.Print*` for user-facing stdout output only.
 - `internal/executil` — thin wrapper around `os/exec`. `NewRunner(binary)` returns a `Runner` that captures stdout/stderr into a `Result`. On non-zero exit, `Run` returns a `*RunError` (implements `error` and `Unwrap`) carrying the binary, args, exit code, and trimmed stderr. Callers check `res.Stdout`/`res.Stderr` directly or use the `StdoutString()`/`StderrString()` convenience methods.
@@ -75,8 +80,8 @@ The rule of thumb: if a function doesn't reference `*cobra.Command` or flag vari
 - `internal/paths` — content-addressed path layout under `$HOME/.qlt/`. All versioned directories use an MD5 hash of the version string. Key functions: `CLIInstallDir`, `BundleInstallDir`, `CustomBundlePath`, `BundleArchivePath`, `ResolveCodeQLBinary`.
 - `internal/codeql` — CLI/bundle download, checksum verification, platform detection, and extraction. `Install(base, version, platform)` is the single entry point used by `cmd/codeql install`.
 - `internal/query` — CodeQL query execution (`RunQuery`), compilation (`RunCompile`), pack dependency installation (`RunPackInstall`), and workspace initialisation (`InitWorkspace`). Used by both `cmd/query` and `cmd/phase`.
-- `internal/test` — `RunUnitTests(base, lang, codeqlArgs, numThreads)` resolves and runs all `.qlref` test files for a language. Used by both `cmd/test run` and `cmd/phase test`.
-- `internal/pack` — `FindQlpacks(base, lang, pack)` runs `codeql pack ls` and returns `[]Entry`; used by `cmd/pack list`, `cmd/pack publish`, and `cmd/phase publish`.
+- `internal/test` — `RunUnitTests(base, lang, codeqlArgs, reportOutput, numThreads)` resolves and runs all `.qlref` test files. When `lang` is `""` or `"all"`, tests are resolved from `base`; otherwise from `base/<lang-dir>`. Used by both `cmd/test run` and `cmd/phase test`.
+- `internal/pack` — `ListPacks(cli, dir)` runs `codeql pack ls` and returns `[]*Pack`. `Pack.IsTestPack()` returns true when the pack lives under a `test/` directory or declares an extractor. Used by `cmd/pack list`, `cmd/pack resolve`, `cmd/pack publish`, and `cmd/phase publish`.
 - `internal/matrix` — `Build(osVersions, cliVersion)` constructs and marshals a GitHub Actions CI matrix JSON.
 
 ## Logger
@@ -91,7 +96,7 @@ Templates live under `internal/template/files/` and are embedded at compile time
 - `query/all/testref.tmpl`, `query/codeql-workspace.tmpl`
 - `test/actions/`, `bundle/actions/`, `validation/actions/`
 
-**Delimiter:** `[[ ]]` not `{{ }}`. Use `[[- ]]` / `[[ -]]` for whitespace trimming. The `toLower` function is available in all templates.
+**Delimiter:** `[[ ]]` not `{{ }}`. Use `[[- ]]` / `[[ -]]` for whitespace trimming. Available functions: `toLower`, `join` (e.g. `[[ join .Languages ", " ]]`).
 
 ## Path Layout
 
@@ -119,17 +124,15 @@ $HOME/.qlt/
 
 ```json
 {
-  "CodeQLCLI": "2.25.1",
-  "CodeQLCLIBundle": "codeql-bundle-v2.25.1",
-  "EnableCustomCodeQLBundles": true,
-  "CodeQLPackConfiguration": [
-    { "Name": "scope/pack-name", "Bundle": true }
+  "version": "2.25.1",
+  "packs": [
+    { "name": "scope/pack-name", "bundle": true, "publish": false, "referencesBundle": false }
   ]
 }
 ```
 
-- `EnableCustomCodeQLBundles` — set to `true` by `qlt query init --use-bundle`; controls which binary `ResolveCodeQLBinary` returns and which download path `codeql install` uses.
-- `CodeQLPackConfiguration` — upserted by `qlt query generate new-query`; always records the generated pack (`Bundle=true` only when `--use-bundle` is set).
+- `version` (`CodeQLCLIVersion`) — CodeQL CLI version string; used by `ResolveCodeQLBinary` and install commands.
+- `packs` (`CodeQLPackConfiguration`) — upserted by `qlt query generate new-query` and `qlt pack resolve`; `bundle: true` only when `--use-bundle` is set.
 
 ## Lifecycle
 
