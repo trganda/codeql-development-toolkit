@@ -12,31 +12,36 @@ import (
 
 func newInitBundleTestCmd(base *string) *cobra.Command {
 	var (
-		lang              string
+		langs             []string
+		branch            string
 		overwriteExisting bool
 	)
 	cmd := &cobra.Command{
 		Use:   "bundle-test",
 		Short: "Initialize bundle support",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing bundle init command", "base", *base, "language", lang)
-			return runBundleInit(*base, lang, overwriteExisting)
+			slog.Debug("Executing bundle init command", "base", *base, "languages", langs, "branch", branch)
+			return runBundleInit(*base, langs, branch, overwriteExisting)
 		},
 	}
-	cmd.Flags().StringVar(&lang, "language", "", "Language for bundle")
-	cmd.Flags().BoolVar(&overwriteExisting, "overwrite-existing", false, "Overwrite existing files")
+	cmd.Flags().StringArrayVar(&langs, "language", nil, "Language(s) for bundle (repeat for multiple, e.g. --language java --language cpp)")
+	cmd.Flags().StringVar(&branch, "branch", "main", "Branch to trigger automation on")
+	cmd.Flags().BoolVar(&overwriteExisting, "overwrite", false, "Overwrite existing files")
+	cmd.MarkFlagRequired("language")
 	return cmd
 }
 
 // bundleInitData holds template variables for bundle init.
 type bundleInitData struct {
-	Language string
+	Languages []string
+	Branch    string
 }
 
-func runBundleInit(base, lang string, overwrite bool) error {
-	slog.Debug("Running bundle init", "base", base, "lang", lang)
+func runBundleInit(base string, langs []string, branch string, overwrite bool) error {
+	slog.Debug("Running bundle init", "base", base, "langs", langs, "branch", branch)
 	data := bundleInitData{
-		Language: lang,
+		Languages: langs,
+		Branch:    branch,
 	}
 
 	// Write install-qlt action

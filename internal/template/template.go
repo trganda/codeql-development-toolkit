@@ -11,6 +11,7 @@ import (
 
 var funcMap = template.FuncMap{
 	"toLower": strings.ToLower,
+	"join":    strings.Join,
 }
 
 // Render executes a template string with [[ ]] delimiters and the given data.

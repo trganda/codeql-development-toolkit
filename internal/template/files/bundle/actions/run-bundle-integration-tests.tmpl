@@ -1,12 +1,12 @@
-name: ⚙️ Integration Test Bundle ([[ .Language ]])
+name: ⚙️ Integration Test Bundle ([[ join .Languages ", " ]])
 
 on:
   push:
     branches:
-      - '**'
+      - '[[ .Branch ]]'
   pull_request:
     branches:
-      - '**'
+      - '[[ .Branch ]]'
   workflow_dispatch:
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'cpp' ]
+        language: [ [[ range $i, $l := .Languages ]][[if $i]], [[end]]'[[ $l ]]'[[ end ]] ]
 
     steps:
     - name: Checkout repository
