@@ -27,8 +27,8 @@ var downloadClient = &http.Client{Timeout: 30 * time.Minute}
 func Install(base, platform string) error {
 	cfg := config.MustLoadFromFile(base)
 
-	slog.Info("Installing CodeQL CLI", "version", cfg.CodeQLCLI)
-	return installCLI(cfg.CodeQLCLI, platform)
+	slog.Info("Installing CodeQL CLI", "version", cfg.CodeQLCLIVersion)
+	return installCLI(cfg.CodeQLCLIVersion, platform)
 }
 
 func Download(version, platform string) (p string, err error) {

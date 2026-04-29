@@ -43,7 +43,7 @@ func InitWorkspace(base, codeqlVersion string, overwriteExisting bool) (*config.
 		cfg = &config.QLTConfig{}
 	}
 
-	cfg.CodeQLCLI = codeqlVersion
+	cfg.CodeQLCLIVersion = codeqlVersion
 
 	if err := cfg.SaveToFile(base); err != nil {
 		return nil, fmt.Errorf("save config: %w", err)

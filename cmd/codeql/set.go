@@ -36,7 +36,7 @@ following fallback values are used:
 			slog.Debug("Executing codeql set version command", "base", *base)
 
 			cfg := &config.QLTConfig{
-				CodeQLCLI: cliVersion,
+				CodeQLCLIVersion: cliVersion,
 			}
 			if err := cfg.SaveToFile(*base); err != nil {
 				return fmt.Errorf("save config: %w", err)

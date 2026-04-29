@@ -33,8 +33,8 @@ func runGetMatrix(base, osVersions string) error {
 	}
 
 	cliVersion := "latest"
-	if cfg != nil && cfg.CodeQLCLI != "" {
-		cliVersion = cfg.CodeQLCLI
+	if cfg != nil && cfg.CodeQLCLIVersion != "" {
+		cliVersion = cfg.CodeQLCLIVersion
 	}
 
 	out, err := matrix.Build(osVersions, cliVersion)

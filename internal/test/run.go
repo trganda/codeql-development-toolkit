@@ -25,7 +25,7 @@ func RunUnitTests(base, lang, codeqlArgs string, reportOutput *string, numThread
 
 	slog.Info("Executing unit tests",
 		"language", lang,
-		"codeql-cli", cfg.CodeQLCLI,
+		"codeql-cli", cfg.CodeQLCLIVersion,
 		"threads", numThreads,
 		"codeql-args", codeqlArgs,
 	)

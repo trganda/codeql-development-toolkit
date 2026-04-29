@@ -111,8 +111,8 @@ func CustomBundlePath(base, bundleName string) (string, error) {
 // Falls back to codeql found on PATH.
 func ResolveCodeQLBinary(base string) (string, error) {
 	if cfg, _ := config.LoadFromFile(base); cfg != nil {
-		if cfg.CodeQLCLI != "" {
-			if bin, err := codeQLBinary(cfg.CodeQLCLI); err == nil {
+		if cfg.CodeQLCLIVersion != "" {
+			if bin, err := codeQLBinary(cfg.CodeQLCLIVersion); err == nil {
 				if _, err := os.Stat(bin); err == nil {
 					return bin, nil
 				}

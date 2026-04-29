@@ -51,23 +51,23 @@ func NewCreateOptions(base, bundlePath string, noPrecompile, minimal bool, platf
 	}
 
 	if bundlePath == "" {
-		if cfg.CodeQLCLI == "" {
+		if cfg.CodeQLCLIVersion == "" {
 			return nil, fmt.Errorf("bundle path not provided and CodeQLCLI version not set in qlt.conf.json; set CodeQLCLI or provide --bundle")
 		}
-		bundlePath, err = paths.CLIArchivePath(cfg.CodeQLCLI)
+		bundlePath, err = paths.CLIArchivePath(cfg.CodeQLCLIVersion)
 		if err != nil {
 			return nil, fmt.Errorf("resolving bundle path: %w", err)
 		}
 
 		// Download the base CodeQL CLI bundle if not already present.
 		if _, err := os.Stat(bundlePath); err != nil {
-			if _, err := codeql.Download(cfg.CodeQLCLI, "all"); err != nil {
+			if _, err := codeql.Download(cfg.CodeQLCLIVersion, "all"); err != nil {
 				return nil, fmt.Errorf("download CodeQL CLI: %w", err)
 			}
 		}
 	}
 
-	output, err = paths.CustomBundlePath(base, cfg.CodeQLCLI)
+	output, err = paths.CustomBundlePath(base, cfg.CodeQLCLIVersion)
 	if err != nil {
 		return nil, fmt.Errorf("resolving custom bundle output path: %w", err)
 	}
