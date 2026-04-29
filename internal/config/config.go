@@ -10,9 +10,9 @@ import (
 // CodeQLPackConfiguration represents a single CodeQL pack entry in qlt.conf.json.
 type CodeQLPackConfiguration struct {
 	Name             string `json:"name"`
-	Bundle           bool   `json:"bundle"`
-	Publish          bool   `json:"publish"`
-	ReferencesBundle bool   `json:"referencesBundle"`
+	Bundle           bool   `json:"bundle,omitempty"`
+	Publish          bool   `json:"publish,omitempty"`
+	ReferencesBundle bool   `json:"referencesBundle,omitempty"`
 }
 
 // QueryEntry records a generated query so it can be resolved by name later.
@@ -25,10 +25,8 @@ type QueryEntry struct {
 
 // QLTConfig holds the QLT configuration loaded from qlt.conf.json.
 type QLTConfig struct {
-	CodeQLCLI           string `json:"codeQLCLI"`
-	CodeQLConfiguration string `json:"codeQLConfiguration,omitempty"`
-	// Scope                   string                    `json:"scope,omitempty"`
-	CodeQLPackConfiguration []CodeQLPackConfiguration `json:"codeQLPackConfiguration,omitempty"`
+	CodeQLCLI               string                    `json:"version,omitempty"`
+	CodeQLPackConfiguration []CodeQLPackConfiguration `json:"packs,omitempty"`
 	base                    string
 }
 
