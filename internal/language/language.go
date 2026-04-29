@@ -4,23 +4,31 @@ import "strings"
 
 // SupportedLanguages lists all CodeQL-supported languages.
 var SupportedLanguages = []string{
-	"c", "cpp", "csharp", "go", "java", "javascript", "python", "ruby",
+	"cpp", "csharp", "go", "java", "javascript", "python", "ruby",
+}
+
+// IsSupported reports whether lang matches one of SupportedLanguages (case-insensitive).
+func IsSupported(lang string) bool {
+	for _, l := range SupportedLanguages {
+		if strings.EqualFold(l, lang) {
+			return true
+		}
+	}
+	return false
 }
 
 // ToDirectory maps a language option string to its CodeQL directory name.
 func ToDirectory(lang string) string {
-	switch strings.ToLower(lang) {
-	case "c", "cpp":
-		return "cpp"
-	default:
-		return strings.ToLower(lang)
+	if lang == "all" {
+		return ""
 	}
+	return strings.ToLower(lang)
 }
 
 // ToImport maps a language to its CodeQL import name.
 func ToImport(lang string) string {
 	switch strings.ToLower(lang) {
-	case "c", "cpp":
+	case "cpp":
 		return "cpp"
 	case "csharp":
 		return "csharp"
@@ -42,8 +50,6 @@ func ToImport(lang string) string {
 // ToExtension maps a language to its source file extension.
 func ToExtension(lang string) string {
 	switch strings.ToLower(lang) {
-	case "c":
-		return "c"
 	case "cpp":
 		return "cpp"
 	case "csharp":

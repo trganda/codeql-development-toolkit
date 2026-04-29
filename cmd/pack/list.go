@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
+	"github.com/trganda/codeql-development-toolkit/internal/language"
 	"github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
@@ -22,6 +23,12 @@ func newListCmd(base *string) *cobra.Command {
 
 Use --language to narrow the search to a specific language directory
 or pack name. By default, test packs are excluded; use --all to include them.`,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if lang != "" && !language.IsSupported(lang) {
+				return fmt.Errorf("--language must be one of %v, got %q", language.SupportedLanguages, lang)
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing pack list command", "base", *base, "language", lang, "all", all)
 			return runPackList(*base, lang, all)

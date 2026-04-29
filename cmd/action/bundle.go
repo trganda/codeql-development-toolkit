@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/trganda/codeql-development-toolkit/internal/language"
 	tmpl "github.com/trganda/codeql-development-toolkit/internal/template"
 )
 
@@ -19,6 +20,14 @@ func newInitBundleTestCmd(base *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bundle-test",
 		Short: "Initialize bundle support",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			for _, l := range langs {
+				if !language.IsSupported(l) {
+					return fmt.Errorf("--language must be one of %v, got %q", language.SupportedLanguages, l)
+				}
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing bundle init command", "base", *base, "languages", langs, "branch", branch)
 			return runBundleInit(*base, langs, branch, overwriteExisting)
@@ -28,6 +37,7 @@ func newInitBundleTestCmd(base *string) *cobra.Command {
 	cmd.Flags().StringVar(&branch, "branch", "main", "Branch to trigger automation on")
 	cmd.Flags().BoolVar(&overwriteExisting, "overwrite", false, "Overwrite existing files")
 	cmd.MarkFlagRequired("language")
+
 	return cmd
 }
 

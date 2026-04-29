@@ -9,6 +9,7 @@ import (
 
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/config"
+	"github.com/trganda/codeql-development-toolkit/internal/language"
 	"github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
@@ -20,6 +21,12 @@ func newResolveCmd(base *string) *cobra.Command {
 		Short: "Auto-discover non-test packs and register them in qlt.conf.json",
 		Long: `Scan <base> for CodeQL packs, exclude test packs, and add any
 newly discovered packs to qlt.conf.json. Existing entries are left unchanged.`,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if lang != "" && !language.IsSupported(lang) {
+				return fmt.Errorf("--language must be one of %v, got %q", language.SupportedLanguages, lang)
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing pack resolve command", "base", *base, "language", lang)
 			return runPackResolve(*base, lang)

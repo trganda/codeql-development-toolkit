@@ -136,7 +136,7 @@ func formatExtension(format string) string {
 
 func isKnownLanguage(lang string) bool {
 	known := map[string]bool{
-		"c": true, "cpp": true, "csharp": true, "go": true,
+		"cpp": true, "csharp": true, "go": true,
 		"java": true, "javascript": true, "python": true, "ruby": true,
 		"swift": true, "kotlin": true,
 	}

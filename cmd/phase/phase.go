@@ -1,8 +1,11 @@
 package phase
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
+	"github.com/trganda/codeql-development-toolkit/internal/language"
 	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
@@ -41,6 +44,9 @@ Phases can be run individually or in sequence. Common flows:
 		PersistentPreRunE: func(c *cobra.Command, args []string) error {
 			if c.Name() == "init" {
 				return nil
+			}
+			if common.language != "" && common.language != "all" && !language.IsSupported(common.language) {
+				return fmt.Errorf("--language must be one of %v or \"all\", got %q", language.SupportedLanguages, common.language)
 			}
 			return utils.CheckWorkspace(*base)
 		},

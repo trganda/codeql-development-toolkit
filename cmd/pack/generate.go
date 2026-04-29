@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
+	"github.com/trganda/codeql-development-toolkit/internal/language"
 	"github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
@@ -28,6 +29,12 @@ func newGenerateCmd(base *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "generate",
 		Short: "Create a new CodeQL pack with scaffolding",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if !language.IsSupported(lang) {
+				return fmt.Errorf("--language must be one of %v, got %q", language.SupportedLanguages, lang)
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing pack generate new-query command",
 				"name", queryName, "language", lang, "pack", packName, "kind", queryKind, "use-bundle", bundle)
@@ -52,7 +59,7 @@ func newGenerateCmd(base *string) *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&queryName, "query-name", "MyNewQuery", "Name of the first query in the new pack (e.g. MyNewQuery)")
-	cmd.Flags().StringVar(&lang, "language", "", "Language (c|cpp|csharp|go|java|javascript|python|ruby)")
+	cmd.Flags().StringVar(&lang, "language", "", "Language (cpp|csharp|go|java|javascript|python|ruby)")
 	cmd.Flags().StringVar(&packName, "pack", "", "CodeQL pack name (e.g. trganda/new-pack)")
 	cmd.Flags().StringVar(&queryKind, "query-kind", "problem", "Query kind of the first query in the new pack (problem|path-problem)")
 	cmd.Flags().BoolVar(&createTests, "create-tests", true, "Create test scaffolding")
