@@ -14,7 +14,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
-	"github.com/trganda/codeql-development-toolkit/internal/language"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
 
@@ -42,22 +41,14 @@ type compileResult struct {
 
 // RunCompile compiles all .ql files under the resolved search root using
 // `codeql query compile`.
-func RunCompile(base, lang, pack string, threads int) error {
+func RunCompile(base, pack string, threads int) error {
 	codeqlBin, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err
 	}
 
-	var searchRoot string
-	if lang != "" && pack != "" {
-		langDir := language.ToDirectory(lang)
-		searchRoot = filepath.Join(base, langDir, pack, "src")
-		if _, err := os.Stat(searchRoot); err != nil {
-			return fmt.Errorf("directory not found: %s", searchRoot)
-		}
-	} else {
-		searchRoot = base
-	}
+	// If a pack is specified, we want to compile queries from that pack only
+	searchRoot := base
 
 	files, err := findQueryFiles(searchRoot)
 	if err != nil {

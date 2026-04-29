@@ -10,7 +10,6 @@ import (
 
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/config"
-	"github.com/trganda/codeql-development-toolkit/internal/language"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
 
@@ -20,11 +19,10 @@ import (
 //   - reportOutput == nil         → no report written
 //   - *reportOutput == ""         → <base>/target/test/test-report-<timestamp>.json
 //   - *reportOutput != ""         → the caller-supplied path
-func RunUnitTests(base, lang, codeqlArgs string, reportOutput *string, numThreads int) error {
+func RunUnitTests(base, codeqlArgs string, reportOutput *string, numThreads int) error {
 	cfg := config.MustLoadFromFile(base)
 
 	slog.Info("Executing unit tests",
-		"language", lang,
 		"codeql-cli", cfg.CodeQLCLIVersion,
 		"threads", numThreads,
 		"codeql-args", codeqlArgs,
@@ -38,11 +36,7 @@ func RunUnitTests(base, lang, codeqlArgs string, reportOutput *string, numThread
 	slog.Debug("Using CodeQL binary", "path", codeqlBin)
 
 	cli := codeql.NewCLI(codeqlBin)
-	testDir := base
-	if lang != "" && strings.ToLower(lang) != "all" {
-		testDir = filepath.Join(base, language.ToDirectory(lang))
-	}
-	res, err := cli.ResolveTests(testDir)
+	res, err := cli.ResolveTests(base)
 	if err != nil {
 		return fmt.Errorf("failed to resolve tests: %w", err)
 	}
@@ -116,7 +110,6 @@ func RunUnitTests(base, lang, codeqlArgs string, reportOutput *string, numThread
 	report := &TestReport{
 		Metadata: ReportMetadata{
 			Timestamp:  start,
-			Language:   lang,
 			NumThreads: numThreads,
 		},
 		Summary: summary,

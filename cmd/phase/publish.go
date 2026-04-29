@@ -3,7 +3,6 @@ package phase
 import (
 	"fmt"
 	"log/slog"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -24,28 +23,23 @@ Requires workspace initialization (run 'qlt phase init' first).
 Scans for packs under <base> (optionally filtered by --language) and
 publishes each using 'codeql pack publish'.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing phase publish", "base", *base, "language", common.language)
+			slog.Debug("Executing phase publish", "base", *base)
 			if err := runVerifyChain(*base, common); err != nil {
 				return err
 			}
-			return runPublish(*base, common.language)
+			return runPublish(*base)
 		},
 	}
 }
 
-func runPublish(base, lang string) error {
+func runPublish(base string) error {
 	codeqlBin, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err
 	}
 	cli := codeql.NewCLI(codeqlBin)
 
-	targetDir := base
-	if lang != "" {
-		targetDir = filepath.Join(targetDir, lang)
-	}
-
-	packs, err := pack.ListPacks(cli, targetDir)
+	packs, err := pack.ListPacks(cli, base)
 	if err != nil {
 		return fmt.Errorf("list packs: %w", err)
 	}

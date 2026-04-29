@@ -20,7 +20,7 @@ metadata and run integration checks.
 
 For now, use: qlt validation run check-queries --language <lang>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing phase verify", "base", *base, "language", common.language)
+			slog.Debug("Executing phase verify", "base", *base)
 			return runVerifyChain(*base, common)
 		},
 	}

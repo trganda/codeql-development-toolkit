@@ -1,18 +1,15 @@
 package phase
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
-	"github.com/trganda/codeql-development-toolkit/internal/language"
 	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
 // commonFlags holds flags shared across most phase subcommands.
 // Populated by persistent flags on the parent and read by each subcommand.
 type commonFlags struct {
-	language   string
+	// language   string
 	numThreads int
 	codeqlArgs string
 }
@@ -45,14 +42,12 @@ Phases can be run individually or in sequence. Common flows:
 			if c.Name() == "init" {
 				return nil
 			}
-			if common.language != "" && common.language != "all" && !language.IsSupported(common.language) {
-				return fmt.Errorf("--language must be one of %v or \"all\", got %q", language.SupportedLanguages, common.language)
-			}
+
 			return utils.CheckWorkspace(*base)
 		},
 	}
 
-	cmd.PersistentFlags().StringVar(&common.language, "language", "", "Filter by language (e.g. go, java)")
+	// cmd.PersistentFlags().StringVar(&common.language, "language", "", "Filter by language (e.g. go, java)")
 	cmd.PersistentFlags().IntVar(&common.numThreads, "num-threads", 0, "Number of threads (0 = all cores)")
 	cmd.PersistentFlags().StringVar(&common.codeqlArgs, "codeql-args", "", "Extra arguments to pass to CodeQL")
 

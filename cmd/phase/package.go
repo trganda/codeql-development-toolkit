@@ -26,7 +26,7 @@ Requires workspace initialization (run 'qlt phase init' first).
 Reads packs from qlt.conf.json where Bundle=true and builds a custom bundle
 using the base bundle archive downloaded by 'qlt codeql install'.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing phase package", "base", *base, "language", common.language)
+			slog.Debug("Executing phase package", "base", *base)
 			if err := runVerifyChain(*base, common); err != nil {
 				return err
 			}

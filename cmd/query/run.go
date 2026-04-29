@@ -58,5 +58,6 @@ The CodeQL binary is resolved in order:
 	run.MarkFlagRequired("query")
 	run.MarkFlagRequired("database")
 	run.MarkFlagRequired("language")
+
 	return run
 }

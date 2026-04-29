@@ -12,7 +12,7 @@ func runCompileChain(base string, c *commonFlags) error {
 	// if err := query.RunPackInstall(base, c.language); err != nil {
 	// 	return err
 	// }
-	return query.RunCompile(base, c.language, "", c.numThreads)
+	return query.RunCompile(base, "", c.numThreads)
 }
 
 // runTestChain runs install → compile → test. reportOutput controls whether
@@ -22,7 +22,7 @@ func runTestChain(base string, reportOutput *string, c *commonFlags) error {
 	if err := runCompileChain(base, c); err != nil {
 		return err
 	}
-	return qlttest.RunUnitTests(base, c.language, c.codeqlArgs, reportOutput, c.numThreads)
+	return qlttest.RunUnitTests(base, c.codeqlArgs, reportOutput, c.numThreads)
 }
 
 // runVerifyChain runs install → compile → test → verify (placeholder).

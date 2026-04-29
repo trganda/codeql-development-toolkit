@@ -18,8 +18,8 @@ Requires workspace initialization (run 'qlt phase init' first).
 Runs 'codeql pack install' for packs found under <base>, optionally filtered
 by --language.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			slog.Debug("Executing phase install", "base", *base, "language", common.language)
-			return query.RunPackInstall(*base, common.language)
+			slog.Debug("Executing phase install", "base", *base)
+			return query.RunPackInstall(*base)
 		},
 	}
 }

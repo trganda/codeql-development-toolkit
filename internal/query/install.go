@@ -4,11 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"os"
-	"path/filepath"
 
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
-	"github.com/trganda/codeql-development-toolkit/internal/language"
 	packpkg "github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
@@ -54,31 +51,22 @@ type resolvePacksOutput struct {
 // and runs `codeql pack install` for each pack whose dependencies are not fully
 // cached. Deps are checked via `codeql pack resolve-dependencies` and
 // `codeql resolve packs` before triggering an install.
-func RunPackInstall(base, lang string) error {
+func RunPackInstall(base string) error {
 	codeqlBin, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err
 	}
 	cli := codeql.NewCLI(codeqlBin)
 
-	targetPath := base
-	if lang != "" {
-		targetPath = filepath.Join(base, language.ToDirectory(lang))
-	}
-
-	if _, err := os.Stat(targetPath); err != nil {
-		return fmt.Errorf("target path not found: %s", targetPath)
-	}
-
-	qlpacks, err := packpkg.ListPacks(cli, targetPath)
+	qlpacks, err := packpkg.ListPacks(cli, base)
 	if err != nil {
 		return err
 	}
 	if len(qlpacks) == 0 {
-		return fmt.Errorf("No CodeQL packs found under %s. Run 'qlt query generate new-query' to create your first query.", targetPath)
+		return fmt.Errorf("No CodeQL packs found under %s. Run 'qlt query generate new-query' to create your first query.", base)
 	}
 
-	slog.Info("Found query packs under base", "base", targetPath, "count", len(qlpacks))
+	slog.Info("Found query packs under base", "base", base, "count", len(qlpacks))
 
 	// Snapshot the local pack cache once for all packs.
 	cached, err := resolvedPackCache(cli)
@@ -112,7 +100,7 @@ func RunPackInstall(base, lang string) error {
 		}
 	}
 
-	slog.Info("Installed dependencies for all query packs under target path", "targetPath", targetPath, "count", len(qlpacks))
+	slog.Info("Installed dependencies for all query packs under target path", "targetPath", base, "count", len(qlpacks))
 	return nil
 }
 
