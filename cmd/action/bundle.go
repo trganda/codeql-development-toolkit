@@ -3,6 +3,7 @@ package action
 import (
 	"fmt"
 	"log/slog"
+	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -44,6 +45,9 @@ func runBundleInit(base, lang string, overwrite bool) error {
 		return fmt.Errorf("load install-qlt template: %w", err)
 	}
 	installPath := filepath.Join(base, ".github", "actions", "install-qlt", "action.yml")
+	if _, statErr := os.Stat(installPath); statErr == nil && !overwrite {
+		slog.Info("Skipped file (already exists). Use --overwrite-existing to replace.", "path", installPath)
+	}
 	if err := tmpl.WriteFile(installTmpl, installPath, nil, overwrite); err != nil {
 		return fmt.Errorf("write install-qlt: %w", err)
 	}
@@ -54,6 +58,9 @@ func runBundleInit(base, lang string, overwrite bool) error {
 		return fmt.Errorf("load bundle template: %w", err)
 	}
 	bundlePath := filepath.Join(base, ".github", "workflows", "run-bundle-integration-tests.yml")
+	if _, statErr := os.Stat(bundlePath); statErr == nil && !overwrite {
+		slog.Info("Skipped file (already exists). Use --overwrite-existing to replace.", "path", bundlePath)
+	}
 	if err := tmpl.WriteFile(bundleTmpl, bundlePath, data, overwrite); err != nil {
 		return fmt.Errorf("write bundle workflow: %w", err)
 	}

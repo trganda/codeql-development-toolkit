@@ -3,6 +3,7 @@ package action
 import (
 	"fmt"
 	"log/slog"
+	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -31,7 +32,7 @@ func newTestInitCommand(base *string) *cobra.Command {
 	cmd.Flags().BoolVar(&overwrite, "overwrite", false, "Overwrite existing files")
 	cmd.Flags().IntVar(&numThreads, "num-threads", 4, "Number of threads for test execution")
 	cmd.Flags().StringVar(&useRunner, "use-runner", "ubuntu-latest", "GitHub Actions runner(s) to use")
-	cmd.Flags().StringVar(&lang, "language", "", "Language to initialize CodeQL action for")
+	cmd.Flags().StringVar(&lang, "language", "", "Pack of target language to test in this action (use the language name, e.g. 'java' or 'python', use 'all' to test all languages)")
 	cmd.Flags().StringVar(&branch, "branch", "main", "Branch to trigger automation on")
 	cmd.MarkFlagRequired("language")
 
@@ -40,7 +41,8 @@ func newTestInitCommand(base *string) *cobra.Command {
 
 // testInitOptions holds template variables for the test init workflow.
 type testInitOptions struct {
-	Language   string
+	Language   string // display name used in the workflow title and filename
+	LangFlag   string // value for --language flag; empty means test all languages
 	Branch     string
 	NumThreads int
 	UseRunner  string
@@ -49,10 +51,18 @@ type testInitOptions struct {
 
 func runTestInit(base, lang, useRunner, branch string, numThreads int, overwrite bool) error {
 	slog.Debug("Running test init", "lang", lang, "overwrite", overwrite)
-	langDir := language.ToDirectory(lang)
+
+	displayLang := lang
+	langFlag := language.ToDirectory(lang)
+	if lang == "all" {
+		langFlag = ""
+	} else {
+		displayLang = language.ToDirectory(lang)
+	}
 
 	data := testInitOptions{
-		Language:   langDir,
+		Language:   displayLang,
+		LangFlag:   langFlag,
 		Branch:     branch,
 		NumThreads: numThreads,
 		UseRunner:  useRunner,
@@ -64,6 +74,9 @@ func runTestInit(base, lang, useRunner, branch string, numThreads int, overwrite
 		return fmt.Errorf("load install-qlt template: %w", err)
 	}
 	installPath := filepath.Join(base, ".github", "actions", "install-qlt", "action.yml")
+	if _, statErr := os.Stat(installPath); statErr == nil && !overwrite {
+		slog.Info("Skipped file (already exists). Use --overwrite to replace.", "path", installPath)
+	}
 	if err := tmpl.WriteFile(installTmpl, installPath, nil, overwrite); err != nil {
 		return fmt.Errorf("write install-qlt: %w", err)
 	}
@@ -74,6 +87,9 @@ func runTestInit(base, lang, useRunner, branch string, numThreads int, overwrite
 		return fmt.Errorf("load run-unit-tests template: %w", err)
 	}
 	workflowPath := filepath.Join(base, ".github", "workflows", fmt.Sprintf("run-codeql-unit-tests-%s.yml", lang))
+	if _, statErr := os.Stat(workflowPath); statErr == nil && !overwrite {
+		slog.Info("Skipped file (already exists). Use --overwrite to replace.", "path", workflowPath)
+	}
 	if err := tmpl.WriteFile(workflowTmpl, workflowPath, data, overwrite); err != nil {
 		return fmt.Errorf("write run-unit-tests workflow: %w", err)
 	}

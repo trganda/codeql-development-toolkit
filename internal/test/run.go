@@ -38,7 +38,11 @@ func RunUnitTests(base, lang, codeqlArgs string, reportOutput *string, numThread
 	slog.Debug("Using CodeQL binary", "path", codeqlBin)
 
 	cli := codeql.NewCLI(codeqlBin)
-	res, err := cli.ResolveTests(fmt.Sprintf("%s/%s", base, language.ToDirectory(lang)))
+	testDir := base
+	if lang != "" && strings.ToLower(lang) != "all" {
+		testDir = filepath.Join(base, language.ToDirectory(lang))
+	}
+	res, err := cli.ResolveTests(testDir)
 	if err != nil {
 		return fmt.Errorf("failed to resolve tests: %w", err)
 	}
