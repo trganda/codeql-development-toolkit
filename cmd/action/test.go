@@ -20,7 +20,7 @@ func newTestInitCommand(base *string) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "init-test",
+		Use:   "test",
 		Short: "Initialize test infrastructure (GitHub Actions workflow)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing test init command", "language", lang, "runner", useRunner, "branch", branch)

@@ -78,6 +78,8 @@ func RunPackInstall(base, lang string) error {
 		return fmt.Errorf("No CodeQL packs found under %s. Run 'qlt query generate new-query' to create your first query.", targetPath)
 	}
 
+	slog.Info("Found query packs under base", "base", targetPath, "count", len(qlpacks))
+
 	// Snapshot the local pack cache once for all packs.
 	cached, err := resolvedPackCache(cli)
 	if err != nil {

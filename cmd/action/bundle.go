@@ -15,7 +15,7 @@ func newInitBundleTestCmd(base *string) *cobra.Command {
 		overwriteExisting bool
 	)
 	cmd := &cobra.Command{
-		Use:   "init-bundle-test",
+		Use:   "bundle-test",
 		Short: "Initialize bundle support",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing bundle init command", "base", *base, "language", lang)
