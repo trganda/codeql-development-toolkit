@@ -1,16 +1,14 @@
 {
-  "CodeQLCLI": "2.25.1",
-  "CodeQLCLIBundle": "codeql-bundle-v2.25.1",
-  "EnableCustomCodeQLBundles": true,
-  "CodeQLPackConfiguration" : [
+  "version": "2.25.2",
+  "packs": [
     {
-      "Name": "qlt/cpp-customizations",
-      "Bundle" : true
+      "name": "qlt/cpp-customizations"
     },
     {
-      "Name": "qlt2/stuff2-tests",
-      "Bundle" : false,
-      "ReferencesBundle" : true 
+      "name": "qlt55/stuff"
+    },
+    {
+      "name": "qlt2/stuff2"
     }
   ]
 }
