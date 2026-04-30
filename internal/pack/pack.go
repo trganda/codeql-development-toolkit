@@ -165,6 +165,67 @@ func loadConfig(ymlPath string) (QlpackConfig, error) {
 	return cfg, nil
 }
 
+// SelectPacks resolves a list of pack names against allPacks. Names match by
+// full name first, then by unique short name (segment after "/"). When names
+// is empty, every pack is returned (filtered by skipTest). When skipTest is
+// true, test packs are excluded from both the empty-filter result and from
+// short/full name matching.
+func SelectPacks(allPacks []*Pack, names []string, skipTest bool) ([]*Pack, error) {
+	filtered := allPacks
+	if skipTest {
+		filtered = filtered[:0:0]
+		for _, p := range allPacks {
+			if !p.IsTestPack() {
+				filtered = append(filtered, p)
+			}
+		}
+	}
+
+	if len(names) == 0 {
+		return filtered, nil
+	}
+
+	selected := make([]*Pack, 0, len(names))
+	for _, name := range names {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		var (
+			full         *Pack
+			shortMatches []*Pack
+		)
+		for _, p := range filtered {
+			packName := p.Config.FullName()
+			if packName == name {
+				full = p
+				break
+			}
+			if GetPackName(packName) == name {
+				shortMatches = append(shortMatches, p)
+			}
+		}
+		if full != nil {
+			selected = append(selected, full)
+			continue
+		}
+		if len(shortMatches) == 1 {
+			selected = append(selected, shortMatches[0])
+			continue
+		}
+		if len(shortMatches) > 1 {
+			var matched []string
+			for _, p := range shortMatches {
+				matched = append(matched, p.Config.FullName())
+			}
+			return nil, fmt.Errorf("pack %q matches multiple packs; use full name from qlt pack list: %s",
+				name, strings.Join(matched, ", "))
+		}
+		return nil, fmt.Errorf("no pack matched %q under base (run qlt pack list)", name)
+	}
+	return selected, nil
+}
+
 // ListPacks runs `codeql pack ls --format=json <dir>` and returns all packs found.
 func ListPacks(cli *codeql.CLI, dir string) ([]*Pack, error) {
 	res, err := cli.PackLs(dir)

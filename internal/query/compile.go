@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -14,7 +12,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
-	packpkg "github.com/trganda/codeql-development-toolkit/internal/pack"
+	"github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
 
@@ -40,7 +38,7 @@ type compileResult struct {
 	Messages     []compileMessage `json:"messages"`
 }
 
-// RunCompile compiles .ql files belonging to the selected packs using
+// RunCompile compiles qlpack belonging to the selected packs using
 // `codeql query compile`. When packs is empty, every pack listed under base is
 // compiled; otherwise only packs whose full or unique short name matches an
 // entry in packs are compiled.
@@ -51,7 +49,7 @@ func RunCompile(base string, packs []string, threads int) error {
 	}
 
 	cli := codeql.NewCLI(codeqlBin)
-	allPacks, err := packpkg.ListPacks(cli, base)
+	allPacks, err := pack.ListPacks(cli, base)
 	if err != nil {
 		return fmt.Errorf("list packs: %w", err)
 	}
@@ -59,21 +57,12 @@ func RunCompile(base string, packs []string, threads int) error {
 		return fmt.Errorf("no CodeQL packs found under %s", base)
 	}
 
-	selected, err := selectPacksForCompile(allPacks, packs)
+	selected, err := pack.SelectPacks(allPacks, packs, false)
 	if err != nil {
 		return err
 	}
-
-	var files []string
-	for _, p := range selected {
-		f, err := findQueryFiles(p.Dir())
-		if err != nil {
-			return fmt.Errorf("search query files in %s: %w", p.Dir(), err)
-		}
-		files = append(files, f...)
-	}
-	if len(files) == 0 {
-		return fmt.Errorf("no .ql files found in selected packs")
+	if len(selected) == 0 {
+		return fmt.Errorf("no packs selected for compile")
 	}
 
 	maxWorkers := threads
@@ -81,10 +70,7 @@ func RunCompile(base string, packs []string, threads int) error {
 		maxWorkers = runtime.NumCPU()
 	}
 
-	slog.Info("Compiling query files", "count", len(files), "packs", len(selected), "workers", maxWorkers)
-	for _, f := range files {
-		slog.Debug("Scheduled for compile", "file", f)
-	}
+	slog.Info("Compiling query pack", "packs", len(selected), "workers", maxWorkers)
 
 	var (
 		mu   sync.Mutex
@@ -94,16 +80,15 @@ func RunCompile(base string, packs []string, threads int) error {
 	g := new(errgroup.Group)
 	g.SetLimit(maxWorkers)
 
-	for _, f := range files {
-		f := f
+	for _, p := range selected {
 		g.Go(func() error {
-			res, err := cli.QueryCompile(1, f)
+			res, err := cli.QueryCompile(1, p.Dir())
 			if err != nil {
 				if res != nil && len(res.Stdout) > 0 {
 					slog.Debug("CodeQL compile stdout", "output", res.StdoutString())
 				}
 				mu.Lock()
-				errs = append(errs, fmt.Errorf("compile %s: %w", f, err))
+				errs = append(errs, fmt.Errorf("compile %s: %w", p.Config.FullName(), err))
 				mu.Unlock()
 				return nil // let other goroutines continue
 			}
@@ -118,70 +103,6 @@ func RunCompile(base string, packs []string, threads int) error {
 
 	g.Wait()
 	return errors.Join(errs...)
-}
-
-// selectPacksForCompile resolves the user-supplied pack name filter against
-// the listed packs. An empty filter returns all packs unchanged. Names match
-// by full name first, then by unique short name (segment after "/").
-func selectPacksForCompile(allPacks []*packpkg.Pack, filter []string) ([]*packpkg.Pack, error) {
-	if len(filter) == 0 {
-		return allPacks, nil
-	}
-
-	selected := make([]*packpkg.Pack, 0, len(filter))
-	for _, name := range filter {
-		name = strings.TrimSpace(name)
-		if name == "" {
-			continue
-		}
-		var (
-			full         *packpkg.Pack
-			shortMatches []*packpkg.Pack
-		)
-		for _, p := range allPacks {
-			packName := p.Config.FullName()
-			if packName == name {
-				full = p
-				break
-			}
-			if packpkg.GetPackName(packName) == name {
-				shortMatches = append(shortMatches, p)
-			}
-		}
-		if full != nil {
-			selected = append(selected, full)
-			continue
-		}
-		if len(shortMatches) == 1 {
-			selected = append(selected, shortMatches[0])
-			continue
-		}
-		if len(shortMatches) > 1 {
-			var names []string
-			for _, p := range shortMatches {
-				names = append(names, p.Config.FullName())
-			}
-			return nil, fmt.Errorf("pack %q matches multiple packs; use full name from qlt pack list: %s",
-				name, strings.Join(names, ", "))
-		}
-		return nil, fmt.Errorf("no pack matched %q under base (run qlt pack list)", name)
-	}
-	return selected, nil
-}
-
-// findQueryFiles walks dir recursively and collects all .ql file paths.
-func findQueryFiles(dir string) ([]string, error) {
-	var found []string
-	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !d.IsDir() && filepath.Ext(d.Name()) == ".ql" {
-			found = append(found, path)
-		}
-		return nil
-	})
-	return found, err
 }
 
 // logCompileResults parses JSON output from `codeql query compile` and logs
