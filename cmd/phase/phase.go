@@ -10,6 +10,7 @@ import (
 // Populated by persistent flags on the parent and read by each subcommand.
 type commonFlags struct {
 	// language   string
+	packs      []string
 	numThreads int
 	codeqlArgs string
 }
@@ -48,6 +49,7 @@ Phases can be run individually or in sequence. Common flows:
 	}
 
 	// cmd.PersistentFlags().StringVar(&common.language, "language", "", "Filter by language (e.g. go, java)")
+	cmd.PersistentFlags().StringSliceVar(&common.packs, "packs", []string{}, "Filter by pack name (full name, can specify multiple, e.g. --packs=foo/bar --packs=baz/qux)")
 	cmd.PersistentFlags().IntVar(&common.numThreads, "num-threads", 0, "Number of threads (0 = all cores)")
 	cmd.PersistentFlags().StringVar(&common.codeqlArgs, "codeql-args", "", "Extra arguments to pass to CodeQL")
 

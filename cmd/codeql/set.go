@@ -30,8 +30,7 @@ func newSetVersionCmd(base *string) *cobra.Command {
 If --cli-version or --bundle-version are omitted the latest release is
 fetched from GitHub's API automatically. If that request fails the
 following fallback values are used:
-  CLI:    ` + codeql.FallbackCLIVersion + `
-  Bundle: ` + codeql.FallbackBundleVersion,
+  CLI:    ` + codeql.FallbackCLIVersion,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing codeql set version command", "base", *base)
 

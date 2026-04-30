@@ -16,7 +16,8 @@ import (
 )
 
 const cliDownloadBase = "https://github.com/github/codeql-cli-binaries/releases/download"
-const bundleDownloadBase = "https://github.com/github/codeql-action/releases/download"
+
+// const bundleDownloadBase = "https://github.com/github/codeql-action/releases/download"
 
 var downloadClient = &http.Client{Timeout: 30 * time.Minute}
 

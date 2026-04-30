@@ -11,12 +11,11 @@ import (
 // newRunCmd returns `pack run` — analyze a CodeQL database using all queries in a pack.
 func newRunCmd(base *string) *cobra.Command {
 	var (
-		database        string
-		packName        string
-		format          string
-		output          string
-		additionalPacks string
-		threads         int
+		database string
+		packName string
+		format   string
+		output   string
+		threads  int
 	)
 	run := &cobra.Command{
 		Use:   "run",
@@ -33,14 +32,13 @@ The CodeQL binary is resolved the same way as other qlt commands (bundle, ~/.qlt
 			slog.Debug("Executing pack run",
 				"database", database, "pack", packName,
 				"format", format, "output", output, "threads", threads)
-			return packsvc.RunAnalyze(*base, database, packName, format, output, additionalPacks, threads)
+			return packsvc.RunAnalyze(*base, database, packName, format, output, threads)
 		},
 	}
 	run.Flags().StringVar(&database, "database", "", "Path to the CodeQL database (required)")
 	run.Flags().StringVar(&packName, "pack", "", "Pack name as shown by qlt pack list (full name or unique short name, required)")
 	run.Flags().StringVar(&format, "format", "sarif-latest", "Output format: sarif-latest, csv, text, dot, bqrs")
 	run.Flags().StringVar(&output, "output", "", "Output file path (default: <base>/target/analyze/<pack>.<ext>)")
-	run.Flags().StringVar(&additionalPacks, "additional-packs", "", "Colon-separated list of additional pack search paths")
 	run.Flags().IntVar(&threads, "threads", 0, "Number of threads (0 = use all available cores)")
 	run.MarkFlagRequired("database")
 	run.MarkFlagRequired("pack")

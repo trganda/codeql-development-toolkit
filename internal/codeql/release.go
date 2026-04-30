@@ -10,11 +10,10 @@ import (
 )
 
 const (
-	FallbackCLIVersion    = "2.25.1"
-	FallbackBundleVersion = "codeql-bundle-v2.25.1"
+	FallbackCLIVersion = "2.25.1"
 
-	cliLatestURL    = "https://github.com/github/codeql-cli-binaries/releases/latest"
-	bundleLatestURL = "https://github.com/github/codeql-action/releases/latest"
+	cliLatestURL = "https://github.com/github/codeql-cli-binaries/releases/latest"
+	// bundleLatestURL = "https://github.com/github/codeql-action/releases/latest"
 )
 
 // noRedirectClient follows zero redirects so we can read the Location header directly.
@@ -37,13 +36,13 @@ func LatestCLIVersion() string {
 
 // LatestBundleVersion returns the latest bundle tag (e.g. "codeql-bundle-v2.25.1").
 // Falls back to FallbackBundleVersion on any error.
-func LatestBundleVersion() string {
-	tag, err := latestTagFromRedirect(bundleLatestURL)
-	if err != nil {
-		return FallbackBundleVersion
-	}
-	return tag
-}
+// func LatestBundleVersion() string {
+// 	tag, err := latestTagFromRedirect(bundleLatestURL)
+// 	if err != nil {
+// 		return FallbackBundleVersion
+// 	}
+// 	return tag
+// }
 
 // latestTagFromRedirect hits the /releases/latest page and extracts the version
 // tag from the redirect Location header without calling the JSON API.

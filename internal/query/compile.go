@@ -14,6 +14,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
+	packpkg "github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
 
@@ -39,23 +40,40 @@ type compileResult struct {
 	Messages     []compileMessage `json:"messages"`
 }
 
-// RunCompile compiles all .ql files under the resolved search root using
-// `codeql query compile`.
-func RunCompile(base, pack string, threads int) error {
+// RunCompile compiles .ql files belonging to the selected packs using
+// `codeql query compile`. When packs is empty, every pack listed under base is
+// compiled; otherwise only packs whose full or unique short name matches an
+// entry in packs are compiled.
+func RunCompile(base string, packs []string, threads int) error {
 	codeqlBin, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err
 	}
 
-	// If a pack is specified, we want to compile queries from that pack only
-	searchRoot := base
-
-	files, err := findQueryFiles(searchRoot)
+	cli := codeql.NewCLI(codeqlBin)
+	allPacks, err := packpkg.ListPacks(cli, base)
 	if err != nil {
-		return fmt.Errorf("search for query files: %w", err)
+		return fmt.Errorf("list packs: %w", err)
+	}
+	if len(allPacks) == 0 {
+		return fmt.Errorf("no CodeQL packs found under %s", base)
+	}
+
+	selected, err := selectPacksForCompile(allPacks, packs)
+	if err != nil {
+		return err
+	}
+
+	var files []string
+	for _, p := range selected {
+		f, err := findQueryFiles(p.Dir())
+		if err != nil {
+			return fmt.Errorf("search query files in %s: %w", p.Dir(), err)
+		}
+		files = append(files, f...)
 	}
 	if len(files) == 0 {
-		return fmt.Errorf("no .ql files found under %s", searchRoot)
+		return fmt.Errorf("no .ql files found in selected packs")
 	}
 
 	maxWorkers := threads
@@ -63,7 +81,7 @@ func RunCompile(base, pack string, threads int) error {
 		maxWorkers = runtime.NumCPU()
 	}
 
-	slog.Info("Compiling query files", "count", len(files), "root", searchRoot, "workers", maxWorkers)
+	slog.Info("Compiling query files", "count", len(files), "packs", len(selected), "workers", maxWorkers)
 	for _, f := range files {
 		slog.Debug("Scheduled for compile", "file", f)
 	}
@@ -76,7 +94,6 @@ func RunCompile(base, pack string, threads int) error {
 	g := new(errgroup.Group)
 	g.SetLimit(maxWorkers)
 
-	cli := codeql.NewCLI(codeqlBin)
 	for _, f := range files {
 		f := f
 		g.Go(func() error {
@@ -101,6 +118,55 @@ func RunCompile(base, pack string, threads int) error {
 
 	g.Wait()
 	return errors.Join(errs...)
+}
+
+// selectPacksForCompile resolves the user-supplied pack name filter against
+// the listed packs. An empty filter returns all packs unchanged. Names match
+// by full name first, then by unique short name (segment after "/").
+func selectPacksForCompile(allPacks []*packpkg.Pack, filter []string) ([]*packpkg.Pack, error) {
+	if len(filter) == 0 {
+		return allPacks, nil
+	}
+
+	selected := make([]*packpkg.Pack, 0, len(filter))
+	for _, name := range filter {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		var (
+			full         *packpkg.Pack
+			shortMatches []*packpkg.Pack
+		)
+		for _, p := range allPacks {
+			packName := p.Config.FullName()
+			if packName == name {
+				full = p
+				break
+			}
+			if packpkg.GetPackName(packName) == name {
+				shortMatches = append(shortMatches, p)
+			}
+		}
+		if full != nil {
+			selected = append(selected, full)
+			continue
+		}
+		if len(shortMatches) == 1 {
+			selected = append(selected, shortMatches[0])
+			continue
+		}
+		if len(shortMatches) > 1 {
+			var names []string
+			for _, p := range shortMatches {
+				names = append(names, p.Config.FullName())
+			}
+			return nil, fmt.Errorf("pack %q matches multiple packs; use full name from qlt pack list: %s",
+				name, strings.Join(names, ", "))
+		}
+		return nil, fmt.Errorf("no pack matched %q under base (run qlt pack list)", name)
+	}
+	return selected, nil
 }
 
 // findQueryFiles walks dir recursively and collects all .ql file paths.

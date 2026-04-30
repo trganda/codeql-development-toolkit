@@ -13,7 +13,7 @@ import (
 
 // RunAnalyze runs `codeql database analyze` using the resolved query pack directory
 // as the analysis target (all queries in that pack).
-func RunAnalyze(base, database, packRef string, format, output, additionalPacks string, threads int) error {
+func RunAnalyze(base, database, packRef string, format, output string, threads int) error {
 	if _, err := os.Stat(database); err != nil {
 		return fmt.Errorf("database not found: %s", database)
 	}
@@ -40,12 +40,11 @@ func RunAnalyze(base, database, packRef string, format, output, additionalPacks 
 	}
 
 	opts := codeql.DatabaseAnalyzeOptions{
-		Database:        database,
-		QueryFile:       packDir,
-		Format:          format,
-		Output:          output,
-		Threads:         threads,
-		AdditionalPacks: additionalPacks,
+		Database:  database,
+		QueryFile: packDir,
+		Format:    format,
+		Output:    output,
+		Threads:   threads,
 	}
 	slog.Debug("Running CodeQL database analyze on pack", "cmd", codeqlBin, "opts", opts)
 

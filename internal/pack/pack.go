@@ -75,6 +75,7 @@ func (p *Pack) Dir() string { return filepath.Dir(p.YmlPath) }
 // IsTestPack returns true if the pack is a test pack, identified by either
 // having an extractor field set or being located under a test/ directory.
 func (p *Pack) IsTestPack() bool {
+	// TODO: This is a heuristic. We may want to consider a more robust way to identify test packs.
 	for dir := p.Dir(); dir != "/" && dir != "."; dir = filepath.Dir(dir) {
 		if filepath.Base(dir) == "test" {
 			return true
