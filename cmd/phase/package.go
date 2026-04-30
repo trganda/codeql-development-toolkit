@@ -1,7 +1,9 @@
 package phase
 
 import (
+	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/trganda/codeql-development-toolkit/internal/bundle"
@@ -48,15 +50,20 @@ func runPackage(base, bundlePath, output string, platforms []string, noPrecompil
 		return err
 	}
 
-	bundleCtx, err := bundle.NewCustomBundle(opts)
+	tmpDir, err := os.MkdirTemp("", "qlt-bundle-*")
 	if err != nil {
-		return err
+		return fmt.Errorf("creating temp dir: %w", err)
 	}
+	defer func() {
+		slog.Debug("Removing temp dir", "path", tmpDir)
+		os.RemoveAll(tmpDir)
+	}()
+
+	bundleCtx := bundle.NewCustomBundle(opts, tmpDir)
 
 	slog.Info("Creating custom CodeQL bundle",
-		"base-bundle", opts.BundlePath,
 		"output", opts.OutputPath,
-		"packs", opts.Packs,
+		"packs", len(opts.Packs),
 		"platforms", opts.Platforms,
 	)
 

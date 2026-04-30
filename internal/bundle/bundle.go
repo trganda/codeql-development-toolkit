@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"github.com/trganda/codeql-development-toolkit/internal/archive"
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
@@ -16,41 +15,32 @@ import (
 
 type CustomBundle struct {
 	opts            *CreateOptions
-	tmpCodeQLCLI    *codeql.CLI
+	tmpDir          string
 	tmpBundleDir    string
 	tmpQlPacksDir   string
-	tmpDir          string
+	tmpCodeQLCLI    *codeql.CLI
 	commonCachesDir string
 }
 
-func NewCustomBundle(opts *CreateOptions) (*CustomBundle, error) {
-	tmpDir, err := os.MkdirTemp("", "qlt-bundle-*")
-	if err != nil {
-		return nil, fmt.Errorf("creating temp dir: %w", err)
-	}
-	defer func() {
-		slog.Debug("Removing temp dir", "path", tmpDir)
-		os.RemoveAll(tmpDir)
-	}()
-
-	commonCaches := filepath.Join(tmpDir, "common-caches")
-	// Create for common cache
-	os.Mkdir(commonCaches, 0755)
-
-	bundleDir := filepath.Join(tmpDir, "codeql")
-	codeqlBin := filepath.Join(bundleDir, "codeql")
+func NewCustomBundle(opts *CreateOptions, tmpDir string) *CustomBundle {
+	tmpBundleDir := filepath.Join(tmpDir, "codeql")
+	tmpQlPacksDir := filepath.Join(tmpBundleDir, "qlpacks")
+	commonCachesDir := filepath.Join(tmpDir, "common-caches")
+	codeqlBin := filepath.Join(tmpBundleDir, "codeql")
 	if runtime.GOOS == "windows" {
-		codeqlBin = filepath.Join(bundleDir, "codeql.exe")
+		codeqlBin = filepath.Join(tmpBundleDir, "codeql.exe")
 	}
+
+	tmpCodeQLCLI := codeql.NewCLI(codeqlBin)
 
 	return &CustomBundle{
 		opts:            opts,
 		tmpDir:          tmpDir,
-		tmpBundleDir:    bundleDir,
-		tmpQlPacksDir:   filepath.Join(bundleDir, "qlpacks"),
-		tmpCodeQLCLI:    codeql.NewCLI(codeqlBin),
-		commonCachesDir: commonCaches,
-	}, nil
+		tmpBundleDir:    tmpBundleDir,
+		tmpQlPacksDir:   tmpQlPacksDir,
+		tmpCodeQLCLI:    tmpCodeQLCLI,
+		commonCachesDir: commonCachesDir,
+	}
 }
 
 // Create builds a custom CodeQL bundle by extending the base bundle with
@@ -67,9 +57,9 @@ func NewCustomBundle(opts *CreateOptions) (*CustomBundle, error) {
 //  5. Repack the modified bundle, either as a single archive or one per
 //     requested platform.
 //
-// Only QueryPack workspace packs are processed in full. Customization and
-// Library packs are skipped with a warning (future work).
+// Customization packs are skipped with a warning (future work).
 func (ctx *CustomBundle) Create() error {
+
 	slog.Info("Extracting base bundle", "archive", ctx.opts.BundlePath)
 	if err := archive.ExtractZip(ctx.opts.BundlePath, ctx.tmpDir); err != nil {
 		return fmt.Errorf("extracting bundle: %w", err)
@@ -78,7 +68,8 @@ func (ctx *CustomBundle) Create() error {
 	slog.Info("Listing workspace packs", "dir", ctx.opts.WorkspaceDir)
 
 	if len(ctx.opts.Packs) == 0 {
-		return fmt.Errorf("no pack found in workspace")
+		slog.Warn("No packs configured for bundling;")
+		return nil
 	}
 
 	for _, p := range ctx.opts.Packs {
@@ -87,9 +78,9 @@ func (ctx *CustomBundle) Create() error {
 		}
 	}
 
-	// Clear exists qlpacks directory
-	os.RemoveAll(ctx.tmpQlPacksDir)
-	os.Mkdir(ctx.tmpQlPacksDir, 0755)
+	if err := os.RemoveAll(ctx.tmpQlPacksDir); err != nil {
+		return fmt.Errorf("clearing qlpacks dir: %w", err)
+	}
 
 	for _, p := range ctx.opts.Packs {
 		processor := newPackProcessor(ctx, classify(p))
@@ -126,27 +117,13 @@ func (ctx *CustomBundle) Create() error {
 			outFile := filepath.Join(ctx.opts.OutputPath, fmt.Sprintf("codeql-bundle-%s.tar.gz", platform))
 			slog.Info("Creating platform-specific bundle", "platform", platform, "output", outFile)
 
-			filter := MakePlatformFilter(platform, languages)
+			filter := makePlatformFilter(platform, languages)
 			if err := archive.CreateTarGz(outFile, ctx.tmpBundleDir, "codeql", filter); err != nil {
 				return fmt.Errorf("creating bundle archive for %s: %w", platform, err)
 			}
 		}
 	}
 	return nil
-}
-
-// MakePlatformFilter returns a filter function for CreateTarGz that excludes
-// paths not belonging to the target platform.
-func MakePlatformFilter(platform string, languages []string) func(string) bool {
-	exclusions := platformExclusions(platform, languages)
-	return func(relSlash string) bool {
-		for _, excl := range exclusions {
-			if relSlash == excl || strings.HasPrefix(relSlash, excl+"/") {
-				return false
-			}
-		}
-		return true
-	}
 }
 
 func (ctx *CustomBundle) resolveLanguages() ([]string, error) {
@@ -163,56 +140,4 @@ func (ctx *CustomBundle) resolveLanguages() ([]string, error) {
 		result = append(result, k)
 	}
 	return result, nil
-}
-
-// platformExclusions returns the set of slash-prefixed path prefixes that
-// should be excluded for the given target platform. Each entry is relative to
-// the bundle root (no leading slash).
-//
-// platform is one of "linux64", "osx64", "win64".
-// languages is the set of language names returned by `codeql resolve languages`.
-func platformExclusions(platform string, languages []string) []string {
-	// Tools subdirectories per platform.
-	linuxSubdirs := []string{"linux64", "linux"}
-	osxSubdirs := []string{"osx64", "macos"}
-	winSubdirs := []string{"win64", "windows"}
-
-	var excludeSubdirs []string
-	switch platform {
-	case "linux64":
-		excludeSubdirs = append(osxSubdirs, winSubdirs...)
-	case "osx64":
-		excludeSubdirs = append(linuxSubdirs, winSubdirs...)
-	case "win64":
-		excludeSubdirs = append(linuxSubdirs, osxSubdirs...)
-	}
-
-	// Base tools paths to filter.
-	toolsPaths := []string{"tools"}
-	for _, lang := range languages {
-		toolsPaths = append(toolsPaths, lang+"/tools")
-	}
-
-	var exclusions []string
-	for _, base := range toolsPaths {
-		for _, sub := range excludeSubdirs {
-			exclusions = append(exclusions, base+"/"+sub)
-		}
-	}
-
-	// Per-platform binary exclusions.
-	if platform != "win64" {
-		exclusions = append(exclusions, "codeql.exe")
-	}
-	if platform == "win64" {
-		exclusions = append(exclusions, "swift/qltest", "swift/resource-dir")
-	}
-	if platform == "linux64" {
-		exclusions = append(exclusions, "swift/qltest/osx64", "swift/resource-dir/osx64")
-	}
-	if platform == "osx64" {
-		exclusions = append(exclusions, "swift/qltest/linux64", "swift/resource-dir/linux64")
-	}
-
-	return exclusions
 }

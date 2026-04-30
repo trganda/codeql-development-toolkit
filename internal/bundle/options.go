@@ -18,7 +18,7 @@ type CreateOptions struct {
 	BundlePath string
 	// WorkspaceDir is the CodeQL workspace containing the packs to add.
 	WorkspaceDir string
-	// Packs is the list of pack names to include (e.g. "foo/cpp-customizations").
+	// Packs is the resolved set of workspace packs to include in the bundle.
 	Packs []*pack.Pack
 	// OutputPath is where the resulting bundle archive is written.
 	// If Platforms is non-empty, this is treated as a directory; otherwise as a file path.
