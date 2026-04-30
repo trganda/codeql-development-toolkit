@@ -24,19 +24,18 @@ func newSetVersionCmd(base *string) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "version",
-		Short: "Set the CodeQL CLI and bundle version",
-		Long: `Set the CodeQL CLI and bundle version in qlt.conf.json.
+		Short: "Set the CodeQL CLI version",
+		Long: `Set the CodeQL CLI version in qlt.conf.json.
 
-If --cli-version or --bundle-version are omitted the latest release is
+If --cli-version is omitted the latest release is
 fetched from GitHub's API automatically. If that request fails the
 following fallback values are used:
   CLI:    ` + codeql.FallbackCLIVersion,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing codeql set version command", "base", *base)
 
-			cfg := &config.QLTConfig{
-				CodeQLCLIVersion: cliVersion,
-			}
+			cfg := config.MustLoadFromFile(*base)
+			cfg.CodeQLCLIVersion = cliVersion
 			if err := cfg.SaveToFile(*base); err != nil {
 				return fmt.Errorf("save config: %w", err)
 			}
