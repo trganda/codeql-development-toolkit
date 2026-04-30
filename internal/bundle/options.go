@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/config"
+	"github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
 
@@ -17,7 +19,7 @@ type CreateOptions struct {
 	// WorkspaceDir is the CodeQL workspace containing the packs to add.
 	WorkspaceDir string
 	// Packs is the list of pack names to include (e.g. "foo/cpp-customizations").
-	Packs []string
+	Packs []*pack.Pack
 	// OutputPath is where the resulting bundle archive is written.
 	// If Platforms is non-empty, this is treated as a directory; otherwise as a file path.
 	OutputPath string
@@ -31,11 +33,10 @@ type CreateOptions struct {
 	Minimal bool
 }
 
-func NewCreateOptions(base, bundlePath string, noPrecompile, minimal bool, platforms []string) (*CreateOptions, error) {
+func NewCreateOptions(base, bundlePath, output string, noPrecompile, minimal bool, platforms []string) (*CreateOptions, error) {
 	var (
-		output string
-		packs  []string
-		err    error
+		packs []string
+		err   error
 	)
 
 	cfg := config.MustLoadFromFile(base)
@@ -47,7 +48,23 @@ func NewCreateOptions(base, bundlePath string, noPrecompile, minimal bool, platf
 	}
 
 	if len(packs) == 0 {
-		return nil, fmt.Errorf("no packs configured for bundling in qlt.conf.json; set Bundle=true on at least one CodeQLPackConfiguration entry")
+		return nil, fmt.Errorf("no packs configured for bundling in qlt.conf.json; set bundle=true on at least one CodeQLPackConfiguration entry")
+	}
+
+	codeqlBin, err := paths.ResolveCodeQLBinary(base)
+	if err != nil {
+		return nil, fmt.Errorf("resolving CodeQL binary: %w", err)
+	}
+
+	cli := codeql.NewCLI(codeqlBin)
+	allPacks, err := pack.ListPacks(cli, base)
+	if err != nil {
+		return nil, fmt.Errorf("listing packs: %w", err)
+	}
+
+	bundlePack, err := pack.SelectPacks(allPacks, packs, true)
+	if err != nil {
+		return nil, fmt.Errorf("selecting packs: %w", err)
 	}
 
 	if bundlePath == "" {
@@ -67,11 +84,18 @@ func NewCreateOptions(base, bundlePath string, noPrecompile, minimal bool, platf
 		}
 	}
 
-	output, err = paths.CustomBundlePath(base, cfg.CodeQLCLIVersion)
-	if err != nil {
-		return nil, fmt.Errorf("resolving custom bundle output path: %w", err)
+	if output == "" {
+		output, err = paths.CustomBundlePath(base, cfg.CodeQLCLIVersion)
+		if err != nil {
+			return nil, fmt.Errorf("resolving custom bundle output path: %w", err)
+		}
+		output, err = filepath.Abs(output)
+		if err != nil {
+			return nil, fmt.Errorf("resolving absolute path for custom bundle output: %w", err)
+		}
 	}
-	err = os.MkdirAll(output, 0755)
+
+	err = os.MkdirAll(filepath.Dir(output), 0755)
 	if err != nil {
 		return nil, fmt.Errorf("creating output directory: %w", err)
 	}
@@ -87,22 +111,8 @@ func NewCreateOptions(base, bundlePath string, noPrecompile, minimal bool, platf
 		NoPrecompile: noPrecompile,
 		Minimal:      minimal,
 		Platforms:    platforms,
-		Packs:        packs,
+		Packs:        bundlePack,
 	}, nil
-}
-
-// Validate checks that required fields are set and values are well-formed.
-func (o *CreateOptions) Validate() error {
-	if o.BundlePath == "" {
-		return fmt.Errorf("BundlePath is required")
-	}
-	if o.WorkspaceDir == "" {
-		return fmt.Errorf("WorkspaceDir is required")
-	}
-	if o.OutputPath == "" {
-		return fmt.Errorf("OutputPath is required")
-	}
-	return ValidatePlatforms(o.Platforms)
 }
 
 // ValidatePlatforms checks that each platform is one of linux64/osx64/win64.

@@ -101,12 +101,15 @@ type libraryPack struct {
 }
 
 func (l *libraryPack) Process(p *pack.Pack) error {
-	slog.Warn("Library packs are not yet supported in bundle create; skipping",
-		"pack", p.Config.Name)
+	slog.Info("Processing library pack", "pack", p.Config.Name)
 
 	packCopy, err := p.CopyTo(filepath.Join(l.cb.tmpDir, "temp"))
 	if err != nil {
 		return err
+	}
+
+	if _, err := l.cb.tmpCodeQLCLI.PackInstall(packCopy.Dir(), l.cb.commonCachesDir); err != nil {
+		return fmt.Errorf("codeql pack install %s: %w", p.Config.Name, err)
 	}
 
 	if _, err := l.cb.tmpCodeQLCLI.PackBundle(packCopy.Dir(), l.cb.tmpQlPacksDir, l.cb.commonCachesDir); err != nil {

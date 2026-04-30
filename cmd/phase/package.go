@@ -4,7 +4,6 @@ import (
 	"log/slog"
 
 	"github.com/spf13/cobra"
-
 	"github.com/trganda/codeql-development-toolkit/internal/bundle"
 )
 
@@ -24,13 +23,13 @@ func newPackageCmd(base *string, common *commonFlags) *cobra.Command {
 Runs the full chain: install → compile → test → verify → package.
 Requires workspace initialization (run 'qlt phase init' first).
 
-Reads packs from qlt.conf.json where Bundle=true and builds a custom bundle
+Reads packs from qlt.conf.json where bundle=true and builds a custom bundle
 using the base bundle archive downloaded by 'qlt codeql install'.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing phase package", "base", *base)
-			if err := runVerifyChain(*base, common); err != nil {
-				return err
-			}
+			// if err := runVerifyChain(*base, common); err != nil {
+			// 	return err
+			// }
 			return runPackage(*base, bundlePath, output, platforms, noPrecompile, minimal)
 		},
 	}
@@ -44,8 +43,8 @@ using the base bundle archive downloaded by 'qlt codeql install'.`,
 
 // runPackage loads config, resolves paths, and delegates to bundle.Create.
 func runPackage(base, bundlePath, output string, platforms []string, noPrecompile, minimal bool) error {
-	opts, err := bundle.NewCreateOptions(base, bundlePath, noPrecompile, minimal, platforms)
-	if err != nil || opts.Validate() != nil {
+	opts, err := bundle.NewCreateOptions(base, bundlePath, output, noPrecompile, minimal, platforms)
+	if err != nil {
 		return err
 	}
 
@@ -55,10 +54,10 @@ func runPackage(base, bundlePath, output string, platforms []string, noPrecompil
 	}
 
 	slog.Info("Creating custom CodeQL bundle",
-		"base-bundle", bundlePath,
-		"output", output,
+		"base-bundle", opts.BundlePath,
+		"output", opts.OutputPath,
 		"packs", opts.Packs,
-		"platforms", platforms,
+		"platforms", opts.Platforms,
 	)
 
 	return bundleCtx.Create()

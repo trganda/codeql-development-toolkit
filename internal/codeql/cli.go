@@ -59,9 +59,9 @@ func (c *CLI) PackCreate(dir, output, commonCaches string) (*executil.Result, er
 	return c.runner.Run(args...)
 }
 
-// PackBundle runs `codeql pack bundle --format=json --output=<output> [--common-caches=<caches>] <dir>`.
+// PackBundle runs `codeql pack bundle --format=json --pack-path=<output> [--common-caches=<caches>] <dir>`.
 func (c *CLI) PackBundle(dir, output, commonCaches string) (*executil.Result, error) {
-	args := []string{"pack", "bundle", "--format=json", "--output=" + output}
+	args := []string{"pack", "bundle", "--format=json", "--pack-path=" + output}
 	if commonCaches != "" {
 		args = append(args, "--common-caches="+commonCaches)
 	}

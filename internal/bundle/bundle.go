@@ -11,7 +11,6 @@ import (
 
 	"github.com/trganda/codeql-development-toolkit/internal/archive"
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
-	"github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
@@ -77,16 +76,12 @@ func (ctx *CustomBundle) Create() error {
 	}
 
 	slog.Info("Listing workspace packs", "dir", ctx.opts.WorkspaceDir)
-	allWorkspacePacks, err := pack.ListPacks(ctx.tmpCodeQLCLI, ctx.opts.WorkspaceDir)
-	if err != nil {
-		return fmt.Errorf("listing workspace packs: %w", err)
-	}
-	selected := ctx.selectPacks(allWorkspacePacks, ctx.opts.Packs)
-	if len(selected) == 0 {
+
+	if len(ctx.opts.Packs) == 0 {
 		return fmt.Errorf("no pack found in workspace")
 	}
 
-	for _, p := range selected {
+	for _, p := range ctx.opts.Packs {
 		if p.Config.Scope() == "" {
 			return fmt.Errorf("pack %q has no scope; all bundled packs must be scoped", p.Config.FullName())
 		}
@@ -96,7 +91,7 @@ func (ctx *CustomBundle) Create() error {
 	os.RemoveAll(ctx.tmpQlPacksDir)
 	os.Mkdir(ctx.tmpQlPacksDir, 0755)
 
-	for _, p := range selected {
+	for _, p := range ctx.opts.Packs {
 		processor := newPackProcessor(ctx, classify(p))
 		if err := processor.Process(p); err != nil {
 			return fmt.Errorf("processing pack %q: %w", p.Config.FullName(), err)
@@ -152,22 +147,6 @@ func MakePlatformFilter(platform string, languages []string) func(string) bool {
 		}
 		return true
 	}
-}
-
-func (ctx *CustomBundle) selectPacks(workspacePacks []*pack.Pack, names []string) []*pack.Pack {
-	byName := make(map[string]*pack.Pack, len(workspacePacks))
-	for _, p := range workspacePacks {
-		byName[p.Config.Name] = p
-	}
-	var selected []*pack.Pack
-	for _, name := range names {
-		p, ok := byName[name]
-		if !ok {
-			return nil
-		}
-		selected = append(selected, p)
-	}
-	return selected
 }
 
 func (ctx *CustomBundle) resolveLanguages() ([]string, error) {
