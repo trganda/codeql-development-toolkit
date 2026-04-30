@@ -12,6 +12,86 @@ import (
 	"strings"
 )
 
+// CreateTarGz creates a .tar.gz archive from srcDir. Each entry is stored
+// under rootName as the archive root (no leading slash); pass an empty string
+// to use srcDir's relative paths as-is. The filter function receives a
+// slash-separated path relative to srcDir and returns false to exclude that
+// entry (and, for directories, their entire subtree).
+func CreateTarGz(outputPath, srcDir, rootName string, filter func(relSlash string) bool) error {
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+		return err
+	}
+	out, err := os.Create(outputPath)
+	if err != nil {
+		return fmt.Errorf("creating output archive: %w", err)
+	}
+	defer out.Close()
+
+	gz := gzip.NewWriter(out)
+	defer gz.Close()
+
+	tw := tar.NewWriter(gz)
+	defer tw.Close()
+
+	return filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(srcDir, path)
+		if err != nil {
+			return err
+		}
+		if rel == "." {
+			return nil
+		}
+		relSlash := filepath.ToSlash(rel)
+
+		if filter != nil && !filter(relSlash) {
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		linfo, err := os.Lstat(path)
+		if err != nil {
+			return err
+		}
+
+		var linkTarget string
+		if linfo.Mode()&os.ModeSymlink != 0 {
+			linkTarget, err = os.Readlink(path)
+			if err != nil {
+				return err
+			}
+		}
+
+		hdr, err := tar.FileInfoHeader(linfo, linkTarget)
+		if err != nil {
+			return err
+		}
+		if rootName != "" {
+			hdr.Name = rootName + "/" + relSlash
+		} else {
+			hdr.Name = relSlash
+		}
+
+		if err := tw.WriteHeader(hdr); err != nil {
+			return err
+		}
+		if linfo.Mode().IsRegular() {
+			f, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			_, err = io.Copy(tw, f)
+			return err
+		}
+		return nil
+	})
+}
+
 // ExtractTarGz extracts a .tar.gz archive into destDir.
 // Path traversal entries are rejected.
 func ExtractTarGz(archivePath, destDir string) error {

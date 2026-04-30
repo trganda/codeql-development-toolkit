@@ -13,6 +13,7 @@ func newPackageCmd(base *string, common *commonFlags) *cobra.Command {
 		bundlePath   string
 		output       string
 		platforms    []string
+		minimal      bool
 		noPrecompile bool
 	)
 	cmd := &cobra.Command{
@@ -30,19 +31,20 @@ using the base bundle archive downloaded by 'qlt codeql install'.`,
 			if err := runVerifyChain(*base, common); err != nil {
 				return err
 			}
-			return runPackage(*base, bundlePath, output, platforms, noPrecompile)
+			return runPackage(*base, bundlePath, output, platforms, noPrecompile, minimal)
 		},
 	}
 	cmd.Flags().StringVar(&bundlePath, "bundle", "", "Override base bundle archive path (.tar.gz)")
 	cmd.Flags().StringVar(&output, "output", "", "Override output path (.tar.gz)")
 	cmd.Flags().StringArrayVar(&platforms, "platform", nil, "Target platform: linux64, osx64, win64 (repeatable)")
 	cmd.Flags().BoolVar(&noPrecompile, "no-precompile", false, "Skip pre-compilation when bundling packs")
+	cmd.Flags().BoolVar(&minimal, "minimal", false, "Reserved; currently a no-op")
 	return cmd
 }
 
 // runPackage loads config, resolves paths, and delegates to bundle.Create.
-func runPackage(base, bundlePath, output string, platforms []string, noPrecompile bool) error {
-	opts, err := bundle.NewCreateOptions(base, bundlePath, noPrecompile, false, platforms)
+func runPackage(base, bundlePath, output string, platforms []string, noPrecompile, minimal bool) error {
+	opts, err := bundle.NewCreateOptions(base, bundlePath, noPrecompile, minimal, platforms)
 	if err != nil || opts.Validate() != nil {
 		return err
 	}

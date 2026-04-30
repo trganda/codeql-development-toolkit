@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/trganda/codeql-development-toolkit/internal/archive"
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
@@ -117,7 +118,7 @@ func (ctx *CustomBundle) Create() error {
 		outputPath := filepath.Join(ctx.opts.OutputPath, "codeql-bundle.tar.gz")
 		slog.Info("Creating platform-agnostic bundle", "output", outputPath)
 
-		if err := CreateTarGz(outputPath, ctx.tmpBundleDir, nil); err != nil {
+		if err := archive.CreateTarGz(outputPath, ctx.tmpBundleDir, "codeql", nil); err != nil {
 			return fmt.Errorf("creating bundle archive: %w", err)
 		}
 	} else {
@@ -131,12 +132,26 @@ func (ctx *CustomBundle) Create() error {
 			slog.Info("Creating platform-specific bundle", "platform", platform, "output", outFile)
 
 			filter := MakePlatformFilter(platform, languages)
-			if err := CreateTarGz(outFile, ctx.tmpBundleDir, filter); err != nil {
+			if err := archive.CreateTarGz(outFile, ctx.tmpBundleDir, "codeql", filter); err != nil {
 				return fmt.Errorf("creating bundle archive for %s: %w", platform, err)
 			}
 		}
 	}
 	return nil
+}
+
+// MakePlatformFilter returns a filter function for CreateTarGz that excludes
+// paths not belonging to the target platform.
+func MakePlatformFilter(platform string, languages []string) func(string) bool {
+	exclusions := platformExclusions(platform, languages)
+	return func(relSlash string) bool {
+		for _, excl := range exclusions {
+			if relSlash == excl || strings.HasPrefix(relSlash, excl+"/") {
+				return false
+			}
+		}
+		return true
+	}
 }
 
 func (ctx *CustomBundle) selectPacks(workspacePacks []*pack.Pack, names []string) []*pack.Pack {
@@ -169,4 +184,56 @@ func (ctx *CustomBundle) resolveLanguages() ([]string, error) {
 		result = append(result, k)
 	}
 	return result, nil
+}
+
+// platformExclusions returns the set of slash-prefixed path prefixes that
+// should be excluded for the given target platform. Each entry is relative to
+// the bundle root (no leading slash).
+//
+// platform is one of "linux64", "osx64", "win64".
+// languages is the set of language names returned by `codeql resolve languages`.
+func platformExclusions(platform string, languages []string) []string {
+	// Tools subdirectories per platform.
+	linuxSubdirs := []string{"linux64", "linux"}
+	osxSubdirs := []string{"osx64", "macos"}
+	winSubdirs := []string{"win64", "windows"}
+
+	var excludeSubdirs []string
+	switch platform {
+	case "linux64":
+		excludeSubdirs = append(osxSubdirs, winSubdirs...)
+	case "osx64":
+		excludeSubdirs = append(linuxSubdirs, winSubdirs...)
+	case "win64":
+		excludeSubdirs = append(linuxSubdirs, osxSubdirs...)
+	}
+
+	// Base tools paths to filter.
+	toolsPaths := []string{"tools"}
+	for _, lang := range languages {
+		toolsPaths = append(toolsPaths, lang+"/tools")
+	}
+
+	var exclusions []string
+	for _, base := range toolsPaths {
+		for _, sub := range excludeSubdirs {
+			exclusions = append(exclusions, base+"/"+sub)
+		}
+	}
+
+	// Per-platform binary exclusions.
+	if platform != "win64" {
+		exclusions = append(exclusions, "codeql.exe")
+	}
+	if platform == "win64" {
+		exclusions = append(exclusions, "swift/qltest", "swift/resource-dir")
+	}
+	if platform == "linux64" {
+		exclusions = append(exclusions, "swift/qltest/osx64", "swift/resource-dir/osx64")
+	}
+	if platform == "osx64" {
+		exclusions = append(exclusions, "swift/qltest/linux64", "swift/resource-dir/linux64")
+	}
+
+	return exclusions
 }
