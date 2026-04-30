@@ -15,11 +15,10 @@ import (
 
 // RunUnitTests resolves and runs all CodeQL unit tests for the given language
 // under base, reporting a summary via slog. A TestReport is written to disk
-// only when reportOutput is non-nil:
-//   - reportOutput == nil         → no report written
-//   - *reportOutput == ""         → <base>/target/test/test-report-<timestamp>.json
-//   - *reportOutput != ""         → the caller-supplied path
-func RunUnitTests(base, codeqlArgs string, reportOutput *string, numThreads int) error {
+// only when output is non-empty:
+//   - output == ""         → <base>/target/test/test-report-<timestamp>.json
+//   - output != ""         → the caller-supplied path
+func RunUnitTests(base, codeqlArgs string, output string, numThreads int) error {
 	cfg := config.MustLoadFromFile(base)
 
 	slog.Info("Executing unit tests",
@@ -98,13 +97,13 @@ func RunUnitTests(base, codeqlArgs string, reportOutput *string, numThreads int)
 		"failed", summary.Failed,
 	)
 
-	if reportOutput == nil {
-		return nil
+	if output == "" {
+		return nil // skip writing report if no output path provided
 	}
-	outputPath := *reportOutput
-	if outputPath == "" {
-		name := fmt.Sprintf("test-report-%s.json", start.Format("20060102T150405Z"))
-		outputPath = filepath.Join(base, "target", "test", name)
+
+	output, err = filepath.Abs(output)
+	if err != nil {
+		return fmt.Errorf("resolve absolute path for report output: %w", err)
 	}
 
 	report := &TestReport{
@@ -115,10 +114,10 @@ func RunUnitTests(base, codeqlArgs string, reportOutput *string, numThreads int)
 		Summary: summary,
 		Results: results,
 	}
-	if err := WriteReport(outputPath, report); err != nil {
+	if err := WriteReport(output, report); err != nil {
 		return fmt.Errorf("writing test report: %w", err)
 	}
-	slog.Info("Wrote test report", "path", outputPath)
+	slog.Info("Wrote test report", "path", output)
 
 	return nil
 }
