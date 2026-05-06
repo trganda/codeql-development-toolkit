@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path"
 	"sort"
 	"strings"
 )
@@ -22,6 +23,8 @@ type ValidateOptions struct {
 // Comparison is restricted to the semantic findings (ruleId, message text, and
 // physical locations) — telemetry, timestamps, tool versions, and absolute
 // machine paths are intentionally ignored, as they vary between runs.
+// Artifact URIs are compared by basename so that the same finding produced
+// under different source-root prefixes (e.g. local vs. CI) still matches.
 func Validate(opts *ValidateOptions) error {
 	expected, err := readSarifResults(opts.Expected)
 	if err != nil {
@@ -109,11 +112,11 @@ func resultKey(r sarifResult) string {
 	b.WriteString("|")
 	b.WriteString(r.Message.Text)
 	for _, loc := range r.Locations {
-		p := loc.PhysicalLocation
+		pl := loc.PhysicalLocation
 		fmt.Fprintf(&b, "|%s@%d:%d-%d:%d",
-			p.ArtifactLocation.URI,
-			p.Region.StartLine, p.Region.StartColumn,
-			p.Region.EndLine, p.Region.EndColumn,
+			path.Base(pl.ArtifactLocation.URI),
+			pl.Region.StartLine, pl.Region.StartColumn,
+			pl.Region.EndLine, pl.Region.EndColumn,
 		)
 	}
 	return b.String()
