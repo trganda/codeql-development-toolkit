@@ -6,13 +6,7 @@ inputs:
     description: |
       The Go version to use for building QLT.
     required: false
-    default: 'latest'
-
-  add-to-path:
-    description: |
-      Add QLT to the system path
-    required: false
-    default: 'true'
+    default: '1.26.1'
 
 outputs:
   qlt-home:
@@ -29,8 +23,6 @@ runs:
 
     - name: Install QLT (Local)
       id: install-qlt
-      env:
-        ADD_TO_PATH: ${{ inputs.add-to-path }}
       shell: bash
       run: |
         echo -e "\e[0;32m[QLT]\e[0m Building and installing QLT from local checkout"
