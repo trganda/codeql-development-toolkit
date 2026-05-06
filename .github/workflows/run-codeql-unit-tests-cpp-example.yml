@@ -21,7 +21,7 @@ jobs:
 
       - name: Install QLT
         id: install-qlt-local
-        uses: .github/actions/install-qlt
+        uses: ./.github/actions/install-qlt-local
 
       - name: Export unit test matrix
         id: export-unit-test-matrix
@@ -43,7 +43,7 @@ jobs:
 
       - name: Install QLT
         id: install-qlt-local
-        uses: .github/actions/install-qlt-local
+        uses: ./.github/actions/install-qlt-local
 
       - name: Verify Versions of Tooling
         shell: bash
@@ -89,7 +89,7 @@ jobs:
 
       - name: Install QLT
         id: install-qlt-local
-        uses: .github/actions/install-qlt-local
+        uses: ./.github/actions/install-qlt-local
   
       - name: Collect test results
         uses: actions/download-artifact@v7
