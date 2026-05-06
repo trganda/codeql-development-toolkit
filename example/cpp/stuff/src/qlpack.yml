@@ -1,5 +1,5 @@
 ---
-library: true
+library: false
 name: qlt55/stuff
 version: 0.0.2
 description: Default description

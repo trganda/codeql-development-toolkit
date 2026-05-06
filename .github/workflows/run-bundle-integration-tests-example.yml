@@ -69,7 +69,10 @@ jobs:
       with:
         languages: ${{ matrix.language }}
         tools: ${{ steps.bundle.outputs.bundle-path }}
-        packs: 'qlt55/stuff'
+        config: |
+          disable-default-queries: true
+          packs:
+            - qlt55/stuff
 
     - name: Autobuild
       uses: github/codeql-action/autobuild@v4
