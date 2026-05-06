@@ -66,8 +66,6 @@ jobs:
         run: >
           qlt phase test
           --base example
-          --language cpp
-          --codeql-args ""
           --num-threads 4
           --output "${{ runner.temp }}/test_report_${{ runner.os }}_${{ matrix.codeql_cli }}.json"
 
