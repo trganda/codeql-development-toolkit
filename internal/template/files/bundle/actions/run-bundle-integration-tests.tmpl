@@ -100,4 +100,4 @@ jobs:
     - name: Validate SARIF Results
       shell: bash
       run: |
-        qlt bundle run validate-integration-tests --expected integration-tests/${{ matrix.language }}/expected.sarif --actual ${{ steps.analysis.outputs.sarif-output }}/${{ matrix.language }}.sarif
+        qlt bundle validate-integration-tests --expected integration-tests/${{ matrix.language }}/expected.sarif --actual ${{ steps.analysis.outputs.sarif-output }}/${{ matrix.language }}.sarif
