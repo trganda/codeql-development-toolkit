@@ -37,6 +37,11 @@ jobs:
         echo "QLT Home: ${{ steps.install-qlt.outputs.qlt-home }}"
         qlt version
 
+    - name: Install CodeQL CLI
+      shell: bash
+      run: |
+        qlt codeql install
+
     - name: Create Bundle (compiled)
       shell: bash
       run: |

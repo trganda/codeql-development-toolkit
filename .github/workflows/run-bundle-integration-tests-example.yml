@@ -27,20 +27,25 @@ jobs:
       uses: actions/checkout@v6
 
     - name: Install QLT
-      id: install-qlt
+      id: install-qlt-local
       uses: .github/actions/install-qlt-local
 
     - name: Validate QLT Installation
       shell: bash
       run: |
         echo -e "Checking QLT Version:"
-        echo "QLT Home: ${{ steps.install-qlt.outputs.qlt-home }}"
+        echo "QLT Home: ${{ steps.install-qlt-local.outputs.qlt-home }}"
         qlt version
+
+    - name: Install CodeQL CLI
+      shell: bash
+      run: |
+        qlt codeql install --base example
 
     - name: Create Bundle (compiled)
       shell: bash
       run: |
-        qlt phase package
+        qlt phase package --base example
 
     - name: Validate Bundle Existence
       id: bundle
@@ -95,4 +100,4 @@ jobs:
     - name: Validate SARIF Results
       shell: bash
       run: |
-        qlt bundle run validate-integration-tests --expected integration-tests/${{ matrix.language }}/expected.sarif --actual ${{ steps.analysis.outputs.sarif-output }}/${{ matrix.language }}.sarif
+        qlt bundle validate-integration-tests --base example --expected integration-tests/${{ matrix.language }}/expected.sarif --actual ${{ steps.analysis.outputs.sarif-output }}/${{ matrix.language }}.sarif

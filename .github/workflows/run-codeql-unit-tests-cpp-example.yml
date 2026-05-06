@@ -20,8 +20,8 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install QLT
-        id: install-qlt
-        uses: ./.github/actions/install-qlt
+        id: install-qlt-local
+        uses: .github/actions/install-qlt
 
       - name: Export unit test matrix
         id: export-unit-test-matrix
@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install QLT
-        id: install-qlt
+        id: install-qlt-local
         uses: .github/actions/install-qlt-local
 
       - name: Verify Versions of Tooling
@@ -53,18 +53,19 @@ jobs:
       - name: Install CodeQL CLI
         shell: bash
         run: |
-          qlt codeql install
+          qlt codeql install --base example
 
       - name: Install CodeQL Packs Dependencies
         shell: bash
         run: |
-          qlt phase install
+          qlt phase install --base example
 
       - name: Run test suites
         id: run-test-suites
         shell: bash
         run: >
           qlt phase test
+          --base example
           --language cpp
           --codeql-args ""
           --num-threads 4
@@ -87,8 +88,8 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install QLT
-        id: install-qlt
-        uses: ./.github/actions/install-qlt
+        id: install-qlt-local
+        uses: .github/actions/install-qlt-local
   
       - name: Collect test results
         uses: actions/download-artifact@v7
