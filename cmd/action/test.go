@@ -45,16 +45,6 @@ func newTestInitCommand(base *string) *cobra.Command {
 	return cmd
 }
 
-// testInitOptions holds template variables for the test init workflow.
-type testInitOptions struct {
-	Language   string // display name used in the workflow title and filename
-	LangFlag   string // value for --language flag; empty means test all languages
-	Branch     string
-	NumThreads int
-	UseRunner  string
-	CodeqlArgs string
-}
-
 func runTestInit(base, lang, useRunner, branch string, numThreads int, overwrite bool) error {
 	slog.Debug("Running test init", "lang", lang, "overwrite", overwrite)
 
@@ -66,7 +56,7 @@ func runTestInit(base, lang, useRunner, branch string, numThreads int, overwrite
 		displayLang = language.ToDirectory(lang)
 	}
 
-	data := testInitOptions{
+	data := tmpl.TestInitOptions{
 		Language:   displayLang,
 		LangFlag:   langFlag,
 		Branch:     branch,

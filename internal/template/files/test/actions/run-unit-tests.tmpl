@@ -64,8 +64,9 @@ jobs:
         id: run-test-suites
         shell: bash
         run: >
-          qlt phase test[[if .LangFlag]]
-          --codeql-args "[[ .CodeqlArgs ]]"
+          qlt phase test
+          [[- if .LangFlag ]] --language [[ .LangFlag ]][[ end ]]
+          [[- if .CodeqlArgs ]] --codeql-args "[[ .CodeqlArgs ]]"[[ end ]]
           --num-threads [[ .NumThreads ]]
           --output "${{ runner.temp }}/test_report_${{ runner.os }}_${{ matrix.codeql_cli }}.json"
 

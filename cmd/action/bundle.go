@@ -7,7 +7,11 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/trganda/codeql-development-toolkit/internal/codeql"
+	"github.com/trganda/codeql-development-toolkit/internal/config"
 	"github.com/trganda/codeql-development-toolkit/internal/language"
+	"github.com/trganda/codeql-development-toolkit/internal/pack"
+	"github.com/trganda/codeql-development-toolkit/internal/paths"
 	tmpl "github.com/trganda/codeql-development-toolkit/internal/template"
 )
 
@@ -41,17 +45,18 @@ func newInitBundleTestCmd(base *string) *cobra.Command {
 	return cmd
 }
 
-// bundleInitData holds template variables for bundle init.
-type bundleInitData struct {
-	Languages []string
-	Branch    string
-}
-
 func runBundleInit(base string, langs []string, branch string, overwrite bool) error {
 	slog.Debug("Running bundle init", "base", base, "langs", langs, "branch", branch)
-	data := bundleInitData{
+
+	bundledPacks, err := loadBundledPackNames(base)
+	if err != nil {
+		return fmt.Errorf("load bundled packs from qlt.conf.json: %w", err)
+	}
+
+	data := tmpl.BundleInitOptions{
 		Languages: langs,
 		Branch:    branch,
+		Packs:     bundledPacks,
 	}
 
 	// Write install-qlt action
@@ -82,4 +87,58 @@ func runBundleInit(base string, langs []string, branch string, overwrite bool) e
 
 	slog.Info("Bundle integration test workflow initialized", "base", base)
 	return nil
+}
+
+// loadBundledPackNames returns the names of pack entries in qlt.conf.json with
+// Bundle: true, restricted to query packs. Library packs and test packs are
+// filtered out, since github/codeql-action/init's `packs:` input runs queries
+// (or applies data extensions) and library packs do neither.
+func loadBundledPackNames(base string) ([]string, error) {
+	cfg := config.MustLoadFromFile(base)
+
+	var bundled []string
+	for _, p := range cfg.CodeQLPackConfiguration {
+		if p.Bundle {
+			bundled = append(bundled, p.Name)
+		}
+	}
+	if len(bundled) == 0 {
+		return nil, nil
+	}
+
+	codeqlBin, err := paths.ResolveCodeQLBinary(base)
+	if err != nil {
+		return nil, fmt.Errorf("resolve codeql binary: %w", err)
+	}
+	allPacks, err := pack.ListPacks(codeql.NewCLI(codeqlBin), base)
+	if err != nil {
+		return nil, fmt.Errorf("list packs under %s: %w", base, err)
+	}
+	byName := make(map[string]*pack.Pack, len(allPacks))
+	for _, p := range allPacks {
+		byName[p.Config.FullName()] = p
+	}
+
+	var names []string
+	for _, name := range bundled {
+		p, ok := byName[name]
+		if !ok {
+			slog.Warn("Bundled pack not found under base; skipping in workflow config", "pack", name)
+			continue
+		}
+		if p.Config.Library {
+			slog.Info("Skipping library pack in codeql-action packs config", "pack", name)
+			continue
+		}
+		if p.IsTestPack() {
+			slog.Info("Skipping test pack in codeql-action packs config", "pack", name)
+			continue
+		}
+		if p.IsCustomizable() {
+			slog.Info("Skipping customizable pack in codeql-action packs config", "pack", name)
+			continue
+		}
+		names = append(names, name)
+	}
+	return names, nil
 }
