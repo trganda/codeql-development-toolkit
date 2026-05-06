@@ -1,0 +1,2 @@
+- description: Default suite for qlt2/stuff
+- query: TestQuery/TestQuery.ql

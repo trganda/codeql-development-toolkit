@@ -8,7 +8,7 @@
  * @tags stuff
  */
 
- import cpp
- 
- from Expr e
- select e, "Replace this with your query."
+import cpp
+
+from Expr e
+select e, "Replace this with your query."

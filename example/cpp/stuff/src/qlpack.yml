@@ -3,7 +3,7 @@ library: true
 name: qlt55/stuff
 version: 0.0.2
 description: Default description
-suites: 
-license: 
+defaultSuiteFile: stuff-default.qls
+license: MIT
 dependencies:
   codeql/cpp-all: "8.0.3"

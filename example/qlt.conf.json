@@ -5,7 +5,8 @@
       "name": "qlt/cpp-customizations"
     },
     {
-      "name": "qlt55/stuff"
+      "name": "qlt55/stuff",
+      "bundle": true
     },
     {
       "name": "qlt2/stuff2"

@@ -12,13 +12,7 @@ inputs:
     description: |
       The Go version to use for building QLT.
     required: false
-    default: 'latest'
-
-  add-to-path:
-    description: |
-      Add QLT to the system path
-    required: false
-    default: 'true'
+    default: '1.26.1'
 
 outputs:
   qlt-home:
@@ -36,31 +30,20 @@ runs:
     - name: Install QLT
       id: install-qlt
       env:
-        ADD_TO_PATH: ${{ inputs.add-to-path }}
         QLT_VERSION: ${{ inputs.qlt-version }}
-        GITHUB_TOKEN: ${{ github.token }}
       shell: bash
       run: |
         echo -e "\e[0;32m[QLT]\e[0m Installing QLT version $QLT_VERSION via go install"
 
         QLT_HOME="$(go env GOPATH)/bin"
-        mkdir -p "$QLT_HOME"
 
-        WORK_DIR=$(mktemp -d)
         if [ "$QLT_VERSION" == "latest" ]; then
-          GOBIN="$WORK_DIR" go install github.com/trganda/codeql-development-toolkit@latest
+          go install github.com/trganda/codeql-development-toolkit/cmd/qlt@latest
         else
-          GOBIN="$WORK_DIR" go install "github.com/trganda/codeql-development-toolkit@$QLT_VERSION"
-        fi
-        mv "$WORK_DIR/codeql-development-toolkit" "$QLT_HOME/qlt"
-        rm -rf "$WORK_DIR"
-
-        if [ "$ADD_TO_PATH" == "true" ]; then
-          echo -e "\e[0;32m[QLT]\e[0m Adding '$QLT_HOME' to system path"
-          echo "$QLT_HOME" >> $GITHUB_PATH
+          go install "github.com/trganda/codeql-development-toolkit/cmd/qlt@$QLT_VERSION"
         fi
 
-        echo -e "\e[0;32m[QLT]\e[0m Setting output parameter qlt-home to $QLT_HOME"
-        echo "qlt-home=$QLT_HOME" >> $GITHUB_OUTPUT
+        echo -e "\e[0;32m[QLT]\e[0m Adding '$QLT_HOME' to system path"
+        echo "$QLT_HOME" >> $GITHUB_PATH
 
         echo -e "\e[0;32m[QLT]\e[0m Done."
