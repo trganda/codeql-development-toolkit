@@ -10,6 +10,7 @@ import (
 
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/config"
+	packpkg "github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
 )
 
@@ -18,7 +19,7 @@ import (
 // only when output is non-empty:
 //   - output == ""         → <base>/target/test/test-report-<timestamp>.json
 //   - output != ""         → the caller-supplied path
-func RunUnitTests(base, codeqlArgs string, output string, numThreads int) error {
+func RunUnitTests(base, codeqlArgs string, output string, numThreads int, packs []string) error {
 	cfg := config.MustLoadFromFile(base)
 
 	slog.Info("Executing unit tests",
@@ -35,14 +36,32 @@ func RunUnitTests(base, codeqlArgs string, output string, numThreads int) error 
 	slog.Debug("Using CodeQL binary", "path", codeqlBin)
 
 	cli := codeql.NewCLI(codeqlBin)
-	res, err := cli.ResolveTests(base)
+
+	qlpacks, err := packpkg.ListPacks(cli, base)
 	if err != nil {
-		return fmt.Errorf("failed to resolve tests: %w", err)
+		return fmt.Errorf("failed to list packs: %w", err)
+	}
+	selected, err := packpkg.SelectPacks(qlpacks, packs, false)
+	if err != nil {
+		return err
 	}
 
 	var resolvedTests []string
-	if err := json.Unmarshal(res.Stdout, &resolvedTests); err != nil {
-		return fmt.Errorf("failed to parse resolved tests JSON: %w", err)
+	for _, p := range selected {
+		if !p.IsTestPack() {
+			slog.Debug("Skipping non-test pack", "qlpack", p.Config.FullName(), "dir", p.Dir())
+			continue
+		}
+		res, err := cli.ResolveTests(p.Dir())
+		if err != nil {
+			return fmt.Errorf("failed to resolve tests for pack %s: %w", p.Config.FullName(), err)
+		}
+		var packTests []string
+		if err := json.Unmarshal(res.Stdout, &packTests); err != nil {
+			return fmt.Errorf("failed to parse resolved tests JSON for pack %s: %w", p.Config.FullName(), err)
+		}
+		slog.Debug("Resolved test files for pack", "qlpack", p.Config.FullName(), "count", len(packTests))
+		resolvedTests = append(resolvedTests, packTests...)
 	}
 
 	slog.Info("Resolved test files", "count", len(resolvedTests))

@@ -22,7 +22,7 @@ func runTestChain(base string, output string, c *commonFlags) error {
 	if err := runCompileChain(base, c); err != nil {
 		return err
 	}
-	return qlttest.RunUnitTests(base, c.codeqlArgs, output, c.numThreads)
+	return qlttest.RunUnitTests(base, c.codeqlArgs, output, c.numThreads, c.packs)
 }
 
 // runVerifyChain runs install → compile → test → verify (placeholder).
