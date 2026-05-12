@@ -1,5 +1,5 @@
 name: [[ .QueryPackFullName ]]
 dependencies:
   codeql/[[ .QlLanguage ]]-all: "*"
-  [[ .QueryPackDependency ]]: "*"
+  [[ .QueryPackDependency ]]: ${workspace}
 extractor: [[ .QlLanguage ]]
