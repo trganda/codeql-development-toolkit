@@ -35,7 +35,9 @@ cmd/
   phase/           — phase init / install / compile / test / verify / package / publish
                      high-level lifecycle phases; each phase runs the full chain from install
                      up to and including the requested phase (Maven-style).
-                     --language, --num-threads, --codeql-args are persistent flags on the parent.
+                     --pack (repeatable), --num-threads, --codeql-args are persistent flags
+                     on the parent and are bundled into utils.CommonFlags before being passed
+                     to internal/.
   query/           — query generate new-query / run
                      --use-bundle is a persistent flag scoped to this subcommand only
   codeql/          — codeql set version / get version  (auto-resolves from GitHub API)
@@ -79,10 +81,11 @@ The rule of thumb: if a function doesn't reference `*cobra.Command` or flag vari
 - `internal/language` — helpers mapping language names to directories (`c`/`cpp` → `"cpp"`), CodeQL import names, and source file extensions.
 - `internal/paths` — content-addressed path layout under `$HOME/.qlt/`. All versioned directories use an MD5 hash of the version string. Key functions: `CLIInstallDir`, `BundleInstallDir`, `CustomBundlePath`, `BundleArchivePath`, `ResolveCodeQLBinary`.
 - `internal/codeql` — CLI/bundle download, checksum verification, platform detection, and extraction. `Install(base, version, platform)` is the single entry point used by `cmd/codeql install`.
-- `internal/query` — CodeQL query execution (`RunQuery`), compilation (`RunCompile`), pack dependency installation (`RunPackInstall`), and workspace initialisation (`InitWorkspace`). Used by both `cmd/query` and `cmd/phase`.
-- `internal/test` — `RunUnitTests(base, lang, codeqlArgs, reportOutput, numThreads)` resolves and runs all `.qlref` test files. When `lang` is `""` or `"all"`, tests are resolved from `base`; otherwise from `base/<lang-dir>`. Used by both `cmd/test run` and `cmd/phase test`.
-- `internal/pack` — `ListPacks(cli, dir)` runs `codeql pack ls` and returns `[]*Pack`. `Pack.IsTestPack()` returns true when the pack lives under a `test/` directory or declares an extractor. Used by `cmd/pack list`, `cmd/pack resolve`, `cmd/pack publish`, and `cmd/phase publish`.
+- `internal/query` — CodeQL query execution (`RunQuery`), compilation (`RunCompile`), pack dependency installation (`RunPackInstall`), and workspace initialisation (`InitWorkspace`). `RunPackInstall(base, c)` and `RunCompile(base, c)` take `*utils.CommonFlags` and use `pack.SelectPacks` to honour `--pack`. Used by both `cmd/query` and `cmd/phase`.
+- `internal/test` — `RunUnitTests(base, c, output)` takes `*utils.CommonFlags` and a report output path. It lists all packs under `base`, filters by `c.Packs` via `pack.SelectPacks`, skips non-test packs (`!IsTestPack()`), then resolves `.qlref` tests per remaining pack via `codeql resolve tests <pack-dir>`. Used by both `cmd/test run` and `cmd/phase test`.
+- `internal/pack` — `ListPacks(cli, dir)` runs `codeql pack ls` and returns `[]*Pack`. `Pack.IsTestPack()` returns true when the pack lives under a `test/` directory or declares an extractor. `SelectPacks(allPacks, names, skipTest)` resolves a list of pack names against `allPacks` (matching by full name, then by unique short name) and is the shared filter primitive behind `--pack`. Used by `cmd/pack list`, `cmd/pack resolve`, `cmd/pack publish`, `cmd/phase install`, `cmd/phase compile`, `cmd/phase test`, and `cmd/phase publish`.
 - `internal/matrix` — `Build(osVersions, cliVersion)` constructs and marshals a GitHub Actions CI matrix JSON.
+- `internal/utils` — `CommonFlags{Packs []string, NumThreads int, CodeQLArgs string}` DTO assembled in `cmd/phase/phase.go` from persistent flags and passed by pointer into every phase subcommand and the `internal/` functions they delegate to. Also hosts `CheckWorkspace`.
 
 ## Logger
 
@@ -152,7 +155,7 @@ $HOME/.qlt/
 
 **Workspace guard:** The parent `phase` command has a `PersistentPreRunE` that runs `utils.CheckWorkspace` for every subcommand except `init`. If `codeql-workspace.yml` is missing, non-init phases fail with guidance to run `phase init` first.
 
-**Common flags:** `--language`, `--num-threads` (default 0 = all cores), and `--codeql-args` are persistent flags on the parent `phase` command and inherited by every subcommand. Phase-specific flags (e.g. `--scope`, `--bundle`, `--platform`) stay on the individual subcommands.
+**Common flags:** `--pack` (repeatable; full or unique short name), `--num-threads` (default 0 = all cores), and `--codeql-args` are persistent flags on the parent `phase` command and inherited by every subcommand. They are bundled into `*utils.CommonFlags` and passed through `cmd/phase/chain.go` into `internal/`. Phase-specific flags (e.g. `--scope`, `--bundle`, `--platform`, `--output`) stay on the individual subcommands.
 
 **Two supported flows (parallel alternatives):**
 1. `init → ... → verify → publish`

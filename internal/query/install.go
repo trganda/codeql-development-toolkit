@@ -74,7 +74,7 @@ func RunPackInstall(base string, c *utils.CommonFlags) error {
 
 	slog.Info("Found query packs under base", "base", base, "count", len(selected))
 
-	// Snapshot the local pack cache once for all packs.
+	// Snapshot the local pack cache once and reuse across selected packs.
 	cached, err := resolvedPackCache(cli)
 	if err != nil {
 		// Non-fatal: fall back to always installing.
@@ -106,7 +106,7 @@ func RunPackInstall(base string, c *utils.CommonFlags) error {
 		}
 	}
 
-	slog.Info("Installed dependencies for all query packs under target path", "targetPath", base, "count", len(qlpacks))
+	slog.Info("Installed dependencies for selected query packs under target path", "targetPath", base, "count", len(selected))
 	return nil
 }
 

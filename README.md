@@ -87,7 +87,13 @@ The `--base` flag points at the **target CodeQL query repository** being managed
 | package    | `qlt phase package`  | Builds a custom bundle from packs marked `Bundle=true`   |
 | publish    | `qlt phase publish`  | `codeql pack publish` for each pack under `--base`       |
 
-Persistent flags on the parent `phase` command: `--language`, `--num-threads` (0 = all cores), `--codeql-args`.
+Persistent flags on the parent `phase` command:
+
+- `--pack <name>` — restrict the phase to specific packs. Repeatable (e.g. `--pack=foo/bar --pack=baz/qux`). Accepts full pack names or unique short names (the part after `/`). Omit to operate on every pack found under `--base`.
+- `--num-threads <n>` — `0` (default) uses all cores.
+- `--codeql-args <args>` — extra arguments passed through to the underlying `codeql` invocation.
+
+For `qlt phase test`, `--pack` only matches **test** packs; non-test packs are silently skipped after resolution.
 
 Two supported flows:
 

@@ -21,8 +21,7 @@ func newPublishCmd(base *string, common *utils.CommonFlags) *cobra.Command {
 Runs the full chain: install → compile → test → verify → publish.
 Requires workspace initialization (run 'qlt phase init' first).
 
-Scans for packs under <base> (optionally filtered by --language) and
-publishes each using 'codeql pack publish'.`,
+Scans for packs under <base> and publishes each using 'codeql pack publish'.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing phase publish", "base", *base)
 			if err := runVerifyChain(*base, common); err != nil {

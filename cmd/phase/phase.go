@@ -39,7 +39,6 @@ Phases can be run individually or in sequence. Common flows:
 		},
 	}
 
-	// cmd.PersistentFlags().StringVar(&common.language, "language", "", "Filter by language (e.g. go, java)")
 	cmd.PersistentFlags().StringSliceVar(&common.Packs, "pack", []string{}, "Filter by pack name (full name, can specify multiple, e.g. --pack=foo/bar --pack=baz/qux)")
 	cmd.PersistentFlags().IntVar(&common.NumThreads, "num-threads", 0, "Number of threads (0 = all cores)")
 	cmd.PersistentFlags().StringVar(&common.CodeQLArgs, "codeql-args", "", "Extra arguments to pass to CodeQL")
