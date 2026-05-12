@@ -19,7 +19,7 @@ Runs 'codeql pack install' for packs found under <base>, optionally filtered
 by --language.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			slog.Debug("Executing phase install", "base", *base)
-			return query.RunPackInstall(*base)
+			return query.RunPackInstall(*base, common.packs, common.codeqlArgs, common.numThreads)
 		},
 	}
 }

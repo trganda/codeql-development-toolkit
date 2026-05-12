@@ -98,4 +98,88 @@ var _ = Describe("SelectPacks", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(got).To(HaveLen(2))
 	})
+
+	It("returns an error when a name does not match any pack", func() {
+		p := &Pack{
+			YmlPath: filepath.Join("a", "qlpack.yml"),
+			Config:  QlpackConfig{Name: "x/a"},
+		}
+
+		_, err := SelectPacks([]*Pack{p}, []string{"missing"}, true)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("no pack matched"))
+		Expect(err.Error()).To(ContainSubstring("missing"))
+	})
+
+	It("includes test packs when skipTest is false", func() {
+		q := &Pack{
+			YmlPath: filepath.Join("cpp", "pack", "src", "qlpack.yml"),
+			Config:  QlpackConfig{Name: "scope/querypack"},
+		}
+		testPack := &Pack{
+			YmlPath: filepath.Join("cpp", "pack", "test", "qlpack.yml"),
+			Config:  QlpackConfig{Name: "scope/querypack-tests"},
+		}
+
+		got, err := SelectPacks([]*Pack{testPack, q}, nil, false)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got).To(HaveLen(2))
+	})
+
+	It("matches a test pack by full name when skipTest is false", func() {
+		testPack := &Pack{
+			YmlPath: filepath.Join("cpp", "pack", "test", "qlpack.yml"),
+			Config:  QlpackConfig{Name: "scope/querypack-tests"},
+		}
+
+		got, err := SelectPacks([]*Pack{testPack}, []string{"scope/querypack-tests"}, false)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got).To(HaveLen(1))
+		Expect(got[0]).To(BeIdenticalTo(testPack))
+	})
+
+	It("does not match a test pack when skipTest is true", func() {
+		testPack := &Pack{
+			YmlPath: filepath.Join("cpp", "pack", "test", "qlpack.yml"),
+			Config:  QlpackConfig{Name: "scope/querypack-tests"},
+		}
+
+		_, err := SelectPacks([]*Pack{testPack}, []string{"scope/querypack-tests"}, true)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("no pack matched"))
+	})
+
+	It("skips empty and whitespace-only names", func() {
+		p := &Pack{
+			YmlPath: filepath.Join("a", "qlpack.yml"),
+			Config:  QlpackConfig{Name: "x/a"},
+		}
+
+		got, err := SelectPacks([]*Pack{p}, []string{"", "   ", "x/a"}, true)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got).To(HaveLen(1))
+		Expect(got[0]).To(BeIdenticalTo(p))
+	})
+
+	It("match packs with the exact name", func() {
+		p1 := &Pack{
+			YmlPath: filepath.Join("a", "qlpack.yml"),
+			Config:  QlpackConfig{Name: "x/a"},
+		}
+		p2 := &Pack{
+			YmlPath: filepath.Join("b", "qlpack.yml"),
+			Config:  QlpackConfig{Name: "y/b"},
+		}
+
+		got, err := SelectPacks([]*Pack{p1, p2}, []string{"x/a"}, false)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(got).To(HaveLen(1))
+		Expect(got[0]).To(BeIdenticalTo(p1))
+	})
 })

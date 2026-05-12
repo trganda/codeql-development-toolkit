@@ -51,7 +51,7 @@ type resolvePacksOutput struct {
 // and runs `codeql pack install` for each pack whose dependencies are not fully
 // cached. Deps are checked via `codeql pack resolve-dependencies` and
 // `codeql resolve packs` before triggering an install.
-func RunPackInstall(base string) error {
+func RunPackInstall(base string, packs []string, codeqlArgs string, numThreads int) error {
 	codeqlBin, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err
@@ -66,7 +66,12 @@ func RunPackInstall(base string) error {
 		return fmt.Errorf("No CodeQL packs found under %s. Run 'qlt query generate new-query' to create your first query.", base)
 	}
 
-	slog.Info("Found query packs under base", "base", base, "count", len(qlpacks))
+	selected, err := packpkg.SelectPacks(qlpacks, packs, false)
+	if err != nil {
+		return err
+	}
+
+	slog.Info("Found query packs under base", "base", base, "count", len(selected))
 
 	// Snapshot the local pack cache once for all packs.
 	cached, err := resolvedPackCache(cli)
@@ -76,7 +81,7 @@ func RunPackInstall(base string) error {
 		cached = nil
 	}
 
-	for _, p := range qlpacks {
+	for _, p := range selected {
 		if cached != nil {
 			allCached, err := allDepsCached(cli, p.Dir(), cached)
 			if err != nil {

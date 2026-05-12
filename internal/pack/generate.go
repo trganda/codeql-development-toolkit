@@ -77,7 +77,7 @@ func GenerateNewPack(cli *codeql.CLI, opts GeneratePackOptions) error {
 
 	// Query file goes in <base>/<langDir>/<pack>/src/<queryName>/<queryName>.ql
 	queryDir := filepath.Join(opts.Base, langDir, packName, "src", opts.QueryName)
-	if err := os.MkdirAll(queryDir, 0755); err != nil {
+	if err := os.MkdirAll(queryDir, 0700); err != nil {
 		return fmt.Errorf("create query directory: %w", err)
 	}
 
@@ -119,15 +119,15 @@ func GenerateNewPack(cli *codeql.CLI, opts GeneratePackOptions) error {
 	if err != nil {
 		return fmt.Errorf("load qlpack-query template: %w", err)
 	}
-	qlpackPath := filepath.Join(opts.Base, langDir, opts.Pack, "src", "qlpack.yml")
+	qlpackPath := filepath.Join(opts.Base, langDir, packName, "src", "qlpack.yml")
 	if err := tmpl.WriteFile(qlpackTmpl, qlpackPath, data, opts.Overwrite); err != nil {
 		return fmt.Errorf("write qlpack-query: %w", err)
 	}
 
 	// Write test scaffolding.
 	if opts.CreateTests {
-		testDir := filepath.Join(opts.Base, langDir, opts.Pack, "test", opts.QueryName)
-		if err := os.MkdirAll(testDir, 0755); err != nil {
+		testDir := filepath.Join(opts.Base, langDir, packName, "test", opts.QueryName)
+		if err := os.MkdirAll(testDir, 0700); err != nil {
 			return fmt.Errorf("create test directory: %w", err)
 		}
 
@@ -175,7 +175,7 @@ func GenerateNewPack(cli *codeql.CLI, opts GeneratePackOptions) error {
 		if err != nil {
 			return fmt.Errorf("load qlpack-test template: %w", err)
 		}
-		testPackPath := filepath.Join(opts.Base, langDir, opts.Pack, "test", "qlpack.yml")
+		testPackPath := filepath.Join(opts.Base, langDir, packName, "test", "qlpack.yml")
 		if err := tmpl.WriteFile(testPackTmpl, testPackPath, testData, opts.Overwrite); err != nil {
 			return fmt.Errorf("write qlpack-test: %w", err)
 		}
