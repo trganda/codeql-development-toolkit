@@ -3,6 +3,7 @@ package pack
 import (
 	"fmt"
 	"log/slog"
+	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -19,9 +20,12 @@ func newListCmd(base *string) *cobra.Command {
 		Use:   "list",
 		Short: "List CodeQL packs under the base directory",
 		Long:  `List all CodeQL packs found under <base> using 'codeql pack ls'. By default, test packs are excluded; use --all to include them.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing pack list command", "base", *base, "all", all)
-			return runPackList(*base, all)
+			if err := runPackList(*base, all); err != nil {
+				slog.Error("Pack list failed", "err", err)
+				os.Exit(1)
+			}
 		},
 	}
 
@@ -54,7 +58,7 @@ func runPackList(base string, all bool) error {
 		if err != nil {
 			rel = p.Dir()
 		}
-		fmt.Printf("%-40s  %s  (%s)\n", p.Config.FullName(), p.Config.Version, rel)
+		slog.Info("Found pack", "name", p.Config.FullName(), "version", p.Config.Version, "relativeDir", rel)
 	}
 	return nil
 }

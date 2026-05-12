@@ -3,6 +3,7 @@ package test
 import (
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -16,9 +17,12 @@ func newGetMatrixCmd(base *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get-matrix",
 		Short: "Get a CI/CD matrix based on the current configuration",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing test run get-matrix command", "base", *base, "os-version", osVersion)
-			return runGetMatrix(*base, osVersion)
+			if err := runGetMatrix(*base, osVersion); err != nil {
+				slog.Error("Get matrix failed", "err", err)
+				os.Exit(1)
+			}
 		},
 	}
 	cmd.Flags().StringVar(&osVersion, "os-version", "ubuntu-latest", "Operating system(s) to use (comma-separated)")

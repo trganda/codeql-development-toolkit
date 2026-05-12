@@ -2,6 +2,7 @@ package pack
 
 import (
 	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -28,11 +29,14 @@ or an unambiguous short name (segment after '/').
 If --output is omitted, results are written to <base>/target/analyze/<pack>.<ext>.
 
 The CodeQL binary is resolved the same way as other qlt commands (bundle, ~/.qlt/packages, PATH).`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing pack run",
 				"database", database, "pack", packName,
 				"format", format, "output", output, "threads", threads)
-			return packsvc.RunAnalyze(*base, database, packName, format, output, threads)
+			if err := packsvc.RunAnalyze(*base, database, packName, format, output, threads); err != nil {
+				slog.Error("Pack run failed", "pack", packName, "database", database, "err", err)
+				os.Exit(1)
+			}
 		},
 	}
 	run.Flags().StringVar(&database, "database", "", "Path to the CodeQL database (required)")

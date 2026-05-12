@@ -42,11 +42,10 @@ func versionCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
 		Short: "Get the current tool version",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			version := resolvedVersion()
 			slog.Debug("Executing version command", "version", version)
 			fmt.Printf("QLT Version: %s\n", version)
-			return nil
 		},
 	}
 }

@@ -23,15 +23,18 @@ func newTestInitCommand(base *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "test",
 		Short: "Initialize test infrastructure (GitHub Actions workflow)",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRun: func(cmd *cobra.Command, args []string) {
 			if lang != "all" && !language.IsSupported(lang) {
-				return fmt.Errorf("--language must be one of %v or \"all\", got %q", language.SupportedLanguages, lang)
+				slog.Error("Invalid --language", "supported", language.SupportedLanguages, "extra", "all", "got", lang)
+				os.Exit(1)
 			}
-			return nil
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing test init command", "language", lang, "runner", useRunner, "branch", branch)
-			return runTestInit(*base, lang, useRunner, branch, numThreads, overwrite)
+			if err := runTestInit(*base, lang, useRunner, branch, numThreads, overwrite); err != nil {
+				slog.Error("Test init failed", "err", err)
+				os.Exit(1)
+			}
 		},
 	}
 

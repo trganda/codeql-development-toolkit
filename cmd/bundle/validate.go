@@ -2,6 +2,7 @@ package bundle
 
 import (
 	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -14,10 +15,13 @@ func newValidateIntegrationTestsCmd(_ *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "validate-integration-tests",
 		Short: "Validate bundle integration test SARIF results",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing bundle run validate-integration-tests command", "expected", expected, "actual", actual)
 			slog.Info("Comparing SARIF results", "expected", expected, "actual", actual)
-			return bundle.Validate(&bundle.ValidateOptions{Expected: expected, Actual: actual})
+			if err := bundle.Validate(&bundle.ValidateOptions{Expected: expected, Actual: actual}); err != nil {
+				slog.Error("Bundle validate failed", "err", err)
+				os.Exit(1)
+			}
 		},
 	}
 	cmd.Flags().StringVar(&expected, "expected", "", "Path to expected SARIF file")

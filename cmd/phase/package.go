@@ -28,12 +28,12 @@ Requires workspace initialization (run 'qlt phase init' first).
 
 Reads packs from qlt.conf.json where bundle=true and builds a custom bundle
 using the base bundle archive downloaded by 'qlt codeql install'.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing phase package", "base", *base)
-			// if err := runVerifyChain(*base, common); err != nil {
-			// 	return err
-			// }
-			return runPackage(*base, bundlePath, output, platforms, noPrecompile, minimal)
+			if err := runPackage(*base, bundlePath, output, platforms, noPrecompile, minimal); err != nil {
+				slog.Error("Phase package failed", "err", err)
+				os.Exit(1)
+			}
 		},
 	}
 	cmd.Flags().StringVar(&bundlePath, "bundle", "", "Override base bundle archive path (.tar.gz)")

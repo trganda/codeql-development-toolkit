@@ -3,6 +3,7 @@ package pack
 import (
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -29,7 +30,7 @@ Examples:
   qlt pack set scope/my-pack --bundle=false --publish
   qlt pack set scope/my-pack --references-bundle`,
 		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			name := args[0]
 			slog.Debug("Executing pack set command", "base", *base, "pack", name)
 
@@ -37,7 +38,8 @@ Examples:
 
 			entry, idx := findPack(cfg, name)
 			if entry == nil {
-				return fmt.Errorf("pack %q not found in qlt.conf.json; add it first via 'qlt query generate new-query'", name)
+				slog.Error("Pack not found in qlt.conf.json; add it first via 'qlt query generate new-query'", "pack", name)
+				os.Exit(1)
 			}
 
 			if cmd.Flags().Changed("bundle") {
@@ -53,11 +55,11 @@ Examples:
 			cfg.CodeQLPackConfiguration[idx] = *entry
 
 			if err := cfg.SaveToFile(*base); err != nil {
-				return fmt.Errorf("saving config: %w", err)
+				slog.Error("Save config failed", "base", *base, "err", err)
+				os.Exit(1)
 			}
 
 			fmt.Printf("Updated pack %q in qlt.conf.json\n", name)
-			return nil
 		},
 	}
 

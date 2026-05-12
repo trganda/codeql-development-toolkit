@@ -1,8 +1,8 @@
 package query
 
 import (
-	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/trganda/codeql-development-toolkit/internal/language"
@@ -22,27 +22,26 @@ func newGenerateCmd(base *string) *cobra.Command {
 		Use:   "generate",
 		Short: "Generate a query and add it to a pack",
 		Long:  `Generate a query from a template. This command creates a new query file based on the specified template and parameters.`,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRun: func(cmd *cobra.Command, args []string) {
 			if !language.IsSupported(lang) {
-				return fmt.Errorf("--language must be one of %v, got %q", language.SupportedLanguages, lang)
+				slog.Error("Invalid --language", "supported", language.SupportedLanguages, "got", lang)
+				os.Exit(1)
 			}
-			return nil
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing query generate command",
 				"name", queryName, "language", lang, "pack", packName, "kind", queryKind)
 
-			err := query.GenerateNewQuery(&query.GenerateQueryOptions{
+			if err := query.GenerateNewQuery(&query.GenerateQueryOptions{
 				Base:      *base,
 				Name:      queryName,
 				Language:  lang,
 				QueryKind: queryKind,
 				PackName:  packName,
-			})
-			if err != nil {
-				slog.Error("Query generation failed", "details", err.Error())
+			}); err != nil {
+				slog.Error("Query generation failed", "err", err)
+				os.Exit(1)
 			}
-			return nil
 		},
 	}
 	gen.Flags().StringVar(&queryName, "query-name", "GeneratedQuery", "Name of the query in the pack (e.g. GeneratedQuery)")

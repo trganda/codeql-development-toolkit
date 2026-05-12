@@ -2,6 +2,7 @@ package phase
 
 import (
 	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/trganda/codeql-development-toolkit/internal/utils"
@@ -16,9 +17,12 @@ func newTestCmd(base *string, common *utils.CommonFlags) *cobra.Command {
 
 Runs the full chain: install → compile → test.
 Requires workspace initialization (run 'qlt phase init' first).`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing phase test", "base", *base, "numThreads", common.NumThreads, "output", output)
-			return runTestChain(*base, output, common)
+			if err := runTestChain(*base, output, common); err != nil {
+				slog.Error("Phase test failed", "err", err)
+				os.Exit(1)
+			}
 		},
 	}
 	cmd.Flags().StringVar(&output, "output", "", "Write test report to the given JSON file (skip generating report if empty)")

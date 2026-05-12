@@ -1,8 +1,8 @@
 package pack
 
 import (
-	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -29,22 +29,23 @@ func newGenerateCmd(base *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "generate",
 		Short: "Create a new CodeQL pack with scaffolding",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRun: func(cmd *cobra.Command, args []string) {
 			if !language.IsSupported(lang) {
-				return fmt.Errorf("--language must be one of %v, got %q", language.SupportedLanguages, lang)
+				slog.Error("Invalid --language", "supported", language.SupportedLanguages, "got", lang)
+				os.Exit(1)
 			}
-			return nil
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing pack generate new-query command",
 				"name", queryName, "language", lang, "pack", packName, "kind", queryKind, "use-bundle", bundle)
 
 			codeqlBin, err := paths.ResolveCodeQLBinary(*base)
 			if err != nil {
-				return fmt.Errorf("resolve CodeQL binary: %w", err)
+				slog.Error("Resolve CodeQL binary failed", "base", *base, "err", err)
+				os.Exit(1)
 			}
 
-			return pack.GenerateNewPack(codeql.NewCLI(codeqlBin), pack.GeneratePackOptions{
+			if err := pack.GenerateNewPack(codeql.NewCLI(codeqlBin), pack.GeneratePackOptions{
 				Base:        *base,
 				QueryName:   queryName,
 				Lang:        lang,
@@ -54,7 +55,10 @@ func newGenerateCmd(base *string) *cobra.Command {
 				Overwrite:   overwrite,
 				UseBundle:   bundle,
 				Library:     library,
-			})
+			}); err != nil {
+				slog.Error("Generate new pack failed", "pack", packName, "err", err)
+				os.Exit(1)
+			}
 		},
 	}
 

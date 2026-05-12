@@ -24,17 +24,20 @@ func newInitBundleTestCmd(base *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bundle-test",
 		Short: "Initialize bundle support",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRun: func(cmd *cobra.Command, args []string) {
 			for _, l := range langs {
 				if !language.IsSupported(l) {
-					return fmt.Errorf("--language must be one of %v, got %q", language.SupportedLanguages, l)
+					slog.Error("Invalid --language", "supported", language.SupportedLanguages, "got", l)
+					os.Exit(1)
 				}
 			}
-			return nil
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing bundle init command", "base", *base, "languages", langs, "branch", branch)
-			return runBundleInit(*base, langs, branch, overwriteExisting)
+			if err := runBundleInit(*base, langs, branch, overwriteExisting); err != nil {
+				slog.Error("Bundle init failed", "err", err)
+				os.Exit(1)
+			}
 		},
 	}
 	cmd.Flags().StringArrayVar(&langs, "language", nil, "Language(s) for bundle (repeat for multiple, e.g. --language java --language cpp)")

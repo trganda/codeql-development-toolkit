@@ -2,6 +2,7 @@ package phase
 
 import (
 	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -24,12 +25,12 @@ Writes codeql-workspace.yml under <base> and updates qlt.conf.json with the
 provided scope and CodeQL CLI version.
 
 Corresponds to: qlt query init`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing phase init", "base", *base)
 			if _, err := query.InitWorkspace(*base, codeqlVersion, overwrite); err != nil {
-				return err
+				slog.Error("Phase init failed", "base", *base, "err", err)
+				os.Exit(1)
 			}
-			return nil
 		},
 	}
 

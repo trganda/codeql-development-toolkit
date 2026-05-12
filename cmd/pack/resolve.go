@@ -3,6 +3,7 @@ package pack
 import (
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -19,9 +20,12 @@ func newResolveCmd(base *string) *cobra.Command {
 		Short: "Auto-discover non-test packs and register them in qlt.conf.json",
 		Long: `Scan <base> for CodeQL packs, exclude test packs, and add any
 newly discovered packs to qlt.conf.json. Existing entries are left unchanged.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing pack resolve command", "base", *base)
-			return runPackResolve(*base)
+			if err := runPackResolve(*base); err != nil {
+				slog.Error("Pack resolve failed", "base", *base, "err", err)
+				os.Exit(1)
+			}
 		},
 	}
 

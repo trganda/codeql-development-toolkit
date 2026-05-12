@@ -2,6 +2,7 @@ package codeql
 
 import (
 	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -13,10 +14,13 @@ func newInstallCmd(base *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "install",
 		Short: "Download and install the CodeQL CLI binary",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing codeql install command",
 				"base", *base, "version", version, "platform", platform)
-			return codeql.Install(*base, platform)
+			if err := codeql.Install(*base, platform); err != nil {
+				slog.Error("CodeQL install failed", "platform", platform, "err", err)
+				os.Exit(1)
+			}
 		},
 	}
 

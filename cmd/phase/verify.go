@@ -2,6 +2,7 @@ package phase
 
 import (
 	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/trganda/codeql-development-toolkit/internal/utils"
@@ -18,9 +19,12 @@ Requires workspace initialization (run 'qlt phase init' first).
 
 This phase is a placeholder. Full implementation will validate CodeQL query
 metadata and run integration checks.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing phase verify", "base", *base, "numThreads", common.NumThreads)
-			return runVerifyChain(*base, common)
+			if err := runVerifyChain(*base, common); err != nil {
+				slog.Error("Phase verify failed", "err", err)
+				os.Exit(1)
+			}
 		},
 	}
 }

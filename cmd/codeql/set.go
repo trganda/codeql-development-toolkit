@@ -1,8 +1,8 @@
 package codeql
 
 import (
-	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -31,15 +31,15 @@ If --cli-version is omitted the latest release is
 fetched from GitHub's API automatically. If that request fails the
 following fallback values are used:
   CLI:    ` + codeql.FallbackCLIVersion,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing codeql set version command", "base", *base)
 
 			cfg := config.MustLoadFromFile(*base)
 			cfg.CodeQLCLIVersion = cliVersion
 			if err := cfg.SaveToFile(*base); err != nil {
-				return fmt.Errorf("save config: %w", err)
+				slog.Error("Save config failed", "base", *base, "err", err)
+				os.Exit(1)
 			}
-			return nil
 		},
 	}
 	cmd.Flags().StringVar(&cliVersion, "cli-version", cliVersion, "CodeQL CLI version (e.g. 2.25.1); auto-resolved if omitted")

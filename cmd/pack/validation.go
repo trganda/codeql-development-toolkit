@@ -3,6 +3,7 @@ package pack
 import (
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -25,9 +26,12 @@ func newCheckQueriesCmd(base *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "queries",
 		Short: "Validate CodeQL query metadata",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing validation run check-queries command", "base", *base)
-			return runCheckQueries(*base, lang, prettyPrint)
+			if err := runCheckQueries(*base, lang, prettyPrint); err != nil {
+				slog.Error("Check queries failed", "err", err)
+				os.Exit(1)
+			}
 		},
 	}
 

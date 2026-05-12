@@ -3,6 +3,7 @@ package phase
 import (
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -22,12 +23,16 @@ Runs the full chain: install → compile → test → verify → publish.
 Requires workspace initialization (run 'qlt phase init' first).
 
 Scans for packs under <base> and publishes each using 'codeql pack publish'.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			slog.Debug("Executing phase publish", "base", *base)
 			if err := runVerifyChain(*base, common); err != nil {
-				return err
+				slog.Error("Phase publish failed during verify chain", "err", err)
+				os.Exit(1)
 			}
-			return runPublish(*base)
+			if err := runPublish(*base); err != nil {
+				slog.Error("Phase publish failed", "err", err)
+				os.Exit(1)
+			}
 		},
 	}
 }

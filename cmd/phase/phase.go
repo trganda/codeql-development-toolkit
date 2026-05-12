@@ -1,6 +1,9 @@
 package phase
 
 import (
+	"log/slog"
+	"os"
+
 	"github.com/spf13/cobra"
 
 	"github.com/trganda/codeql-development-toolkit/internal/utils"
@@ -30,12 +33,15 @@ Phases can be run individually or in sequence. Common flows:
   qlt phase init && qlt phase install && qlt phase compile && qlt phase test
 
   qlt phase init && ... && qlt phase package && qlt phase publish`,
-		PersistentPreRunE: func(c *cobra.Command, args []string) error {
+		PersistentPreRun: func(c *cobra.Command, args []string) {
 			if c.Name() == "init" {
-				return nil
+				return
 			}
 
-			return utils.CheckWorkspace(*base)
+			if err := utils.CheckWorkspace(*base); err != nil {
+				slog.Error("Workspace check failed", "base", *base, "err", err)
+				os.Exit(1)
+			}
 		},
 	}
 

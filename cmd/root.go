@@ -28,18 +28,15 @@ var rootCmd = &cobra.Command{
 	Use:   "qlt",
 	Short: "CodeQL Development Lifecycle Toolkit",
 	Long:  "QLT helps you develop, test, and validate CodeQL queries.",
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		// Suppress usage for logic errors from RunE. Flag/argument validation
-		// errors happen before this hook runs, so they still show usage.
-		cmd.SilenceUsage = true
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		qltlog.Init(Verbose)
 		abs, err := filepath.Abs(BasePath)
 		if err != nil {
-			return fmt.Errorf("resolve base path: %w", err)
+			slog.Error("Resolve base path failed", "base", BasePath, "err", err)
+			os.Exit(1)
 		}
 		BasePath = abs
 		slog.Debug("QLT startup", "verbose", Verbose, "base", BasePath)
-		return nil
 	},
 }
 
