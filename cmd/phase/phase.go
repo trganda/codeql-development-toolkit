@@ -6,18 +6,9 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
-// commonFlags holds flags shared across most phase subcommands.
-// Populated by persistent flags on the parent and read by each subcommand.
-type commonFlags struct {
-	// language   string
-	packs      []string
-	numThreads int
-	codeqlArgs string
-}
-
 // NewCommand returns the `phase` cobra command.
 func NewCommand(base *string) *cobra.Command {
-	common := &commonFlags{}
+	common := &utils.CommonFlags{}
 	cmd := &cobra.Command{
 		Use:   "phase",
 		Short: "CodeQL development phases",
@@ -49,9 +40,9 @@ Phases can be run individually or in sequence. Common flows:
 	}
 
 	// cmd.PersistentFlags().StringVar(&common.language, "language", "", "Filter by language (e.g. go, java)")
-	cmd.PersistentFlags().StringSliceVar(&common.packs, "pack", []string{}, "Filter by pack name (full name, can specify multiple, e.g. --pack=foo/bar --pack=baz/qux)")
-	cmd.PersistentFlags().IntVar(&common.numThreads, "num-threads", 0, "Number of threads (0 = all cores)")
-	cmd.PersistentFlags().StringVar(&common.codeqlArgs, "codeql-args", "", "Extra arguments to pass to CodeQL")
+	cmd.PersistentFlags().StringSliceVar(&common.Packs, "pack", []string{}, "Filter by pack name (full name, can specify multiple, e.g. --pack=foo/bar --pack=baz/qux)")
+	cmd.PersistentFlags().IntVar(&common.NumThreads, "num-threads", 0, "Number of threads (0 = all cores)")
+	cmd.PersistentFlags().StringVar(&common.CodeQLArgs, "codeql-args", "", "Extra arguments to pass to CodeQL")
 
 	cmd.AddCommand(newInitCmd(base))
 	cmd.AddCommand(newInstallCmd(base, common))

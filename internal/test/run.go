@@ -12,6 +12,7 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/config"
 	packpkg "github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
+	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
 // RunUnitTests resolves and runs all CodeQL unit tests for the given language
@@ -19,13 +20,13 @@ import (
 // only when output is non-empty:
 //   - output == ""         → <base>/target/test/test-report-<timestamp>.json
 //   - output != ""         → the caller-supplied path
-func RunUnitTests(base, codeqlArgs string, output string, numThreads int, packs []string) error {
+func RunUnitTests(base string, c *utils.CommonFlags, output string) error {
 	cfg := config.MustLoadFromFile(base)
 
 	slog.Info("Executing unit tests",
 		"codeql-cli", cfg.CodeQLCLIVersion,
-		"threads", numThreads,
-		"codeql-args", codeqlArgs,
+		"threads", c.NumThreads,
+		"codeql-args", c.CodeQLArgs,
 	)
 
 	codeqlBin, err := paths.ResolveCodeQLBinary(base)
@@ -41,7 +42,7 @@ func RunUnitTests(base, codeqlArgs string, output string, numThreads int, packs 
 	if err != nil {
 		return fmt.Errorf("failed to list packs: %w", err)
 	}
-	selected, err := packpkg.SelectPacks(qlpacks, packs, false)
+	selected, err := packpkg.SelectPacks(qlpacks, c.Packs, false)
 	if err != nil {
 		return err
 	}
@@ -71,7 +72,7 @@ func RunUnitTests(base, codeqlArgs string, output string, numThreads int, packs 
 
 	for _, testFile := range resolvedTests {
 		slog.Debug("Running test file", "file", testFile)
-		res, err := cli.TestRun(numThreads, codeqlArgs, testFile)
+		res, err := cli.TestRun(c.NumThreads, c.CodeQLArgs, testFile)
 		if err != nil {
 			stderr := ""
 			if res != nil {
@@ -128,7 +129,7 @@ func RunUnitTests(base, codeqlArgs string, output string, numThreads int, packs 
 	report := &TestReport{
 		Metadata: ReportMetadata{
 			Timestamp:  start,
-			NumThreads: numThreads,
+			NumThreads: c.NumThreads,
 		},
 		Summary: summary,
 		Results: results,

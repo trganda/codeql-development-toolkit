@@ -7,9 +7,10 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/trganda/codeql-development-toolkit/internal/bundle"
+	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
-func newPackageCmd(base *string, common *commonFlags) *cobra.Command {
+func newPackageCmd(base *string, common *utils.CommonFlags) *cobra.Command {
 	var (
 		bundlePath   string
 		output       string

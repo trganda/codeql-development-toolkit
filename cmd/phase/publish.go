@@ -9,9 +9,10 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
+	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
-func newPublishCmd(base *string, common *commonFlags) *cobra.Command {
+func newPublishCmd(base *string, common *utils.CommonFlags) *cobra.Command {
 	return &cobra.Command{
 		Use:   "publish",
 		Short: "Publish CodeQL packs to the GitHub Package Registry",

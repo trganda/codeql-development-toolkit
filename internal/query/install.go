@@ -8,6 +8,7 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	packpkg "github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
+	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
 // installPackEntry is one dependency entry in `codeql pack install --format=json` output.
@@ -51,7 +52,7 @@ type resolvePacksOutput struct {
 // and runs `codeql pack install` for each pack whose dependencies are not fully
 // cached. Deps are checked via `codeql pack resolve-dependencies` and
 // `codeql resolve packs` before triggering an install.
-func RunPackInstall(base string, packs []string, codeqlArgs string, numThreads int) error {
+func RunPackInstall(base string, c *utils.CommonFlags) error {
 	codeqlBin, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err
@@ -66,7 +67,7 @@ func RunPackInstall(base string, packs []string, codeqlArgs string, numThreads i
 		return fmt.Errorf("No CodeQL packs found under %s. Run 'qlt query generate new-query' to create your first query.", base)
 	}
 
-	selected, err := packpkg.SelectPacks(qlpacks, packs, false)
+	selected, err := packpkg.SelectPacks(qlpacks, c.Packs, false)
 	if err != nil {
 		return err
 	}

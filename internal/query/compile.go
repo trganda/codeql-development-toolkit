@@ -14,6 +14,7 @@ import (
 	"github.com/trganda/codeql-development-toolkit/internal/codeql"
 	"github.com/trganda/codeql-development-toolkit/internal/pack"
 	"github.com/trganda/codeql-development-toolkit/internal/paths"
+	"github.com/trganda/codeql-development-toolkit/internal/utils"
 )
 
 type compilePosition struct {
@@ -42,7 +43,7 @@ type compileResult struct {
 // `codeql query compile`. When packs is empty, every pack listed under base is
 // compiled; otherwise only packs whose full or unique short name matches an
 // entry in packs are compiled.
-func RunCompile(base string, packs []string, threads int) error {
+func RunCompile(base string, c *utils.CommonFlags) error {
 	codeqlBin, err := paths.ResolveCodeQLBinary(base)
 	if err != nil {
 		return err
@@ -57,7 +58,7 @@ func RunCompile(base string, packs []string, threads int) error {
 		return fmt.Errorf("no CodeQL packs found under %s", base)
 	}
 
-	selected, err := pack.SelectPacks(allPacks, packs, false)
+	selected, err := pack.SelectPacks(allPacks, c.Packs, false)
 	if err != nil {
 		return err
 	}
@@ -65,7 +66,7 @@ func RunCompile(base string, packs []string, threads int) error {
 		return fmt.Errorf("no packs selected for compile")
 	}
 
-	maxWorkers := threads
+	maxWorkers := c.NumThreads
 	if maxWorkers <= 0 {
 		maxWorkers = runtime.NumCPU()
 	}
