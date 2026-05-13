@@ -1,0 +1,6 @@
+language: go
+primary_contact: "jongsx1203@gmail.com"
+fuzzing_engines:
+  - libfuzzer
+sanitizers:
+  - address
