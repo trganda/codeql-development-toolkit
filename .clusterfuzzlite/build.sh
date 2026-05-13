@@ -4,8 +4,11 @@
 
 cd "$SRC/codeql-development-toolkit"
 
-# Ensure module dependencies are available inside the build container.
-go mod download
+# compile_native_go_fuzzer rewrites testing.F calls to use the helper package
+# below, so it must be in the module graph during the fuzzer build. This only
+# affects the ephemeral build container; the repo's go.mod is unchanged.
+go get github.com/AdamKorcz/go-118-fuzz-build/testing
+go mod tidy
 
 MODULE="github.com/trganda/codeql-development-toolkit"
 
