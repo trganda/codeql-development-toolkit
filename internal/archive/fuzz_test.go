@@ -10,8 +10,8 @@ import (
 	"testing"
 )
 
-func seedTarGz(tb testing.TB) []byte {
-	tb.Helper()
+func seedTarGz(f *testing.F) []byte {
+	f.Helper()
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	tw := tar.NewWriter(gz)
@@ -22,37 +22,37 @@ func seedTarGz(tb testing.TB) []byte {
 		{"hello.txt", "hello"},
 		{"dir/nested.txt", "nested"},
 	}
-	for _, f := range files {
-		hdr := &tar.Header{Name: f.name, Mode: 0600, Size: int64(len(f.body)), Typeflag: tar.TypeReg}
+	for _, file := range files {
+		hdr := &tar.Header{Name: file.name, Mode: 0600, Size: int64(len(file.body)), Typeflag: tar.TypeReg}
 		if err := tw.WriteHeader(hdr); err != nil {
-			tb.Fatal(err)
+			f.Fatal(err)
 		}
-		if _, err := tw.Write([]byte(f.body)); err != nil {
-			tb.Fatal(err)
+		if _, err := tw.Write([]byte(file.body)); err != nil {
+			f.Fatal(err)
 		}
 	}
 	if err := tw.Close(); err != nil {
-		tb.Fatal(err)
+		f.Fatal(err)
 	}
 	if err := gz.Close(); err != nil {
-		tb.Fatal(err)
+		f.Fatal(err)
 	}
 	return buf.Bytes()
 }
 
-func seedZip(tb testing.TB) []byte {
-	tb.Helper()
+func seedZip(f *testing.F) []byte {
+	f.Helper()
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 	w, err := zw.Create("hello.txt")
 	if err != nil {
-		tb.Fatal(err)
+		f.Fatal(err)
 	}
 	if _, err := w.Write([]byte("hello")); err != nil {
-		tb.Fatal(err)
+		f.Fatal(err)
 	}
 	if err := zw.Close(); err != nil {
-		tb.Fatal(err)
+		f.Fatal(err)
 	}
 	return buf.Bytes()
 }
