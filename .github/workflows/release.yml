@@ -1,0 +1,43 @@
+name: 🚀 Release (SLSA L3)
+
+on:
+  release:
+    types: [published]
+
+permissions: read-all
+
+jobs:
+  args:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - name: Extract version from tag
+        id: v
+        run: |
+          # Strip leading 'v' (v1.2.3 -> 1.2.3).
+          echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: args
+    permissions:
+      id-token: write   # To sign the provenance.
+      contents: write   # To upload assets to release.
+      actions: read     # To read the workflow path.
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - linux
+          - windows
+          - darwin
+        arch:
+          - amd64
+          - arm64
+    uses: slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@v2.1.0
+    with:
+      go-version-file: go.mod
+      config-file: .slsa-goreleaser/${{ matrix.os }}-${{ matrix.arch }}.yml
+      evaluated-envs: "VERSION:${{ needs.args.outputs.version }}"
+      upload-assets: true
+      upload-tag-name: v${{ needs.args.outputs.version }}

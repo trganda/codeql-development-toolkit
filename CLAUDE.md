@@ -167,13 +167,13 @@ The granular commands (`qlt query`, `qlt test`, `qlt pack`, etc.) are preserved 
 
 ## CI / Release Workflows
 
-The release pipeline is split into three platform workflows called from `internal-release-build.yml`:
+The release pipeline lives in `.github/workflows/release.yml`. It triggers on `release: published`, extracts the version from the tag, then fans out via a matrix to the SLSA Level 3 Go builder (`slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@v2.0.0`). One matrix entry per platform; each entry passes a different `.slsa-goreleaser/<platform>.yml` config file:
 
-- `internal-build-release-linux64.yml` — `ubuntu-latest`, produces `qlt-linux-x86_64.zip`
-- `internal-build-release-macos64.yml` — `macos-26` (arm64), produces `qlt-macos-arm64.zip`
-- `internal-build-release-win64.yml` — `windows-latest`, produces `qlt-windows-x64.zip`
+- `linux-amd64`, `linux-arm64`
+- `darwin-amd64`, `darwin-arm64`
+- `windows-amd64`, `windows-arm64`
 
-All three use `actions/setup-go@v6` with the version from `go.mod`, inject `inputs.version` via `-ldflags`, and upload to the GitHub release via `gh release upload`.
+Each config sets `GOOS`/`GOARCH`/`CGO_ENABLED=0`, the `-trimpath` flag, the `cmd.Version` ldflag (sourced from the release tag via `evaluated-envs: VERSION:...`), and a platform-suffixed `binary:` name. Output artifacts are **raw binaries** (e.g. `qlt-linux-amd64`, `qlt-windows-amd64.exe`) plus a `<binary>.intoto.jsonl` SLSA provenance file per platform — no `.zip` wrapping. The builder uploads everything to the GitHub release automatically.
 
 ## Git Conversions
 

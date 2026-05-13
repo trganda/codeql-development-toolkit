@@ -1,0 +1,16 @@
+version: 1
+
+env:
+  - GOOS=darwin
+  - GOARCH=arm64
+  - CGO_ENABLED=0
+
+flags:
+  - -trimpath
+
+ldflags:
+  - "-X github.com/trganda/codeql-development-toolkit/cmd.Version={{ .Env.VERSION }}"
+
+main: ./cmd/qlt
+
+binary: qlt-darwin-arm64
