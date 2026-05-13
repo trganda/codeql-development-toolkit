@@ -1,8 +1,9 @@
 version: 1
 
+goos: windows
+goarch: amd64
+
 env:
-  - GOOS=windows
-  - GOARCH=amd64
   - CGO_ENABLED=0
 
 flags:

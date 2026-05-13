@@ -1,8 +1,9 @@
 version: 1
 
+goos: darwin
+goarch: arm64
+
 env:
-  - GOOS=darwin
-  - GOARCH=arm64
   - CGO_ENABLED=0
 
 flags:
