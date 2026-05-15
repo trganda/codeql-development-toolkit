@@ -51,6 +51,14 @@ cmd/
   bundle/          — bundle init (generates GitHub Actions workflows)
   pack/            — pack list [--all] [--language]
                      pack resolve [--language] — auto-discovers non-test packs and registers them in qlt.conf.json
+                     pack generate --language <lang> --pack <scope/name> [--query-name N] [--query-kind problem|path-problem]
+                                   [--skip-test] [--overwrite] [--library] [--bundle]
+                                   Creates a normal qlpack (and, unless --skip-test, a matching <pack>-tests pack).
+                                   --overwrite is scoped to what the command writes (src/ and, when applicable, test/).
+                     pack add-test --language <lang> --pack <scope/name> [--query-name N]
+                                   [--query-kind problem|path-problem] [--overwrite]
+                                   Adds the <pack>-tests test pack to an already-generated normal pack.
+                                   Errors if the normal pack is missing; --overwrite is scoped to test/ only.
 ```
 
 **Shared `--base` flag** points to the target CodeQL repository being managed (not this repo itself). All file writes go relative to `--base`.
