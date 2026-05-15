@@ -16,14 +16,14 @@ import (
 func newGenerateCmd(base *string) *cobra.Command {
 
 	var (
-		queryName   string
-		lang        string
-		packName    string
-		queryKind   string
-		createTests bool
-		overwrite   bool
-		library     bool
-		bundle      bool
+		queryName string
+		lang      string
+		packName  string
+		queryKind string
+		skipTest  bool
+		overwrite bool
+		library   bool
+		bundle    bool
 	)
 
 	cmd := &cobra.Command{
@@ -51,7 +51,7 @@ func newGenerateCmd(base *string) *cobra.Command {
 				Lang:        lang,
 				Pack:        packName,
 				QueryKind:   queryKind,
-				CreateTests: createTests,
+				SkipTest:    skipTest,
 				Overwrite:   overwrite,
 				UseBundle:   bundle,
 				Library:     library,
@@ -66,7 +66,7 @@ func newGenerateCmd(base *string) *cobra.Command {
 	cmd.Flags().StringVar(&lang, "language", "", "Language (cpp|csharp|go|java|javascript|python|ruby)")
 	cmd.Flags().StringVar(&packName, "pack", "", "CodeQL pack name (e.g. trganda/new-pack)")
 	cmd.Flags().StringVar(&queryKind, "query-kind", "problem", "Query kind of the first query in the new pack (problem|path-problem)")
-	cmd.Flags().BoolVar(&createTests, "create-tests", true, "Create test scaffolding")
+	cmd.Flags().BoolVar(&skipTest, "skip-test", false, "Skip creating test scaffolding")
 	cmd.Flags().BoolVar(&overwrite, "overwrite", false, "Overwrite existing pack related files")
 	cmd.Flags().BoolVar(&library, "library", false, "Mark the generated qlpack as a library pack (sets library: true)")
 	cmd.Flags().BoolVar(&bundle, "bundle", false, "Add to a custom CodeQL bundle")

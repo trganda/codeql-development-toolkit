@@ -22,7 +22,7 @@ type GeneratePackOptions struct {
 	Pack            string
 	QueryKind       string
 	CreateQueryPack bool
-	CreateTests     bool
+	SkipTest        bool
 	Overwrite       bool
 	UseBundle       bool
 	Library         bool
@@ -125,7 +125,7 @@ func GenerateNewPack(cli *codeql.CLI, opts GeneratePackOptions) error {
 	}
 
 	// Write test scaffolding.
-	if opts.CreateTests {
+	if !opts.SkipTest {
 		testDir := filepath.Join(opts.Base, langDir, packName, "test", opts.QueryName)
 		if err := os.MkdirAll(testDir, 0700); err != nil {
 			return fmt.Errorf("create test directory: %w", err)
