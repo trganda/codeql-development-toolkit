@@ -44,6 +44,18 @@ func (c *QLTConfig) UpsertPackConfig(name string, bundle bool) {
 	})
 }
 
+// RemovePackConfig removes the CodeQLPackConfiguration entry for the given name.
+// Returns true if an entry was removed.
+func (c *QLTConfig) RemovePackConfig(name string) bool {
+	for i, p := range c.CodeQLPackConfiguration {
+		if p.Name == name {
+			c.CodeQLPackConfiguration = append(c.CodeQLPackConfiguration[:i], c.CodeQLPackConfiguration[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
 // ConfigFilePath returns the path to qlt.conf.json under the base directory.
 func ConfigFilePath(base string) string {
 	return filepath.Join(base, "qlt.conf.json")
